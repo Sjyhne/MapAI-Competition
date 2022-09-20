@@ -1,0 +1,121 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Evaluation Pipeline
+
+# Controls when the workflow will run
+on:
+  release:
+    types: [published]
+  pull_request:
+    types: [opened]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  evaluate:
+    env:
+      ACCESS_TOKEN: ${{ secrets.HF_EVAL_ACCESS_TOKEN }}
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install ubuntu dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-pip  python3.8-venv  ffmpeg libsm6 libxext6
+
+      - name: Install Pyenv
+        run: curl https://pyenv.run | bash
+
+      # Install python packages that are required.
+      - name: Install Python Global Dependencies
+        run: python3 -m pip install tomli pyenv-api
+
+      # Runs a set of commands using the runners shell
+      # If not field github.event.pull_request exists, then do first forloop
+      - name: Evaluation
+        run: |
+          # Setup pyenv
+          export PYENV_ROOT="$HOME/.pyenv"
+          command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+          eval "$(pyenv init -)"
+          
+          # Variables
+          datapercentage=1.0
+          
+          
+          # Create artifacts_path
+          artifacts_path="/tmp/mapai-result-artifacts"
+          rm -rf $artifacts_path
+          mkdir -p $artifacts_path
+          
+          for team in team_*/ ; do
+            # Set-up python environment
+            pyenv_exec=$(python3 competition_toolkit/competition_toolkit/version_extractor.py --config $team/pyproject.toml)
+            eval "$pyenv_exec -m venv env"
+            #python3 -m venv env
+            source env/bin/activate
+            
+            # Install team dependencies
+            pip3 install $team
+            
+            # Install competition_toolkit
+            pip3 install competition_toolkit/
+          
+            if [ -z ${{ github.event.release }} ]; then
+                # validation data (on public data)
+                data_type=validation
+              else
+                # test data(on private data, competition submission)
+                echo $ACCESS_TOKEN | huggingface-cli login
+                data_type=test         
+            fi
+                      
+            # Create submission directory (temporary)
+            submission_path="/tmp/MapAI-$team-submission"
+            rm -rf $submission_path
+            mkdir -p submission_path
+                    
+            # Enter team directory
+            cd $team/src
+          
+            # RUN both tasks
+            for task in 1 2; do
+              # RUN participant code
+              python3 main.py --data-ratio $datapercentage --data-type $data_type --submission-path $submission_path --task $task
+              
+              # RUN evaluation code
+              python3 ../../competition_toolkit/competition_toolkit/evaluation.py --task $task --data-ratio $datapercentage --submission-path $submission_path --team $team --data-type $data_type
+            done
+
+            # Deactivate virtual env
+            deactivate
+          
+            echo "Finished evaluation for $team."
+            cd ../..
+
+          done
+
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: evaluation_results
+          path: |
+            /tmp/mapai-result-artifacts/*.json
+
+      #- name: Commit files
+      #  run: |
+      #    git config --local user.email "github-actions[bot]@users.noreply.github.com"
+      #    git config --local user.name "github-actions[bot]"
+      #    git commit -m "Adding result files generated during evaluation" -a
+      #- name: Push changes
+      #  uses: ad-m/github-push-action@master
+      #  with:
+      #    github_token: ${{ secrets.ADD_RESULTS_TOKEN }}
+      #    branch: ${{ github.ref }}

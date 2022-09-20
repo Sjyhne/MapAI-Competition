@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "static-page-web-builder"
+description = "Builds a static page for the competition engine"
+requires-python = ">=3.7"
+keywords = []
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "pyenv-api==1.1.0",
+    "Markdown==3.4.1",
+    "Jinja2==3.1.2",
+    "pydantic==1.10.2",
+    "tomli==2.0.1"
+]
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.rst"]}
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["src*"]  # package names should match these glob patterns (["*"] by default)
+exclude = [
+    "node_modules*",
+    "scripts*",
+    "tests*",
+    "venv*"
+]  # exclude packages matching these glob patterns (empty by default)
