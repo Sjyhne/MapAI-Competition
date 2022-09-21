@@ -86,10 +86,17 @@ def main(args):
 
         # Perform model prediction
         prediction = model(image)["out"]
-        prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
-
+        if opts["device"] == "cpu":
+            prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
+        else:
+            prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().cpu().detach().numpy()
         # Postprocess prediction
-        label = label.squeeze().detach().numpy()
+
+        if opts["device"] == "cpu":
+            label = label.squeeze().detach().numpy()
+        else:
+            label = label.squeeze().cpu().detach().numpy()
+
         prediction = np.uint8(prediction)
         label = np.uint8(label)
         assert prediction.shape == label.shape, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {label.shape}]"
@@ -106,7 +113,10 @@ def main(args):
         for idx, value in enumerate(opts["classes"]):
             prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
 
-        image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)
+        if opts["device"] == "cpu":
+            image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)
+        else:
+            image = image.squeeze().cpu().detach().numpy()[:3, :, :].transpose(1, 2, 0)
 
         fig, ax = plt.subplots(1, 3)
         columns = 3
@@ -122,6 +132,7 @@ def main(args):
         predicted_sample_path_png = predictions_path.joinpath(f"{filename_base}.png")
         predicted_sample_path_tif = predictions_path.joinpath(filename[0])
         plt.savefig(str(predicted_sample_path_png))
+        plt.close()
         cv.imwrite(str(predicted_sample_path_tif), prediction)
 
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
