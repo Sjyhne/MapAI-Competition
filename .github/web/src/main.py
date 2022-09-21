@@ -9,6 +9,7 @@ from pydantic import BaseModel
 import tomli
 import os
 import urllib.request
+import numpy as np
 
 base_dir = pathlib.Path(__file__).parent
 
@@ -80,7 +81,7 @@ def parse_participant(participant_path: pathlib.Path):
         task2iou = 0.0
         task2biou = 0.0
 
-    score = (task1iou + task1biou + task2iou + task2biou)/4
+    score = np.round((task1iou + task1biou + task2iou + task2biou)/4, 5)
 
     return dict(
         name=participant_config["project"]["name"],

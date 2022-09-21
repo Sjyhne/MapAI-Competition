@@ -16,7 +16,8 @@ dependencies = [
     "Markdown==3.4.1",
     "Jinja2==3.1.2",
     "pydantic==1.10.2",
-    "tomli==2.0.1"
+    "tomli==2.0.1",
+    "numpy"
 ]
 dynamic = ["version", "readme"]
 
