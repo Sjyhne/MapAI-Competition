@@ -1,5 +1,8 @@
 # NORA MapAI: Precision in Building Segmentation
 
+<a href="https://journals.uio.no/NMI/article/view/9849"><img src="https://img.shields.io/badge/Competition%20Paper-MapAI-brightgreen" ></a>
+![GitHub forks](https://img.shields.io/github/forks/Sjyhne/MapAI-Competition.svg?style=social&label=Forks&maxAge=2592000)
+
 This is the official repository for the MapAI competition arranged by 
 the Norwegian Mapping Authority, Centre for Artificial Intelligence Research at University of Agder (CAIR),
 Norwegian Artificial Intelligence Research Consortium (NORA), AI:Hub, Norkart, and the Danish Agency for 
@@ -163,6 +166,13 @@ pass in order to deliver the submission.
 When the deadline is finished, we will evaluate all of your code on the hidden test-dataset and publish the results
 on a github page.
 
+#### Step 7 - 2 Page Paper
+
+All participants are asked to submit a 2 page paper (double column, plus 1 additional page
+for references) describing their method and results. The submitted papers will be 
+reviewed single blind and will be published. Outstanding submissions will be invited 
+to submit a full length paper to a special issue about the competition in the Nordic 
+Machine Intelligence Journal.
 
 ### Uploading and downloading models from drive.google.com
 
@@ -192,3 +202,22 @@ your own google drive and download them from there during evaluation.
   * Ensure the entire workflow runs without any issues (environment issues are common)
     * If the environment issues are an issue, then you have to edit the pyproject.toml in
       the base of your team folder
+
+### Bibtex Citation
+
+```
+@article{Jyhne2022,
+   author = {Sander Jyhne and Morten Goodwin and Per-Arne Andersen and Ivar Oveland and Alexander Salveson Nossum and Karianne Ormseth and Mathilde Ørstavik and Andrew C Flatman},
+   doi = {10.5617/NMI.9849},
+   issn = {2703-9196},
+   issue = {3},
+   journal = {Nordic Machine Intelligence},
+   keywords = {Aerial Images,Deep Learning,Image segmentation,machine learning,remote sensing,semantic segmentation},
+   month = {9},
+   pages = {1-3},
+   title = {MapAI: Precision in Building Segmentation},
+   volume = {2},
+   url = {https://journals.uio.no/NMI/article/view/9849},
+   year = {2022},
+}
+```
