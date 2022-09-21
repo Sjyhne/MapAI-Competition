@@ -39,6 +39,8 @@ to a building in an image.
 The images come from orthophotos generated using a DTM, and therefore, the building-masks are
 slightly skewed compared to the ground truth masks.
 
+The dataset is hosted on Huggingface and can be found [here](https://huggingface.co/datasets/sjyhne/mapai_training_data).
+
 ### Motivation
 
 Acquiring accurate segmentation masks of buildings is challenging since the training data 
