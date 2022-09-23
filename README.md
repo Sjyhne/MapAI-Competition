@@ -1,7 +1,8 @@
 # NORA MapAI: Precision in Building Segmentation
 
 <a href="https://journals.uio.no/NMI/article/view/9849"><img src="https://img.shields.io/badge/Competition%20Paper-MapAI-brightgreen" ></a>
-![GitHub forks](https://img.shields.io/github/forks/Sjyhne/MapAI-Competition.svg?style=social&label=Forks&maxAge=2592000)
+<a href="https://sjyhne.github.io/MapAI-Competition/"><img src="https://img.shields.io/badge/Competition-Results-brightgreen" ></a>
+<a href="https://huggingface.co/datasets/sjyhne/mapai_training_data"><img src="https://img.shields.io/badge/MapAI-Dataset-brightgreen" ></a>
 
 This is the official repository for the MapAI competition arranged by 
 the Norwegian Mapping Authority, Centre for Artificial Intelligence Research at University of Agder (CAIR),
