@@ -38,12 +38,33 @@ data will be released after the competition in a collected huggingface dataset.
 
 It is important to note that the training and evaluation data comes from real-world data. As a
 result there will be flaws in the dataset, such as missing masks or masks that does not correspond
-to a building in an image.
-
-The images come from orthophotos generated using a DTM, and therefore, the building-masks are
+to a building in an image. The images come from orthophotos generated using a DTM, and therefore, the building-masks are
 slightly skewed compared to the ground truth masks.
 
 The dataset is hosted on Huggingface and can be found [here](https://huggingface.co/datasets/sjyhne/mapai_training_data).
+Downloading the dataset is done using the huggingface datasets package with the following function:
+
+```python
+from datasets import load_dataset
+data_type = "train" # or "validation"
+# paths is a list of dicts, where each dict is a data sample, 
+# and each dict have "image", "lidar", and "mask" keys
+# with the path to the corresponding file
+paths = load_dataset("sjyhne/mapai_training_data", split=data_type)
+
+data_sample = paths[0]
+
+"""
+data_sample = {
+    "image": <path_to_img>,
+    "lidar": <path_to_lidar>,
+    "mask": <path_to_mask>
+}
+"""
+```
+
+where data_type can either be "train" or "validation". The function downloads a .parquet file from huggingface
+and extracts images, masks, and lidar data to a data/ folder in the base of the repository. 
 
 ### Motivation
 
