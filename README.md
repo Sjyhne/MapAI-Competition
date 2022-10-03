@@ -42,15 +42,23 @@ to a building in an image. The images come from orthophotos generated using a DT
 slightly skewed compared to the ground truth masks.
 
 The dataset is hosted on Huggingface and can be found [here](https://huggingface.co/datasets/sjyhne/mapai_training_data).
-Downloading the dataset is done using the huggingface datasets package with the following function:
+Downloading the dataset is done using the huggingface datasets package.
+
+First you need to install the competition_toolkit package with pip (command expects your current directory is MapAI-Compeition):
+
+> pip3 install competition_toolkit/
+
+The you can download the dataset with the following python code:
+
 
 ```python
-from datasets import load_dataset
+from competition_toolkit.dataloader import download_dataset
 data_type = "train" # or "validation"
+task = 1 # or 2, but does not matter for train and validation data types
 # paths is a list of dicts, where each dict is a data sample, 
 # and each dict have "image", "lidar", and "mask" keys
 # with the path to the corresponding file
-paths = load_dataset("sjyhne/mapai_training_data", split=data_type)
+paths = download_dataset(data_type, task)
 
 data_sample = paths[0]
 
@@ -160,10 +168,13 @@ outside the team-folder should be changed or altered. You can find more informat
 the folder structure and contents in the section about _folder structure_.
 
 The template is already ready with code that can run, train, and evaluate - this is just template
-code and you are allowed to change everything related to the training of the models. When it comes
-the evaluation files, it is more restricted, as they are used to automatically evaluate the models.
+code and you are allowed to change everything related to the training of the models. 
+To use the template code, some functionality relies on the competition_toolkit package which can
+be installed from the MapAI-Competition folder with the following command:
+> pip3 install competition_toolkit/
 
-
+When it comes the evaluation file, it is more restricted, as they are used to automatically 
+evaluate the models.
 
 #### Step 6 - Delivery
 
