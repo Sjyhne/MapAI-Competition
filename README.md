@@ -48,7 +48,8 @@ First you need to install the competition_toolkit package with pip (command expe
 
 > pip3 install competition_toolkit/
 
-The you can download the dataset with the following python code:
+The you can download the dataset with the following python code, be sure to run the function from _within_ the src folder
+in your team folder:
 
 
 ```python
@@ -73,6 +74,9 @@ data_sample = {
 
 where data_type can either be "train" or "validation". The function downloads a .parquet file from huggingface
 and extracts images, masks, and lidar data to a data/ folder in the base of the repository. 
+
+NB: If the function returns paths without downloading them, and you do not have a data/ folder in the MapAI-Competition
+folder, then you have to remove the cache for huggingface datasets. In Ubuntu, you will find this cache in `~/.cache/huggingface`
 
 ### Motivation
 
