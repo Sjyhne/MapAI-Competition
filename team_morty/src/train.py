@@ -4,20 +4,16 @@ import numpy as np
 from yaml import load, dump, Loader, Dumper
 from tqdm import tqdm
 import torch
-import torchvision
 from tabulate import tabulate
-import torch.nn as nn
 import argparse
 import time
-
-from competition_toolkit.dataloader import create_dataloader
+from augmentation.dataloader import create_dataloader
+from ai_models.load_models import load_unet, load_resnet101, load_resnet50
 from utils import create_run_dir, store_model_weights, record_scores
-
 from competition_toolkit.eval_functions import calculate_score
-# from ai_models.u_net import UNet
 
 
-def test(opts, dataloader, model, lossfn):
+def test(opts, dataloader, model, lossfn, get_output):
     model.eval()
 
     device = opts["device"]
@@ -28,11 +24,13 @@ def test(opts, dataloader, model, lossfn):
     scoretotal = np.zeros((len(dataloader)), dtype=float)
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
+        if idx > 30:
+            break
         image, label, filename = batch
         image = image.to(device)
         label = label.to(device)
 
-        output = model(image)["out"]
+        output = model(image)[get_output]
 
         loss = lossfn(output, label).item()
 
@@ -56,23 +54,14 @@ def test(opts, dataloader, model, lossfn):
     return loss, iou, biou, score
 
 
-def set_parameter_requires_grad(model, feature_extracting):
-    if feature_extracting:
-        for param in model.parameters():
-            param.requires_grad = False
-
 def train(opts):
     device = opts["device"]
 
-    # The current model should be swapped with a different one of your choice
-    # model = torchvision.models.segmentation.fcn_resnet50(pretrained="FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1")
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    # model = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=opts["num_classes"] )
-    # set_parameter_requires_grad(model, True)
-    # num_ftrs = model.aux_classifier[4].in_channels
-    # model.aux_classifier[4] = nn.Conv2d(num_ftrs, opts["num_classes"], kernel_size=(1, 1))
-    # model = torchvision.models.segmentation.fcn_resnet50(pretrained="FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1", num_classes=opts["num_classes"])
-    # model = UNet()
+    # model, get_output = load_unet(opts)
+    # model, get_output = load_resnet50(opts)
+    # model, get_output = load_resnet50(opts, pretrained=True)
+    model, get_output = load_resnet101(opts)
+
 
     if opts["task"] == 2:
         new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
@@ -101,16 +90,14 @@ def train(opts):
         bioutotal = np.zeros((len(trainloader)), dtype=float)
 
         stime = time.time()
+      
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
+            if idx > 30:
+                break
             image, label, filename = batch
-            image = image.to(device)
-            label = label.to(device)
-
-            output = model(image)["out"]
-
+            output = model(image)[get_output]
             loss = lossfn(output, label)
-
             optimizer.zero_grad()
             # loss.requires_grad = True
             loss.backward()
@@ -130,7 +117,7 @@ def train(opts):
             bioutotal[idx] = trainmetrics["biou"]
             scoretotal[idx] = trainmetrics["score"]
 
-        testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn)
+        testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn, get_output)
         trainloss = round(losstotal.mean(), 4)
         trainiou = round(ioutotal.mean(), 4)
         trainbiou = round(bioutotal.mean(), 4)
@@ -171,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--task", type=int, default=2)
+    parser.add_argument("--task", type=int, default=1)
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")
 
