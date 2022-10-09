@@ -8,7 +8,7 @@ class_to_color:
   "background": 0
   "building": 255
 
-imagesize: 500
+imagesize: 512
 
 train:
   batchsize: 8
