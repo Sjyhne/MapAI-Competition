@@ -93,8 +93,6 @@ def train(opts):
       
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
-            if idx > 30:
-                break
             image, label, filename = batch
             output = model(image)[get_output]
             loss = lossfn(output, label)

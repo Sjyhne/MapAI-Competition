@@ -33,7 +33,7 @@ def load_resnet50(
             get_output,
         )
     model = torchvision.models.segmentation.fcn_resnet50(
-        pretrained=pretrained_model, num_classes=opts["num_classes"]
+        pretrained=pretrained_model
     )
     # set_parameter_requires_grad(model, True)
     num_ftrs = model.aux_classifier[4].in_channels
