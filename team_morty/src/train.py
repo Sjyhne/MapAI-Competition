@@ -8,7 +8,7 @@ from tabulate import tabulate
 import argparse
 import time
 from augmentation.dataloader import create_dataloader
-from ai_models.load_models import load_unet, load_resnet101, load_resnet50
+from ai_models.create_models import load_unet, load_resnet101, load_resnet50
 from utils import create_run_dir, store_model_weights, record_scores
 from competition_toolkit.eval_functions import calculate_score
 
@@ -24,8 +24,8 @@ def test(opts, dataloader, model, lossfn, get_output):
     scoretotal = np.zeros((len(dataloader)), dtype=float)
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
-        if idx > 30:
-            break
+        # if idx > 30:
+        #     break
         image, label, filename = batch
         image = image.to(device)
         label = label.to(device)
@@ -57,10 +57,10 @@ def test(opts, dataloader, model, lossfn, get_output):
 def train(opts):
     device = opts["device"]
 
-    # model, get_output = load_unet(opts)
+    model, get_output = load_unet(opts)
     # model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
-    model, get_output = load_resnet101(opts)
+    # model, get_output = load_resnet101(opts)
 
 
     if opts["task"] == 2:
@@ -72,6 +72,8 @@ def train(opts):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
     lossfn = torch.nn.CrossEntropyLoss()
+    # lossfn = torch.nn.BCELoss()
+
 
     epochs = opts["epochs"]
 
@@ -92,12 +94,15 @@ def train(opts):
         stime = time.time()
       
 
+
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
             image, label, filename = batch
+            image = image.to(device)
+            label = label.to(device)
             output = model(image)[get_output]
+
             loss = lossfn(output, label)
             optimizer.zero_grad()
-            # loss.requires_grad = True
             loss.backward()
             optimizer.step()
 
@@ -153,7 +158,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--task", type=int, default=1)

@@ -10,9 +10,16 @@ import torch
 import cv2 as cv
 import numpy as np
 from augmentation.data_augmentation import get_transforms
+from torch.utils.data import RandomSampler 
+
 
 transform = get_transforms()
 
+class DS(Dataset):
+    def __len__(self):
+        return 5
+    def __getitem__(self, index):
+        return torch.empty(1).fill_(index)
 
 def load_image(imagepath: str, size: tuple) -> torch.tensor:
     image = cv.imread(imagepath, cv.IMREAD_COLOR)
@@ -181,7 +188,13 @@ def create_dataloader(opts: dict, datatype: str = "test") -> DataLoader:
     elif opts["task"] == 2:
         dataset = ImageLabelAndLidarDataset(opts, datatype)
 
+<<<<<<< HEAD
     dataloader = DataLoader(dataset, batch_size=opts[f"task{opts['task']}"]["batchsize"], shuffle=opts[f"task{opts['task']}"]["shuffle"])
+=======
+    ds = DS()
+    sampler = RandomSampler(ds, replacement=True, num_samples=3000)
+    dataloader = DataLoader(dataset, batch_size=opts[f"task{opts['task']}"]["batchsize"], shuffle=opts[f"task{opts['task']}"]["shuffle"])#, sampler=sampler)
+>>>>>>> 6021c32adb11b22fd870ec355cad6a51277c7561
 
     return dataloader
 
