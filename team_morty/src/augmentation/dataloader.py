@@ -28,15 +28,8 @@ def load_image(imagepath: str, size: tuple) -> torch.tensor:
 
 def load_lidar(lidarpath: str, size: tuple) -> torch.tensor:
     lidar = cv.imread(lidarpath, cv.IMREAD_UNCHANGED)
-<<<<<<< HEAD
-    lidar = cv.resize(lidar, size)
-    lidar = transform(image=lidar)['image']
-    lidar = torch.tensor(lidar.astype(np.float)).float()
-    return lidar
-=======
     return cv.resize(lidar, size)
 
->>>>>>> b6105e2d1e9e31cd9195b2e0f7323359af075bac
 
 def load_label(labelpath: str, size: tuple) -> torch.tensor:
     label = cv.imread(labelpath, cv.IMREAD_GRAYSCALE)
@@ -151,8 +144,6 @@ class ImageLabelAndLidarDataset(Dataset):
         label = load_label(labelfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
         lidar = load_lidar(lidarfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
 
-<<<<<<< HEAD
-=======
         
         t = transform(image=image, image1=lidar, mask=label)
         lidar = t["image1"]
@@ -165,24 +156,14 @@ class ImageLabelAndLidarDataset(Dataset):
 
   
 
->>>>>>> b6105e2d1e9e31cd9195b2e0f7323359af075bac
         assert image.shape[1:] == label.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
         assert image.shape[1:] == lidar.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
-<<<<<<< HEAD
-
-        # Concatenate lidar and image data
-        lidar = lidar.unsqueeze(0)
-
-        image = torch.cat((image, lidar), dim=0)
-
-=======
               # Concatenate lidar and image data
         lidar = lidar.unsqueeze(0)
 
         image = torch.cat((image, lidar), dim=0)
->>>>>>> b6105e2d1e9e31cd9195b2e0f7323359af075bac
         return image, label, filename
 
 
