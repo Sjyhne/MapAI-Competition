@@ -11,7 +11,8 @@ from augmentation.dataloader import create_dataloader
 from ai_models.create_models import load_unet, load_resnet101, load_resnet50
 from utils import create_run_dir, store_model_weights, record_scores
 from competition_toolkit.eval_functions import calculate_score
-
+import segmentation_models_pytorch as smp
+from segmentation_models_pytorch.losses.dice import DiceLoss
 
 def test(opts, dataloader, model, lossfn, get_output):
     model.eval()
@@ -57,8 +58,8 @@ def test(opts, dataloader, model, lossfn, get_output):
 def train(opts):
     device = opts["device"]
 
-    #model, get_output = load_unet(opts)
-    #model, get_output = load_resnet50(opts)
+    # model, get_output = load_unet(opts)
+    # model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
     model, get_output = load_resnet101(opts)
 
@@ -73,6 +74,7 @@ def train(opts):
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
     lossfn = torch.nn.CrossEntropyLoss()
     # lossfn = torch.nn.BCELoss()
+    # lossfn = DiceLoss()
 
 
     epochs = opts["epochs"]
@@ -93,6 +95,7 @@ def train(opts):
 
         stime = time.time()
       
+
 
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
@@ -158,7 +161,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate used during training")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--task", type=int, default=1)
