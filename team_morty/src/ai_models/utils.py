@@ -1,15 +1,10 @@
-<<<<<<< HEAD
-=======
 import argparse
 from yaml import load, Loader
 
->>>>>>> 6021c32adb11b22fd870ec355cad6a51277c7561
 def set_parameter_requires_grad(model, feature_extracting):
     if feature_extracting:
         for param in model.parameters():
             param.requires_grad = False
-<<<<<<< HEAD
-=======
 
 
 def get_opts():
@@ -33,4 +28,3 @@ def get_opts():
     except Exception as e:
         opts = {**opts, **vars(args)}
     return opts
->>>>>>> 6021c32adb11b22fd870ec355cad6a51277c7561

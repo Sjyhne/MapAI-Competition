@@ -57,10 +57,10 @@ def test(opts, dataloader, model, lossfn, get_output):
 def train(opts):
     device = opts["device"]
 
-    model, get_output = load_unet(opts)
-    # model, get_output = load_resnet50(opts)
+    #model, get_output = load_unet(opts)
+    #model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
-    # model, get_output = load_resnet101(opts)
+    model, get_output = load_resnet101(opts)
 
 
     if opts["task"] == 2:
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate used during training")
+    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--task", type=int, default=1)
