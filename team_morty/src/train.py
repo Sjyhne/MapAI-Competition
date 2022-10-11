@@ -72,9 +72,9 @@ def train(opts):
     model = model.float()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
-    lossfn = torch.nn.CrossEntropyLoss()
+    # lossfn = torch.nn.CrossEntropyLoss()
     # lossfn = torch.nn.BCELoss()
-    # lossfn = DiceLoss()
+    lossfn = DiceLoss(mode="multiclass")
 
 
     epochs = opts["epochs"]
@@ -95,6 +95,7 @@ def train(opts):
 
         stime = time.time()
       
+
 
 
 
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate used during training")
+    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--task", type=int, default=1)
