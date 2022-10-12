@@ -99,10 +99,10 @@ class ImageAndLabelDataset(Dataset):
         label = load_label(labelfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
         t = transform(image=image, mask=label)
         image = t["image"]
-        image = torch.tensor(image.astype(np.uint8), device="cuda") / 255
+        image = torch.tensor(image.astype(np.uint8), device=self.opts["device"]) / 255
         image = torch.permute(image, (2, 0, 1))
         label = t["mask"]
-        label = torch.tensor(label.astype(np.uint8), device="cuda").long()
+        label = torch.tensor(label.astype(np.uint8), device=self.opts["device"]).long()
         assert image.shape[1:] == label.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
 
@@ -147,12 +147,12 @@ class ImageLabelAndLidarDataset(Dataset):
         
         t = transform(image=image, image1=lidar, mask=label)
         lidar = t["image1"]
-        lidar = torch.tensor(lidar.astype(np.float), device="cuda").float()
+        lidar = torch.tensor(lidar.astype(np.float), device=self.opts["device"]).float()
         image = t["image"]
-        image = torch.tensor(image.astype(np.uint8), device="cuda") / 255
+        image = torch.tensor(image.astype(np.uint8), device=self.opts["device"]) / 255
         image = torch.permute(image, (2, 0, 1))
         label = t["mask"]
-        label = torch.tensor(label.astype(np.uint8), device="cuda").long()
+        label = torch.tensor(label.astype(np.uint8), device=self.opts["device"]).long()
 
   
 

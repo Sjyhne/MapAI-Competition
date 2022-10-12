@@ -1,3 +1,11 @@
+# vs code
+.vscode
+submision
+test_submision
+temp_download
+backup
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
