@@ -180,10 +180,14 @@ be installed from the MapAI-Competition folder with the following command:
 When it comes the evaluation file, it is more restricted, as they are used to automatically 
 evaluate the models.
 
+**Please** fill out the all of the details in the form at the bottom of the README.md inside your src folder.
+
 #### Step 6 - Delivery
 
 When the deadline is due, there are a few steps that will have to be taken to get ready for
 submission.
+
+NB: The models will be evaluated against images with **500x500** resolution. Therefore, the predictions of the models **must** be the same size. The model can produce 500x500 predictions directly, or you can resize the  predictions to the correct size.
 
 ##### Step 6.1 - Push your changes to the fork
 
