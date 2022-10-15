@@ -74,7 +74,7 @@ def train(opts):
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
     # lossfn = torch.nn.CrossEntropyLoss()
     # lossfn = torch.nn.BCELoss()
-    lossfn = DiceLoss(mode="multiclass")
+    lossfn = DiceLoss(mode="binary")
 
 
     epochs = opts["epochs"]
@@ -104,6 +104,10 @@ def train(opts):
             image = image.to(device)
             label = label.to(device)
             output = model(image)[get_output]
+            # output is Size(1,2,512,512) need to be Size(1,512,512)
+            #_thnn_log_sigmoid_forward not supported on CUDAType for Long
+            # output = torch.argmax(torch.softmax(output, dim=1), dim=1)
+            
 
             loss = lossfn(output, label)
             optimizer.zero_grad()

@@ -12,7 +12,8 @@ import shutil
 
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
-
+from ai_models.load_models import load_model
+from ai_models.create_models import load_resnet50, load_resnet101, load_unet
 
 def main(args):
     #########################################################################
@@ -30,8 +31,8 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     #########################################################################
-
-    pt_share_link = "https://drive.google.com/file/d/17YB5-KZVW-mqaQdz4xv7rioDr4DzhfOU/view?usp=sharing"
+    
+    pt_share_link = "https://drive.google.com/file/d/1vqSvHqU9fZBYpy38mrpAg8CG90lSL2xh/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
@@ -57,12 +58,8 @@ def main(args):
     # Setup Model
     ###
     #########################################################################
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    model.load_state_dict(torch.load(model_checkpoint))
     device = opts["device"]
-    model = model.to(device)
-    model.eval()
-
+    model, get_output = load_model(load_unet, model_checkpoint, opts)
     #########################################################################
     ###
     # Load Data
@@ -85,7 +82,7 @@ def main(args):
         label = label.to(device)
 
         # Perform model prediction
-        prediction = model(image)["out"]
+        prediction = model(image)[get_output]
         if opts["device"] == "cpu":
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
         else:

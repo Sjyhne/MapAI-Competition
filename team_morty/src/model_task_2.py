@@ -31,7 +31,7 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     #########################################################################
-    pt_share_link = "https://drive.google.com/file/d/10xBcdT3ryUFrhDs-g7ZourRuVjf-FHOj/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/1F_l7KekAyHwmouE91ulW_cocvEFUpW9r/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
@@ -58,7 +58,7 @@ def main(args):
     ###
     #########################################################################
     # Adds 4 channels to the input layer instead of 3
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
+    model = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=opts["num_classes"])
     new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
     model.backbone.conv1 = new_conv1
     model.load_state_dict(torch.load(model_checkpoint))
