@@ -9,9 +9,10 @@ from tabulate import tabulate
 
 import argparse
 import time
-
-from competition_toolkit.dataloader import create_dataloader
-from utils import create_run_dir, store_model_weights, record_scores
+import segmentation_models_pytorch as smp
+#from competition_toolkit.dataloader import create_dataloader
+from custom_dataloader import create_dataloader
+from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer
 
 from competition_toolkit.eval_functions import calculate_score
 
@@ -31,7 +32,7 @@ def test(opts, dataloader, model, lossfn):
         image = image.to(device)
         label = label.to(device)
 
-        output = model(image)["out"]
+        output = model(image)
 
         loss = lossfn(output, label).item()
 
@@ -56,22 +57,20 @@ def test(opts, dataloader, model, lossfn):
 
 
 def train(opts):
-    device = opts["device"]
-
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print('Using device:', device)
     # The current model should be swapped with a different one of your choice
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-
-    if opts["task"] == 2:
-        new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        model.backbone.conv1 = new_conv1
+    model = get_model(opts)
 
     model.to(device)
     model = model.float()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
-    lossfn = torch.nn.CrossEntropyLoss()
+    optimizer = get_optimizer(opts, model)
 
-    epochs = opts["epochs"]
+    # TODO configurable losses, see utils
+    lossfn = smp.losses.SoftCrossEntropyLoss(smooth_factor=0.05) # equivalent to torch.nn.CrossEntropyLoss() with label smoothing
+
+    epochs = opts["train"]["epochs"]
 
     trainloader = create_dataloader(opts, "train")
     valloader = create_dataloader(opts, "validation")
@@ -94,8 +93,7 @@ def train(opts):
             image = image.to(device)
             label = label.to(device)
 
-            output = model(image)["out"]
-
+            output = model(image)
             loss = lossfn(output, label)
 
             optimizer.zero_grad()
@@ -156,7 +154,6 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--task", type=int, default=1)
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")
