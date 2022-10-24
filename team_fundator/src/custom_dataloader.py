@@ -167,9 +167,8 @@ class ImageLabelAndLidarDataset(Dataset):
             image = image.transpose(2, 0, 1)
 
         # TODO: additional augs on LIDAR
-
         # Concatenate lidar and image data
-        lidar = np.expand_dims(lidar, 0)
+        lidar = np.expand_dims(lidar, 0) // 15.0
         image = np.concatenate((image, lidar), axis=0)
 
         sample = dict(
