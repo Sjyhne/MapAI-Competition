@@ -66,8 +66,9 @@ class ImageAndLabelDataset(Dataset):
         self.opts = opts
 
         root = opts["data_dirs"]["root"]
-        self.image_paths = sorted(pathlib.Path(f"{root}/{datatype}/{opts['data_dirs']['images']}").glob("*.tif"))
-        self.mask_paths = sorted(pathlib.Path(f"{root}/{datatype}/{opts['data_dirs']['masks']}").glob("*.tif"))
+        folder = opts["data_dirs"][datatype]
+        self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
+        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['masks']}").glob("*.tif"))
         
         assert len(self.image_paths)  == len(self.mask_paths) 
         print()
@@ -117,9 +118,10 @@ class ImageLabelAndLidarDataset(Dataset):
         self.opts = opts
 
         root = opts["data_dirs"]["root"]
-        self.lidar_paths = sorted(pathlib.Path(f"{root}/{datatype}/{opts['data_dirs']['lidar']}").glob("*.tif"))
-        self.image_paths = sorted(pathlib.Path(f"{root}/{datatype}/{opts['data_dirs']['images']}").glob("*.tif"))
-        self.mask_paths = sorted(pathlib.Path(f"{root}/{datatype}/{opts['data_dirs']['masks']}").glob("*.tif"))
+        folder = opts["data_dirs"][datatype]
+        self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
+        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['masks']}").glob("*.tif"))
+        self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
 
         assert len(self.image_paths)  == len(self.mask_paths) 
         assert len(self.image_paths)  == len(self.lidar_paths) 

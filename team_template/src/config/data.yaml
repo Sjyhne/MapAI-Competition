@@ -1,28 +1,34 @@
 version: 1.0
 
+model:
+  name: "UNet++"
+  in_channels: 3
+  encoder_depth: 5
+  encoder: "efficientnet-b4"
+
+data_dirs:
+  root: 'C:\Users\LARHOD\Documents\GIS\MapAI-Competition\data\overlapping_data'
+  train: 'train'
+  validation: 'supersampled_validation'
+  images: "images"
+  lidar: "lidar"
+  masks: "masks"
+
 num_classes: 2
 classes: ["background", "building"]
 class_to_color:
   "background": 0
   "building": 1
 
-model:
-  name: "UNet++"
-  in_channels: 3
-  encoder_depth: 5
-
-data_dirs:
-  root: 'C:\Users\LARHOD\Documents\GIS\MapAI-Competition\data\overlapping_data'
-  images: "images"
-  lidar: "lidar"
-  masks: "masks"
+augmentation: 'normal'  # None, 'normal', 'hard', 'very_hard'
 
 training:
   losses:
-    names: [DiceLoss]
-    weighting: [1.0]
+    names: ['DiceLoss']
+    weights: [1.0]
     DiceLoss:
       init_params:
+        mode: "multiclass"
 
   metrics:
     mask:
@@ -46,14 +52,11 @@ imagesize: 512
 
 train:
   epochs: 50
-  batchsize: 8
+  batchsize: 2
   shuffle: True
+  num_workers: 0
+
 validation:
-  batchsize: 1
-  shuffle: False
-task1:
-  batchsize: 1
-  shuffle: False
-task2:
-  batchsize: 1
-  shuffle: False
+  batchsize: 2
+  shuffle: True
+  num_workers: 0

@@ -1,4 +1,5 @@
 import os
+from cv2 import transform
 
 import numpy as np
 from yaml import load, dump, Loader, Dumper
@@ -12,15 +13,17 @@ import time
 import segmentation_models_pytorch as smp
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
-from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer
-
+from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses
+from transforms import valid_transform
 from competition_toolkit.eval_functions import calculate_score
+import transforms
 
-
-def test(opts, dataloader, model, lossfn):
+transforms = transforms.__dict__
+print(transforms.keys())
+def test(dataloader, model, lossfn, device):
     model.eval()
 
-    device = opts["device"]
+    device = device
 
     losstotal = np.zeros((len(dataloader)), dtype=float)
     ioutotal = np.zeros((len(dataloader)), dtype=float)
@@ -28,10 +31,10 @@ def test(opts, dataloader, model, lossfn):
     scoretotal = np.zeros((len(dataloader)), dtype=float)
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
-        image, label, filename = batch
+        image, label = batch.values()
         image = image.to(device)
-        label = label.to(device)
-
+        label = label.long().to(device)
+        
         output = model(image)
 
         loss = lossfn(output, label).item()
@@ -66,14 +69,15 @@ def train(opts):
     model = model.float()
 
     optimizer = get_optimizer(opts, model)
-
-    # TODO configurable losses, see utils
-    lossfn = smp.losses.SoftCrossEntropyLoss(smooth_factor=0.05) # equivalent to torch.nn.CrossEntropyLoss() with label smoothing
+    lossfn = get_losses(opts)
 
     epochs = opts["train"]["epochs"]
 
-    trainloader = create_dataloader(opts, "train")
-    valloader = create_dataloader(opts, "validation")
+    train_transform = transforms[opts.get('augmentation', 'valid_transform')]
+    print(train_transform)
+
+    trainloader = create_dataloader(opts, "train", transforms=train_transform)
+    valloader = create_dataloader(opts, "validation", transforms=valid_transform)
 
     bestscore = 0
 
@@ -89,9 +93,9 @@ def train(opts):
         stime = time.time()
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
-            image, label, filename = batch
+            image, label = batch.values()
             image = image.to(device)
-            label = label.to(device)
+            label = label.long().to(device)
 
             output = model(image)
             loss = lossfn(output, label)
@@ -114,7 +118,7 @@ def train(opts):
             bioutotal[idx] = trainmetrics["biou"]
             scoretotal[idx] = trainmetrics["score"]
 
-        testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn)
+        testloss, testiou, testbiou, testscore = test(valloader, model, lossfn, device)
         trainloss = round(losstotal.mean(), 4)
         trainiou = round(ioutotal.mean(), 4)
         trainbiou = round(bioutotal.mean(), 4)
