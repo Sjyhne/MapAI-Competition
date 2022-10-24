@@ -50,8 +50,8 @@ which is used during evaluation on our servers
 
 Team name: ___
 
-Team participants:  ___
+Team participants:  Lars Martin Hodne, Eivind Hovdegård Furdal
 
-Emails: ___
+Emails: lars.martin.hodne@norconsult.com, eivind.hovdegard.furdal@norconsult.com
 
-Countr(y/ies): ___
+Countr(y/ies): Norway

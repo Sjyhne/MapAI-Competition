@@ -24,6 +24,11 @@ def post_transform(image, **kwargs):
 
 post_transform = A.Lambda(name="post_transform", image=post_transform, mask=post_transform)
 
+lidar_normal = A.Compose([
+    A.RandomCrop(512, 512, p=1.),
+    post_transform,
+])
+
 # crop 512
 normal = A.Compose([
     A.RandomCrop(512, 512, p=1.),
