@@ -1,4 +1,5 @@
 import os
+from cv2 import transform
 
 import numpy as np
 from yaml import load, dump, Loader, Dumper
@@ -9,17 +10,20 @@ from tabulate import tabulate
 
 import argparse
 import time
-
-from competition_toolkit.dataloader import create_dataloader
-from utils import create_run_dir, store_model_weights, record_scores
-
+import segmentation_models_pytorch as smp
+#from competition_toolkit.dataloader import create_dataloader
+from custom_dataloader import create_dataloader
+from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses
+from transforms import valid_transform
 from competition_toolkit.eval_functions import calculate_score
+import transforms
 
-
-def test(opts, dataloader, model, lossfn):
+transforms = transforms.__dict__
+print(transforms.keys())
+def test(dataloader, model, lossfn, device):
     model.eval()
 
-    device = opts["device"]
+    device = device
 
     losstotal = np.zeros((len(dataloader)), dtype=float)
     ioutotal = np.zeros((len(dataloader)), dtype=float)
@@ -27,11 +31,11 @@ def test(opts, dataloader, model, lossfn):
     scoretotal = np.zeros((len(dataloader)), dtype=float)
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
-        image, label, filename = batch
+        image, label = batch.values()
         image = image.to(device)
-        label = label.to(device)
-
-        output = model(image)["out"]
+        label = label.long().to(device)
+        
+        output = model(image)
 
         loss = lossfn(output, label).item()
 
@@ -56,25 +60,24 @@ def test(opts, dataloader, model, lossfn):
 
 
 def train(opts):
-    device = opts["device"]
-
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print('Using device:', device)
     # The current model should be swapped with a different one of your choice
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-
-    if opts["task"] == 2:
-        new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        model.backbone.conv1 = new_conv1
+    model = get_model(opts)
 
     model.to(device)
     model = model.float()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
-    lossfn = torch.nn.CrossEntropyLoss()
+    optimizer = get_optimizer(opts, model)
+    lossfn = get_losses(opts)
 
-    epochs = opts["epochs"]
+    epochs = opts["train"]["epochs"]
 
-    trainloader = create_dataloader(opts, "train")
-    valloader = create_dataloader(opts, "validation")
+    train_transform = transforms[opts.get('augmentation', 'valid_transform')]
+    print(train_transform)
+
+    trainloader = create_dataloader(opts, "train", transforms=train_transform)
+    valloader = create_dataloader(opts, "validation", transforms=valid_transform)
 
     bestscore = 0
 
@@ -90,12 +93,11 @@ def train(opts):
         stime = time.time()
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
-            image, label, filename = batch
+            image, label = batch.values()
             image = image.to(device)
-            label = label.to(device)
+            label = label.long().to(device)
 
-            output = model(image)["out"]
-
+            output = model(image)
             loss = lossfn(output, label)
 
             optimizer.zero_grad()
@@ -116,7 +118,7 @@ def train(opts):
             bioutotal[idx] = trainmetrics["biou"]
             scoretotal[idx] = trainmetrics["score"]
 
-        testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn)
+        testloss, testiou, testbiou, testscore = test(valloader, model, lossfn, device)
         trainloss = round(losstotal.mean(), 4)
         trainiou = round(ioutotal.mean(), 4)
         trainbiou = round(bioutotal.mean(), 4)
@@ -154,12 +156,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cpu")
     parser.add_argument("--task", type=int, default=1)
-    parser.add_argument("--data_ratio", type=float, default=1.0,
-                        help="Percentage of the whole dataset that is used")
 
     args = parser.parse_args()
 
