@@ -156,11 +156,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--task", type=int, default=1)
-    parser.add_argument("--data_ratio", type=float, default=1.0,
-                        help="Percentage of the whole dataset that is used")
 
     args = parser.parse_args()
 
