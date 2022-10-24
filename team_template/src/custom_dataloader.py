@@ -28,11 +28,11 @@ def load_image(imagepath: str, size: tuple) -> torch.tensor:
     image = cv.imread(imagepath, cv.IMREAD_COLOR)
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
     image = cv.resize(image, size)
-    
-    image = torch.tensor(image.astype(np.uint8)) / 255
-    image = torch.permute(image, (2, 0, 1))
 
-    return image
+    image = torch.tensor(image.astype(np.uint8)) / 255
+    #image = torch.permute(image, (2, 0, 1)) done by albummentations
+
+    return image.numpy()
 
 
 def load_label(labelpath: str, size: tuple) -> torch.tensor:
@@ -40,7 +40,7 @@ def load_label(labelpath: str, size: tuple) -> torch.tensor:
     label[label == 255] = 1
     label = cv.resize(label, size)
 
-    label = torch.tensor(label.astype(np.uint8)).long()
+    label = label.astype(np.int32)
 
     return label
 
@@ -60,7 +60,8 @@ class ImageAndLabelDataset(Dataset):
 
     def __init__(self,
                  opts: dict,
-                 datatype: str = "validation"):
+                 datatype: str = "validation",
+                 transforms=None):
 
         self.opts = opts
 
@@ -73,7 +74,8 @@ class ImageAndLabelDataset(Dataset):
 
         print(
             f"Using number of images in {datatype}dataset: {int(len(self.image_paths) * self.opts['data_ratio'])}/{len(self.image_paths) }")
-
+        self.transform = transforms
+    
     def __len__(self):
         return int(len(self.image_paths) * self.opts["data_ratio"])
 
@@ -90,11 +92,20 @@ class ImageAndLabelDataset(Dataset):
 
         image = load_image(imagefilepath, (self.opts["imagesize"], self.opts["imagesize"]))
         label = load_label(labelfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
+        
+        assert image.shape[:2] == label.shape[
+                                  :2], f"image and label shape not the same; {image.shape[:2]} != {label.shape[:2]}"
 
-        assert image.shape[1:] == label.shape[
-                                  :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
-
-        return image, label, filename
+        sample = dict(
+            image=image,
+            mask=label,
+        )
+        
+        if self.transform is not None:
+            sample = self.transform(**sample)
+        else:
+            sample["image"] = sample["image"].transpose(2, 0, 1)
+        return sample
 
 
 class ImageLabelAndLidarDataset(Dataset):
@@ -170,12 +181,12 @@ class TestDataset(Dataset):
         return image, filename
 
 
-def create_dataloader(opts: dict, datatype: str = "test") -> DataLoader:
+def create_dataloader(opts: dict, datatype: str = "test", transforms=None) -> DataLoader:
     if opts["task"] == 1:
-        dataset = ImageAndLabelDataset(opts, datatype)
+        dataset = ImageAndLabelDataset(opts, datatype, transforms)
     elif opts["task"] == 2:
-        dataset = ImageLabelAndLidarDataset(opts, datatype)
+        dataset = ImageLabelAndLidarDataset(opts, datatype, transforms)
 
-    dataloader = DataLoader(dataset, batch_size=opts[f"task{opts['task']}"]["batchsize"], shuffle=opts[f"task{opts['task']}"]["shuffle"])
+    dataloader = DataLoader(dataset, batch_size=opts[datatype]["batchsize"], shuffle=opts[datatype]["shuffle"], num_workers=opts[datatype]["num_workers"])
 
     return dataloader
