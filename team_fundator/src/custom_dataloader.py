@@ -29,10 +29,10 @@ def load_image(imagepath: str, size: tuple) -> torch.tensor:
     image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
     image = cv.resize(image, size)
 
-    image = torch.tensor(image.astype(np.uint8)) / 255
+    image = image.astype(np.float32) / 255.0
     #image = torch.permute(image, (2, 0, 1)) done by albummentations
 
-    return image.numpy()
+    return image
 
 
 def load_label(labelpath: str, size: tuple) -> torch.tensor:
@@ -52,8 +52,6 @@ def load_lidar(lidarpath: str, size: tuple) -> torch.tensor:
     lidar = lidar.astype(np.float)
 
     return lidar
-
-
 
 
 class ImageAndLabelDataset(Dataset):
@@ -115,10 +113,12 @@ class ImageLabelAndLidarDataset(Dataset):
     def __init__(self,
                  opts: dict,
                  datatype: str = "validation",
-                 transform=None):
+                 transform=None,
+                 lidar_transform=None):
 
         self.opts = opts
         self.transform = transform
+        self.lidar_transform = lidar_transform
         self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
@@ -168,7 +168,8 @@ class ImageLabelAndLidarDataset(Dataset):
 
         # TODO: additional augs on LIDAR
         # Concatenate lidar and image data
-        lidar = np.expand_dims(lidar, 0) // 15.0
+        lidar = self.lidar_transform(lidar)
+        lidar = np.expand_dims(lidar, 0)
         image = np.concatenate((image, lidar), axis=0)
 
         sample = dict(
@@ -203,10 +204,11 @@ class TestDataset(Dataset):
 
 
 def create_dataloader(opts: dict, datatype: str = "test", transforms=None) -> DataLoader:
+    image_transforms, lidar_transform = transforms
     if opts["task"] == 1:
-        dataset = ImageAndLabelDataset(opts, datatype, transforms)
+        dataset = ImageAndLabelDataset(opts, datatype, image_transforms)
     elif opts["task"] == 2:
-        dataset = ImageLabelAndLidarDataset(opts, datatype, transforms)
+        dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform)
 
     dataloader = DataLoader(dataset, batch_size=opts[datatype]["batchsize"], shuffle=opts[datatype]["shuffle"], num_workers=opts[datatype]["num_workers"])
 
