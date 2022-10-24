@@ -10,6 +10,9 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 class TreeNode():
+    """
+    Implementation of a disjoint set. Used to group pixels belonging to the same building
+    """
     def __init__(self, root=None) -> None:
         self.root: TreeNode = root if root is not None else self
         self.rank = 0
@@ -72,12 +75,15 @@ class gtDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         full_grid = cv2.imread(self.images[idx], cv2.IMREAD_UNCHANGED)
-        grid = full_grid[:, :, 0]
+        grid = full_grid.copy()
+        full_grid = np.stack([grid, grid, grid], axis=-1)
 
         assert np.max(grid) <= 1
         forest = defaultdict(lambda: defaultdict(lambda: TreeNode()))
         edges_list = set()
         
+        #find all pixels on the edge of a building, i.e. neighbouring an empty pixel, or the edge of the image
+        #also join pixels which are labelled building with the disjoint set
         for y in range(grid.shape[0] - 1):
             for x in range(grid.shape[1] - 1):
                 if grid[y][x] != grid[y][x + 1]:
@@ -146,12 +152,14 @@ class gtDataset(Dataset):
                         continue
                     first_fronts[root].add((nny, nnx))
         
-        if len(all_dists.keys()) < 2:
-            return {'gt': full_grid, "path": self.images[idx]}
+
 
         for root, circumference in tree_circumferences.items():
             if circumference < self.min_building_size:
                 del first_fronts[root]
+
+        if len(first_fronts.keys()) < 2:
+            return {'gt': full_grid, "path": self.images[idx]}
 
         all_dists = np.stack([all_dists[key] for key in first_fronts.keys()], axis=-1)
         for r_idx, root in enumerate(first_fronts.keys()):
@@ -216,7 +224,7 @@ class gtDataset(Dataset):
 
 
 def main(max_dist, replace_folder="masks", min_building_size=30):
-    for split in ["validation", "train"]:
+    for split in ["validation"]:
         gt_ds = gtDataset(f"overlapping_data/{split}/masks/*.tif", max_dist, min_building_size)
         dataloader = DataLoader(gt_ds, batch_size=1, shuffle=False, num_workers=8)
 
