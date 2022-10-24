@@ -2,14 +2,14 @@ version: 1.0
 
 model:
   name: "UNet++"
-  in_channels: 3
+  in_channels: 4
   encoder_depth: 5
   encoder: "efficientnet-b4"
 
 data_dirs:
   root: 'C:\Users\LARHOD\Documents\GIS\MapAI-Competition\data\overlapping_data'
   train: 'train'
-  validation: 'supersampled_validation'
+  validation: 'validation'
   images: "images"
   lidar: "lidar"
   masks: "masks"
@@ -21,6 +21,7 @@ class_to_color:
   "building": 1
 
 augmentation: 'normal'  # None, 'normal', 'hard', 'very_hard'
+lidar_augs: 'normal' # None, 'normal'
 
 training:
   losses:
@@ -55,8 +56,10 @@ train:
   batchsize: 2
   shuffle: True
   num_workers: 0
+  data_ratio: 0.1
 
 validation:
   batchsize: 2
   shuffle: True
   num_workers: 0
+  data_ratio: 1.0

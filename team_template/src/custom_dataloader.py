@@ -40,7 +40,7 @@ def load_label(labelpath: str, size: tuple) -> torch.tensor:
     label[label == 255] = 1
     label = cv.resize(label, size)
 
-    label = label.astype(np.int32)
+    label = label.astype(np.uint8)
 
     return label
 
@@ -49,7 +49,7 @@ def load_lidar(lidarpath: str, size: tuple) -> torch.tensor:
     lidar = cv.imread(lidarpath, cv.IMREAD_UNCHANGED)
     lidar = cv.resize(lidar, size)
 
-    lidar = torch.tensor(lidar.astype(np.float)).float()
+    lidar = lidar.astype(np.float)
 
     return lidar
 
@@ -64,6 +64,7 @@ class ImageAndLabelDataset(Dataset):
                  transforms=None):
 
         self.opts = opts
+        self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
@@ -74,11 +75,11 @@ class ImageAndLabelDataset(Dataset):
         print()
 
         print(
-            f"Using number of images in {datatype}dataset: {int(len(self.image_paths) * self.opts['data_ratio'])}/{len(self.image_paths) }")
+            f"Using number of images in {datatype}dataset: {int(len(self.image_paths) * self.ratio)}/{len(self.image_paths) }")
         self.transform = transforms
     
     def __len__(self):
-        return int(len(self.image_paths) * self.opts["data_ratio"])
+        return int(len(self.image_paths) * self.ratio)
 
     def __getitem__(self, idx):
 
@@ -113,9 +114,12 @@ class ImageLabelAndLidarDataset(Dataset):
 
     def __init__(self,
                  opts: dict,
-                 datatype: str = "validation"):
+                 datatype: str = "validation",
+                 transform=None):
 
         self.opts = opts
+        self.transform = transform
+        self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
@@ -126,10 +130,10 @@ class ImageLabelAndLidarDataset(Dataset):
         assert len(self.image_paths)  == len(self.mask_paths) 
         assert len(self.image_paths)  == len(self.lidar_paths) 
         print(
-            f"Using number of images in {datatype}dataset: {int(len(self.image_paths) * self.opts['data_ratio'])}/{len(self.image_paths) }")
+            f"Using number of images in {datatype}dataset: {int(len(self.image_paths) * self.ratio)}/{len(self.image_paths) }")
 
     def __len__(self):
-        return int(len(self.image_paths) * self.opts["data_ratio"])
+        return int(len(self.image_paths) * self.ratio)
 
     def __getitem__(self, idx):
         imagefilepath = self.image_paths[idx].as_posix()
@@ -147,17 +151,33 @@ class ImageLabelAndLidarDataset(Dataset):
         label = load_label(labelfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
         lidar = load_lidar(lidarfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
 
-        assert image.shape[1:] == label.shape[
+        assert image.shape[:2] == label.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
-        assert image.shape[1:] == lidar.shape[
+        assert image.shape[:2] == lidar.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
+
+
+        if self.transform is not None:
+            aug_sample = self.transform(image=image,  masks=[label, lidar]) # apply lidar augmentations as if it is a mask
+            
+            label, lidar = aug_sample['masks']
+            image = aug_sample['image']
+            assert image.dtype == lidar.dtype
+        else:
+            image = image.transpose(2, 0, 1)
+
+        # TODO: additional augs on LIDAR
 
         # Concatenate lidar and image data
-        lidar = lidar.unsqueeze(0)
+        lidar = np.expand_dims(lidar, 0)
+        image = np.concatenate((image, lidar), axis=0)
 
-        image = torch.cat((image, lidar), dim=0)
+        sample = dict(
+            image=image,
+            mask=label,
+        )
 
-        return image, label, filename
+        return sample
 
 
 class TestDataset(Dataset):
