@@ -68,8 +68,9 @@ def get_losses(opts):
     }
     used_losses = []
     weights = torch.tensor(losses_cfg["weights"])
-    for loss_name in losses_cfg:
-        used_losses.append(losses[loss_name](**losses_cfg[loss_name]))
+    for loss_name in losses_cfg["names"]:
+        init_params = losses_cfg[loss_name]['init_params'] if losses_cfg[loss_name]['init_params'] is not None else {}
+        used_losses.append(losses[loss_name](**init_params))
 
     def multiloss(preds, targets):
         loss = 0
