@@ -14,7 +14,7 @@ import segmentation_models_pytorch as smp
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
 from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses
-from transforms import valid_transform
+from transforms import valid_transform, get_lidar_transform
 from competition_toolkit.eval_functions import calculate_score
 import transforms
 
@@ -63,6 +63,7 @@ def train(opts):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Using device:', device)
     # The current model should be swapped with a different one of your choice
+
     model = get_model(opts)
 
     model.to(device)
@@ -76,8 +77,14 @@ def train(opts):
     train_transform = transforms[opts.get('augmentation', 'valid_transform')]
     print(train_transform)
 
-    trainloader = create_dataloader(opts, "train", transforms=train_transform)
-    valloader = create_dataloader(opts, "validation", transforms=valid_transform)
+
+
+    lidar_transform = None
+    if opts["task"] == 2:
+        lidar_transform = get_lidar_transform(opts)
+
+    trainloader = create_dataloader(opts, "train", transforms=(train_transform, lidar_transform))
+    valloader = create_dataloader(opts, "validation", transforms=(valid_transform, lidar_transform))
 
     bestscore = 0
 
@@ -172,7 +179,7 @@ if __name__ == "__main__":
 
     print("Opts:", opts)
 
-    rundir = create_run_dir(opts)
+    rundir = create_run_dir(opts, opts.get("dataset", ""))
     opts["rundir"] = rundir
     dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 

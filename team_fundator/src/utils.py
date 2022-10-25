@@ -3,11 +3,13 @@ import glob
 import torch
 import segmentation_models_pytorch as smp
 
-def create_run_dir(opts):
+def create_run_dir(opts, dataset_dir=""):
 
     rundir = "runs"
 
     rundir = os.path.join(rundir, "task_" + str(opts["task"]))
+    if dataset_dir != "":
+        rundir = os.path.join(rundir, dataset_dir)
 
     if not os.path.exists(rundir):
         os.makedirs(rundir, exist_ok=True)
@@ -80,39 +82,29 @@ def get_losses(opts):
 
     return multiloss
 
+
+smp_models = {
+        "UNet": smp.Unet,
+        "UNet++": smp.UnetPlusPlus,
+        "MAnet": smp.MAnet,
+        "Linknet": smp.Linknet,
+        "FPN": smp.FPN,
+        "DeepLabV3": smp.DeepLabV3,
+        "DeepLabV3": smp.DeepLabV3Plus
+    }
+
 def get_model(opts):
     model_cfg = opts["model"]
     model = None
-    if model_cfg["name"] == "Unet":
-        model = smp.Unet(
+    if "in_channels" not in model_cfg:
+        model_cfg["in_channels"] = 3 if int(opts["task"]) == 1 else 4
+
+    if model_cfg["name"] in smp_models.keys():
+        model = smp_models[model_cfg["name"]](
             encoder_name=model_cfg.get("encoder", "resnet34"),        
             encoder_weights=model_cfg.get("encoder_weights", "imagenet"),    
-            in_channels=model_cfg.get("in_channels", 3),
-            classes=opts.get("num_classes", 3),
-            encoder_depth=model_cfg.get("encoder_depth", 5)
-        )
-    elif model_cfg["name"] == "UNet++":
-        model = smp.UnetPlusPlus(
-            encoder_name=model_cfg.get("encoder", "resnet34"),        
-            encoder_weights=model_cfg.get("encoder_weights", "imagenet"),    
-            in_channels=model_cfg.get("in_channels", 3),
-            classes=opts.get("num_classes", 3),
-            encoder_depth=model_cfg.get("encoder_depth", 5)
-        )
-    elif model_cfg["name"] == "FPN":
-        model = smp.FPN(
-            encoder_name=model_cfg.get("encoder", "resnet34"),        
-            encoder_weights=model_cfg.get("encoder_weights", "imagenet"),    
-            in_channels=model_cfg.get("in_channels", 3),
-            classes=opts.get("num_classes", 3),
-            encoder_depth=model_cfg.get("encoder_depth", 5)
-        )
-    elif model_cfg["name"] == "DeepLabV3+":
-        model = smp.DeepLabV3Plus(
-            encoder_name=model_cfg.get("encoder", "resnet34"),        
-            encoder_weights=model_cfg.get("encoder_weights", "imagenet"),    
-            in_channels=model_cfg.get("in_channels", 3),
-            classes=opts.get("num_classes", 3),
+            in_channels=model_cfg["in_channels"],
+            classes=opts.get("num_classes", 2),
             encoder_depth=model_cfg.get("encoder_depth", 5)
         )
     else:
