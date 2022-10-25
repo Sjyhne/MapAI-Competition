@@ -156,7 +156,6 @@ class ImageLabelAndLidarDataset(Dataset):
         assert image.shape[:2] == lidar.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
 
-
         if self.transform is not None:
             aug_sample = self.transform(image=image,  masks=[label, lidar]) # apply lidar augmentations as if it is a mask
             
@@ -166,17 +165,23 @@ class ImageLabelAndLidarDataset(Dataset):
         else:
             image = image.transpose(2, 0, 1)
 
-        # TODO: additional augs on LIDAR
         # Concatenate lidar and image data
         lidar = self.lidar_transform(lidar)
         lidar = np.expand_dims(lidar, 0)
         image = np.concatenate((image, lidar), axis=0)
 
+
         sample = dict(
             image=image,
             mask=label,
         )
-
+        # image2 = image.transpose(1, 2, 0)[:, :, :3].astype(np.float32) * 255
+        # print(np.max(image2), np.max(label), np.max(lidar))
+        # print(image.shape)
+        # cv.imwrite("datatest/image.png", image2.astype(np.uint8))
+        # cv.imwrite("datatest/lidar.tif", lidar.transpose(1, 2, 0).astype(np.float32))
+        # cv.imwrite("datatest/label.tif", np.expand_dims(label, -1).astype(np.float32))
+        # exit()
         return sample
 
 

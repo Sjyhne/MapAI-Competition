@@ -4,6 +4,7 @@
 # -------------------------------------------------------------------------------------------
 import warnings
 import albumentations as A
+import numpy as np
 
 warnings.simplefilter("ignore")
 
@@ -24,10 +25,35 @@ def post_transform(image, **kwargs):
 
 post_transform = A.Lambda(name="post_transform", image=post_transform, mask=post_transform)
 
-lidar_normal = A.Compose([
-    A.RandomCrop(512, 512, p=1.),
-    post_transform,
-])
+def get_lidar_transform(opts):
+    lidar_augs = opts["lidar_augs"]
+    clip_min = lidar_augs.get("clip_min", 0.0)
+    clip_max = lidar_augs.get("clip_max", 30.0)
+    norm = lidar_augs.get("norm", "max")
+    norm_basis = lidar_augs.get("norm_basis", "clip")
+
+    if norm not in ["min_max", "max"]:
+        print(f"Norm {norm} not recognized. Can only normalize with clip_max or image_max")
+        exit()
+    if norm_basis not in ["clip", "image"]:
+        print(f"Norm_basis {norm} not recognized. Can only normalize with clip values or image maxima/minima")
+        exit()
+    
+    if norm == "max":
+        def max_lidar_transform(lidar):
+            lidar = np.clip(lidar, clip_min, clip_max)
+            lidar = lidar / (clip_max if norm_basis == "clip" else np.max(lidar))
+            return lidar
+        return max_lidar_transform
+        
+    def min_max_lidar_transform(lidar):
+        lidar = np.clip(lidar, clip_min, clip_max)
+        minimum = clip_min if norm_basis == "clip" else np.min(lidar)
+        maximum = clip_max if norm_basis == "clip" else np.min(lidar)
+        lidar = (lidar - minimum) / (maximum - minimum)
+        return lidar
+    return min_max_lidar_transform
+
 
 # crop 512
 normal = A.Compose([
