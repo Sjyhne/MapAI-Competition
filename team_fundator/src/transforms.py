@@ -38,14 +38,17 @@ def get_lidar_transform(opts):
     if norm_basis not in ["clip", "image"]:
         print(f"Norm_basis {norm} not recognized. Can only normalize with clip values or image maxima/minima")
         exit()
-    
+
+    if opts["task"] == 3:
+        clip_min = max(0.0, clip_min)
+
     if norm == "max":
         def max_lidar_transform(lidar):
             lidar = np.clip(lidar, clip_min, clip_max)
             lidar = lidar / (clip_max if norm_basis == "clip" else np.max(lidar))
             return lidar
         return max_lidar_transform
-        
+
     def min_max_lidar_transform(lidar):
         lidar = np.clip(lidar, clip_min, clip_max)
         minimum = clip_min if norm_basis == "clip" else np.min(lidar)
