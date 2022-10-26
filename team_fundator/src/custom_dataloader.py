@@ -69,6 +69,8 @@ class ImageAndLabelDataset(Dataset):
         self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
         self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['masks']}").glob("*.tif"))
         
+        self.image_size = (opts["imagesize"], opts["imagesize"])
+        self.label_size = self.image_size if datatype == "train" else (500, 500)
         assert len(self.image_paths)  == len(self.mask_paths) 
         print()
 
@@ -90,11 +92,11 @@ class ImageAndLabelDataset(Dataset):
 
         filename = imagefilepath.split("/")[-1]
 
-        image = load_image(imagefilepath, (self.opts["imagesize"], self.opts["imagesize"]))
-        label = load_label(labelfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
+        image = load_image(imagefilepath, self.image_size)
+        label = load_label(labelfilepath, self.label_size)
         
-        assert image.shape[:2] == label.shape[
-                                  :2], f"image and label shape not the same; {image.shape[:2]} != {label.shape[:2]}"
+        # assert image.shape[:2] == label.shape[
+        #                           :2], f"image and label shape not the same; {image.shape[:2]} != {label.shape[:2]}"
 
         sample = dict(
             image=image,
@@ -106,6 +108,9 @@ class ImageAndLabelDataset(Dataset):
         else:
             sample["image"] = sample["image"].transpose(2, 0, 1)
         return sample
+    
+    def set_transform(self, transform):
+        self.transform = transform
 
 
 class ImageLabelAndLidarDataset(Dataset):
@@ -127,6 +132,10 @@ class ImageLabelAndLidarDataset(Dataset):
         self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['masks']}").glob("*.tif"))
         self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
 
+
+        self.image_size = (opts["imagesize"], opts["imagesize"])
+        self.label_size = self.image_size if datatype == "train" else (500, 500)
+
         assert len(self.image_paths)  == len(self.mask_paths) 
         assert len(self.image_paths)  == len(self.lidar_paths) 
         print(
@@ -147,12 +156,12 @@ class ImageLabelAndLidarDataset(Dataset):
 
         filename = imagefilepath.split("/")[-1]
 
-        image = load_image(imagefilepath, (self.opts["imagesize"], self.opts["imagesize"]))
-        label = load_label(labelfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
-        lidar = load_lidar(lidarfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
+        image = load_image(imagefilepath, self.image_size)
+        label = load_label(labelfilepath, self.label_size)
+        lidar = load_lidar(lidarfilepath, self.image_size)
 
-        assert image.shape[:2] == label.shape[
-                                  :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
+        # assert image.shape[:2] == label.shape[
+        #                           :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
         assert image.shape[:2] == lidar.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
 
@@ -183,6 +192,9 @@ class ImageLabelAndLidarDataset(Dataset):
         # cv.imwrite("datatest/label.tif", np.expand_dims(label, -1).astype(np.float32))
         # exit()
         return sample
+    
+    def set_transform(self, transform):
+        self.transform = transform
 
 
 class TestDataset(Dataset):
