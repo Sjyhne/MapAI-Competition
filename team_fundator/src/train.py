@@ -1,5 +1,4 @@
 import os
-from cv2 import transform
 
 import numpy as np
 from yaml import load, dump, Loader, Dumper
@@ -10,52 +9,70 @@ from tabulate import tabulate
 
 import argparse
 import time
-import segmentation_models_pytorch as smp
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
-from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses
+from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler
 from transforms import valid_transform, get_lidar_transform
 from competition_toolkit.eval_functions import calculate_score
 import transforms
 
 transforms = transforms.__dict__
 print(transforms.keys())
-def test(dataloader, model, lossfn, device):
+def test(dataloader, model, lossfn, device, interpolation_mode=torchvision.transforms.InterpolationMode.BILINEAR):
     model.eval()
 
     device = device
 
-    losstotal = np.zeros((len(dataloader)), dtype=float)
-    ioutotal = np.zeros((len(dataloader)), dtype=float)
-    bioutotal = np.zeros((len(dataloader)), dtype=float)
-    scoretotal = np.zeros((len(dataloader)), dtype=float)
+
+    interpolation_modes = [torchvision.transforms.InterpolationMode.BICUBIC, torchvision.transforms.InterpolationMode.BILINEAR, torchvision.transforms.InterpolationMode.NEAREST]
+    losstotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
+    ioutotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
+    bioutotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
+    scoretotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
         image, label = batch.values()
         image = image.to(device)
         label = label.long().to(device)
         
-        output = model(image)
+        big_output = model(image)
+        im_idx = 0
+        for interpolation_mode in interpolation_modes:
+            for alias in [False, True]:
+                output = torchvision.transforms.functional.resize(big_output, (500, 500), interpolation=interpolation_mode, antialias=alias)
 
-        loss = lossfn(output, label).item()
+                loss = lossfn(output, label).item()
 
-        output = torch.argmax(torch.softmax(output, dim=1), dim=1)
-        if device != "cpu":
-            metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
-                                      label.detach().cpu().numpy().astype(np.uint8))
-        else:
-            metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
+                output = torch.argmax(torch.softmax(output, dim=1), dim=1)
+                if device != "cpu":
+                    metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
+                                            label.detach().cpu().numpy().astype(np.uint8))
+                else:
+                    metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
 
-        losstotal[idx] = loss
-        ioutotal[idx] = metrics["iou"]
-        bioutotal[idx] = metrics["biou"]
-        scoretotal[idx] = metrics["score"]
+                losstotal[im_idx][idx] = loss
+                ioutotal[im_idx][idx] = metrics["iou"]
+                bioutotal[im_idx][idx] = metrics["biou"]
+                scoretotal[im_idx][idx] = metrics["score"]
+                im_idx += 1
+                if im_idx == 5:
+                    break
+            if im_idx == 5:
+                break
 
-    loss = round(losstotal.mean(), 4)
-    iou = round(ioutotal.mean(), 4)
-    biou = round(bioutotal.mean(), 4)
-    score = round(scoretotal.mean(), 4)
+    print(tabulate(
+    [
+        ["BICUBIC", losstotal[0].mean(), ioutotal[0].mean(), bioutotal[0].mean(), scoretotal[0].mean()],
+        ["BICUBIC_ALIAS", losstotal[1].mean(), ioutotal[1].mean(), bioutotal[1].mean(), scoretotal[1].mean()],
+        ["BILINEAR", losstotal[2].mean(), ioutotal[2].mean(), bioutotal[2].mean(), scoretotal[2].mean()],
+        ["BILINEAR_Alias", losstotal[3].mean(), ioutotal[3].mean(), bioutotal[3].mean(), scoretotal[3].mean()],
+        ["NEAREST", losstotal[4].mean(), ioutotal[4].mean(), bioutotal[4].mean(), scoretotal[4].mean()]],
+    headers=["Type", "Loss", "IoU", "BIoU", "Score"]))
 
+    iou = round(ioutotal[0].mean(), 4)
+    loss = round(losstotal[0].mean(), 4)
+    biou = round(bioutotal[0].mean(), 4)
+    score = round(scoretotal[0].mean(), 4)
     return loss, iou, biou, score
 
 
@@ -70,11 +87,14 @@ def train(opts):
     model = model.float()
 
     optimizer = get_optimizer(opts, model)
+    scheduler = get_scheduler(opts, optimizer)
     lossfn = get_losses(opts)
 
     epochs = opts["train"]["epochs"]
 
-    train_transform = transforms[opts.get('augmentation', 'valid_transform')]
+
+    augmentation_cfg = opts["augmentation"]
+    train_transform = transforms[augmentation_cfg["initial"]]
     print(train_transform)
 
 
@@ -87,7 +107,8 @@ def train(opts):
     valloader = create_dataloader(opts, "validation", transforms=(valid_transform, lidar_transform))
 
     bestscore = 0
-
+    
+    print("Initial learning rate", scheduler.get_lr())
     for e in range(epochs):
 
         model.train()
@@ -98,6 +119,14 @@ def train(opts):
         bioutotal = np.zeros((len(trainloader)), dtype=float)
 
         stime = time.time()
+
+        if e >= augmentation_cfg["warmup_epochs"]:
+            augmentation_cycle = augmentation_cfg["cycle"]
+            aug = augmentation_cycle[e % len(augmentation_cycle)]
+
+            print(f"Using {aug} transforms")
+            new_transform = transforms[aug]
+            trainloader.dataset.set_transform(new_transform)
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
             image, label = batch.values()
@@ -124,6 +153,7 @@ def train(opts):
             ioutotal[idx] = trainmetrics["iou"]
             bioutotal[idx] = trainmetrics["biou"]
             scoretotal[idx] = trainmetrics["score"]
+        scheduler.step()
 
         testloss, testiou, testbiou, testscore = test(valloader, model, lossfn, device)
         trainloss = round(losstotal.mean(), 4)
@@ -137,7 +167,7 @@ def train(opts):
             store_model_weights(opts, model, f"best", epoch=e)
         else:
             store_model_weights(opts, model, f"last", epoch=e)
-
+        print("New learning rate", scheduler.get_lr())
         print("")
         print(tabulate(
             [["train", trainloss, trainiou, trainbiou, trainscore], ["test", testloss, testiou, testbiou, testscore]],

@@ -20,9 +20,13 @@ class_to_color:
   "background": 0
   "building": 1
 
-augmentation: 'normal'  # None, 'normal', 'hard', 'very_hard'
+augmentation:
+  initial: 'normal'  # None, 'normal', 'hard', 'very_hard'
+  warmup_epochs: 3 # number of epochs before switching to augmentation cycle
+  cycle: ["hard", "normal", "normal"] # select augmentations with index epoch % len(cycle)
+
 lidar_augs:
-  clip_min: 0.0
+  clip_min: -1.0
   clip_max: 30.0
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
@@ -36,29 +40,32 @@ training:
     # "LovaszLoss": smp.losses.LovaszLoss,
     # "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
     # "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
-    names: ['DiceLoss']
+    names: ['SoftCrossEntropyLoss']
     weights: [1.0]
-    DiceLoss:
+    SoftCrossEntropyLoss:
       init_params:
-        mode: "multiclass"
+        smooth_factor: 0.05
 
   optimizer:
-    name: Adam # Adam, SGD
-    lr: 0.0001
+    name: Adam # Adam, SGD, RAdam, AdamWarmup
+    init_params:
+      lr: 0.0001
 
-  # scheduler:
-  #   name: PolyLR
-  #   init_params:
-  #     epochs: 50
-
+  scheduler:
+    name: MultiStep # PolyLR, MultiStep
+    init_params:
+      milestones: [3]
   # fit:
   #   epochs: 50
   #   accumulation_steps: 4
 
 imagesize: 512
 
+label_downscale: Bicubic # Bicubic, Bilinear, Nearest
+aliased_downscaling: True # Bicubic, and Bilinear only
+
 train:
-  epochs: 50
+  epochs: 1
   batchsize: 2
   shuffle: True
   num_workers: 0
