@@ -23,7 +23,7 @@ class_to_color:
 augmentation:
   initial: 'normal'  # None, 'normal', 'hard', 'very_hard'
   warmup_epochs: 3 # number of epochs before switching to augmentation cycle
-  cycle: ["hard", "normal", "normal"] # select augmentations with index epoch % len(cycle)
+  cycle: ["hard", "normal", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
   clip_min: -1.0
@@ -40,11 +40,13 @@ training:
     # "LovaszLoss": smp.losses.LovaszLoss,
     # "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
     # "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
-    names: ['SoftCrossEntropyLoss']
+
+    #Task 3
+    # "MSE" : torch.nn.MSELoss
+    names: ['MSE']
     weights: [1.0]
-    SoftCrossEntropyLoss:
+    MSE:
       init_params:
-        smooth_factor: 0.05
 
   optimizer:
     name: Adam # Adam, SGD, RAdam, AdamWarmup
@@ -61,18 +63,18 @@ training:
 
 imagesize: 512
 
-label_downscale: Bicubic # Bicubic, Bilinear, Nearest
-aliased_downscaling: True # Bicubic, and Bilinear only
+# label_downscale: Bilinear # Bicubic, Bilinear
+# antialiased_downscaling: True # Bicubic, and Bilinear only
 
 train:
-  epochs: 1
+  epochs: 5
   batchsize: 2
   shuffle: True
   num_workers: 0
-  data_ratio: 0.1
+  data_ratio: 0.001
 
 validation:
   batchsize: 2
   shuffle: True
   num_workers: 0
-  data_ratio: 1.0
+  data_ratio: 0.1

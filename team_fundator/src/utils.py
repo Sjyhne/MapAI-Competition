@@ -75,6 +75,10 @@ def get_losses(opts):
         "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
         "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
     }
+    losses_task3 = {
+        "MSE": torch.nn.MSELoss,
+    }
+    losses = losses_task3 if opts["task"] == 3 else losses
     used_losses = []
     weights = torch.tensor(losses_cfg["weights"])
     for loss_name in losses_cfg["names"]:
@@ -104,7 +108,9 @@ def get_model(opts):
     model_cfg = opts["model"]
     model = None
     if "in_channels" not in model_cfg:
-        model_cfg["in_channels"] = 3 if int(opts["task"]) == 1 else 4
+        model_cfg["in_channels"] = 4 if int(opts["task"]) == 2 else 3
+    if opts["task"] == 3:
+        opts["num_classes"] = 1
 
     if model_cfg["name"] in smp_models.keys():
         model = smp_models[model_cfg["name"]](
@@ -134,4 +140,17 @@ def get_scheduler(opts, optimizer):
     init_params = schedule_cfg.get("init_params", {"epochs": opts["epochs"]} if scheduler == "PolyLR" else {"milestones": [int(opts["epochs"] * 0.8)]})
 
     return schedules[scheduler](optimizer, **init_params)
-    
+
+def get_aug_names(opts, augmentation_cfg, transforms):
+    aug_list = []
+    for i in range(opts["train"]["epochs"]):
+        if i >= augmentation_cfg["warmup_epochs"]:
+            aug = augmentation_cfg["cycle"][(i - augmentation_cfg["warmup_epochs"]) % len(augmentation_cfg["cycle"])]
+            if aug not in transforms:
+                print(f"Unsupported transform {aug}")
+                exit()
+                
+            aug_list.append(aug)
+            continue
+        aug_list.append(augmentation_cfg.get("initial", "normal"))
+    return aug_list

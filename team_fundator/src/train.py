@@ -11,63 +11,53 @@ import argparse
 import time
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
-from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler
+from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler, get_aug_names
 from transforms import valid_transform, get_lidar_transform
 from competition_toolkit.eval_functions import calculate_score
 import transforms
 
 transforms = transforms.__dict__
 print(transforms.keys())
-def test(dataloader, model, lossfn, device, interpolation_mode=torchvision.transforms.InterpolationMode.BILINEAR):
+def test(dataloader, model, lossfn, device, interpolation_mode=torchvision.transforms.InterpolationMode.BILINEAR, antialias=True):
     model.eval()
 
     device = device
 
 
-    interpolation_modes = [torchvision.transforms.InterpolationMode.BICUBIC, torchvision.transforms.InterpolationMode.BILINEAR, torchvision.transforms.InterpolationMode.NEAREST]
-    losstotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
-    ioutotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
-    bioutotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
-    scoretotal = [np.zeros((len(dataloader)), dtype=float) for i in range(5)]
+    losstotal = np.zeros((len(dataloader)), dtype=float)
+    ioutotal = np.zeros((len(dataloader)), dtype=float)
+    bioutotal = np.zeros((len(dataloader)), dtype=float)
+    scoretotal = np.zeros((len(dataloader)), dtype=float)
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
         image, label = batch.values()
         image = image.to(device)
-        label = label.long().to(device)
+        label = label.long().to(device) if opts["task"] != 3 else label.to(device)
         
-        big_output = model(image)
-        im_idx = 0
-        for interpolation_mode in interpolation_modes:
-            for alias in [False, True]:
-                output = torchvision.transforms.functional.resize(big_output, (500, 500), interpolation=interpolation_mode, antialias=alias)
 
-                loss = lossfn(output, label).item()
+        output = model(image)
+        if opts["task"] == 3:
+            output = output.squeeze(dim=1)
+        if label.shape[-2:] != output.shape[-2:]:
+            output = torchvision.transforms.functional.resize(output, (500, 500), interpolation=interpolation_mode, antialias=antialias)
 
-                output = torch.argmax(torch.softmax(output, dim=1), dim=1)
-                if device != "cpu":
-                    metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
-                                            label.detach().cpu().numpy().astype(np.uint8))
-                else:
-                    metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
+        loss = lossfn(output, label).item()
+        losstotal[idx] = loss
 
-                losstotal[im_idx][idx] = loss
-                ioutotal[im_idx][idx] = metrics["iou"]
-                bioutotal[im_idx][idx] = metrics["biou"]
-                scoretotal[im_idx][idx] = metrics["score"]
-                im_idx += 1
-                if im_idx == 5:
-                    break
-            if im_idx == 5:
-                break
+        if opts["task"] == 3:
+            continue
 
-    print(tabulate(
-    [
-        ["BICUBIC", losstotal[0].mean(), ioutotal[0].mean(), bioutotal[0].mean(), scoretotal[0].mean()],
-        ["BICUBIC_ALIAS", losstotal[1].mean(), ioutotal[1].mean(), bioutotal[1].mean(), scoretotal[1].mean()],
-        ["BILINEAR", losstotal[2].mean(), ioutotal[2].mean(), bioutotal[2].mean(), scoretotal[2].mean()],
-        ["BILINEAR_Alias", losstotal[3].mean(), ioutotal[3].mean(), bioutotal[3].mean(), scoretotal[3].mean()],
-        ["NEAREST", losstotal[4].mean(), ioutotal[4].mean(), bioutotal[4].mean(), scoretotal[4].mean()]],
-    headers=["Type", "Loss", "IoU", "BIoU", "Score"]))
+        output = torch.argmax(torch.softmax(output, dim=1), dim=1)
+        if device != "cpu":
+            metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
+                                    label.detach().cpu().numpy().astype(np.uint8))
+        else:
+            metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
+
+        ioutotal[idx] = metrics["iou"]
+        bioutotal[idx] = metrics["biou"]
+        scoretotal[idx] = metrics["score"]
+
 
     iou = round(ioutotal[0].mean(), 4)
     loss = round(losstotal[0].mean(), 4)
@@ -94,20 +84,23 @@ def train(opts):
 
 
     augmentation_cfg = opts["augmentation"]
-    train_transform = transforms[augmentation_cfg["initial"]]
-    print(train_transform)
+    initial_transform = transforms[augmentation_cfg.get("initial", "normal")]
+    aug_list = get_aug_names(opts, augmentation_cfg, transforms)
 
 
 
     lidar_transform = None
-    if opts["task"] == 2:
+    if opts["task"] >= 2:
         lidar_transform = get_lidar_transform(opts)
 
-    trainloader = create_dataloader(opts, "train", transforms=(train_transform, lidar_transform))
+    trainloader = create_dataloader(opts, "train", transforms=(initial_transform, lidar_transform))
     valloader = create_dataloader(opts, "validation", transforms=(valid_transform, lidar_transform))
 
     bestscore = 0
-    
+
+
+    print("Training with augmentation schedule: ", aug_list)
+
     print("Initial learning rate", scheduler.get_lr())
     for e in range(epochs):
 
@@ -121,19 +114,20 @@ def train(opts):
         stime = time.time()
 
         if e >= augmentation_cfg["warmup_epochs"]:
-            augmentation_cycle = augmentation_cfg["cycle"]
-            aug = augmentation_cycle[e % len(augmentation_cycle)]
-
-            print(f"Using {aug} transforms")
+            aug = aug_list[e]
+            print(f"Using the {aug} transform")
             new_transform = transforms[aug]
             trainloader.dataset.set_transform(new_transform)
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
             image, label = batch.values()
             image = image.to(device)
-            label = label.long().to(device)
+            label = label.long().to(device) if opts["task"] != 3 else label.to(device)
+
 
             output = model(image)
+            if opts["task"] == 3:
+                output = output.squeeze(dim=1)
             loss = lossfn(output, label)
 
             optimizer.zero_grad()
@@ -141,6 +135,10 @@ def train(opts):
             optimizer.step()
 
             lossitem = loss.item()
+            losstotal[idx] = lossitem
+            if opts["task"] == 3:
+                continue
+
             output = torch.argmax(torch.softmax(output, dim=1), dim=1)
             if device != "cpu":
                 trainmetrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
@@ -149,7 +147,6 @@ def train(opts):
                 trainmetrics = calculate_score(output.detach().numpy().astype(np.uint8),
                                                label.detach().numpy().astype(np.uint8))
 
-            losstotal[idx] = lossitem
             ioutotal[idx] = trainmetrics["iou"]
             bioutotal[idx] = trainmetrics["biou"]
             scoretotal[idx] = trainmetrics["score"]
