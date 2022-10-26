@@ -1,7 +1,10 @@
+from mimetypes import init
 import os
 import glob
 import torch
 import segmentation_models_pytorch as smp
+from optimizers import PolyLR, RAdam, AdamWarmup
+from torch.optim.lr_scheduler import MultiStepLR
 
 def create_run_dir(opts, dataset_dir=""):
 
@@ -45,17 +48,21 @@ def record_scores(opts, scoredict):
     with open(os.path.join(rundir, "run.log"), "a") as f:
         f.write(str(scoredict) + "\n")
 
+optimizers = {
+    "Adam": torch.optim.Adam,
+    "RAdam": RAdam,
+    "AdamWarmup": AdamWarmup,
+    "SGD": torch.optim.SGD
+}
+
 def get_optimizer(opts, model):
     optimizer_cfg = opts["training"]["optimizer"]
-    if optimizer_cfg["name"] == "Adam":
-        return torch.optim.Adam(model.parameters(), lr=optimizer_cfg["lr"])
-    elif optimizer_cfg["name"] == "SGD":
-        return torch.optim.SGD(model.parameters(), lr=optimizer_cfg["lr"])
-    else:
+    if optimizer_cfg["name"] not in optimizers:
         print(f"Optimizer {optimizer_cfg['name']} is not implemented")
         exit()
+    return optimizers[optimizer_cfg["name"]](model.parameters(), **optimizer_cfg["init_params"] )
 
-# TODO: test and use
+
 def get_losses(opts):
     losses_cfg = opts["training"]["losses"]
 
@@ -90,7 +97,7 @@ smp_models = {
         "Linknet": smp.Linknet,
         "FPN": smp.FPN,
         "DeepLabV3": smp.DeepLabV3,
-        "DeepLabV3": smp.DeepLabV3Plus
+        "DeepLabV3+": smp.DeepLabV3Plus
     }
 
 def get_model(opts):
@@ -111,3 +118,20 @@ def get_model(opts):
         print(f"Model {model_cfg['name']} is not available")
         exit()
     return model
+
+
+schedules = {
+    "PolyLR": PolyLR,
+    "MultiStep": MultiStepLR,
+}
+
+
+
+def get_scheduler(opts, optimizer):
+    schedule_cfg = opts["training"]["scheduler"]
+    scheduler = schedule_cfg.get("name", "PolyLR")
+
+    init_params = schedule_cfg.get("init_params", {"epochs": opts["epochs"]} if scheduler == "PolyLR" else {"milestones": [int(opts["epochs"] * 0.8)]})
+
+    return schedules[scheduler](optimizer, **init_params)
+    
