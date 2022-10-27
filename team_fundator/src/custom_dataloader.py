@@ -60,10 +60,12 @@ class ImageAndLabelDataset(Dataset):
                  opts: dict,
                  datatype: str = "validation",
                  transforms=None,
-                 aux_head_labels=False):
+                 aux_head_labels=False,
+                 use_lidar_in_mask=False):
 
         self.opts = opts
         self.aux_head_labels = aux_head_labels
+        self.use_lidar_in_mask = use_lidar_in_mask
         self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
@@ -71,6 +73,11 @@ class ImageAndLabelDataset(Dataset):
         self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
         self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['masks']}").glob("*.tif"))
         
+        self.lidar_paths = None
+        if self.use_lidar_in_mask:
+            self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
+            assert len(self.image_paths)  == len(self.lidar_paths) 
+
         self.image_size = (opts["imagesize"], opts["imagesize"])
         self.label_size = self.image_size if datatype == "train" else (500, 500)
         assert len(self.image_paths)  == len(self.mask_paths) 
@@ -88,6 +95,11 @@ class ImageAndLabelDataset(Dataset):
         imagefilepath = self.image_paths[idx].as_posix()
         labelfilepath = self.mask_paths[idx].as_posix()
 
+        if self.use_lidar_in_mask:
+            lidarfilepath = self.lidar_paths[idx].as_posix()
+            assert imagefilepath.split("/")[-1] == lidarfilepath.split("/")[
+                -1], f"imagefilename and labelfilename does not match; {imagefilepath.split('/')[-1]} != {lidarfilepath.split('/')[-1]}"
+            lidar = load_lidar(lidarfilepath, self.label_size)
 
         assert imagefilepath.split("/")[-1] == labelfilepath.split("/")[
             -1], f"imagefilename and labelfilename does not match; {imagefilepath.split('/')[-1]} != {labelfilepath.split('/')[-1]}"
@@ -97,8 +109,8 @@ class ImageAndLabelDataset(Dataset):
         image = load_image(imagefilepath, self.image_size)
         label = load_label(labelfilepath, self.label_size)
         
-        # assert image.shape[:2] == label.shape[
-        #                           :2], f"image and label shape not the same; {image.shape[:2]} != {label.shape[:2]}"
+        if self.use_lidar_in_mask:
+            label[lidar == 0.0] = 2
 
         sample = dict(
             image=image,
@@ -136,8 +148,9 @@ class ImageLabelAndLidarDataset(Dataset):
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
+        mask_dir = opts['data_dirs']['masks'] if datatype == "train" or "masks_valid" not in opts['data_dirs'] else opts['data_dirs']['masks_valid'] 
         self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
-        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['masks']}").glob("*.tif"))
+        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{mask_dir}").glob("*.tif"))
         self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
 
 
@@ -301,7 +314,8 @@ class TestDataset(Dataset):
 def create_dataloader(opts: dict, datatype: str = "test", transforms=None, aux_head_labels=False) -> DataLoader:
     image_transforms, lidar_transform = transforms
     if opts["task"] == 1:
-        dataset = ImageAndLabelDataset(opts, datatype, image_transforms, aux_head_labels)
+        use_lidar_in_mask = datatype == "train" and opts.get("use_lidar_in_mask", False)
+        dataset = ImageAndLabelDataset(opts, datatype, image_transforms, aux_head_labels, use_lidar_in_mask)
     elif opts["task"] == 2:
         dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels)
     elif opts["task"] == 3:
