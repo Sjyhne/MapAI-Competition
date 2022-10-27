@@ -1,18 +1,25 @@
 version: 1.0
 
 model:
-  name: "UNet++"
+  name: "UNet"
   encoder_depth: 5
   encoder: "efficientnet-b4"
+  aux_head: False
+  aux_head_params:
+    classes: 1 # binary building / no building classification
+    pooling: "avg" # "max",  "avg"
+    dropout: 0.2 # default 0.0
+
 
 data_dirs:
-  root: 'C:\Users\LARHOD\Documents\GIS\MapAI-Competition\data\overlapping_data'
+  root: '..\..\data\overlapping_data'
   train: 'train'
   validation: 'validation'
   images: "images"
   lidar: "lidar"
   masks: "masks"
 
+use_lidar_as_mask: True
 dataset: "mapai" # "mapai", "landcover", "open_cities", "mapai_multiclass"
 num_classes: 2
 classes: ["background", "building"]
@@ -40,13 +47,11 @@ training:
     # "LovaszLoss": smp.losses.LovaszLoss,
     # "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
     # "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
-
-    #Task 3
-    # "MSE" : torch.nn.MSELoss
-    names: ['MSE']
+    names: ['SoftCrossEntropyLoss']
     weights: [1.0]
-    MSE:
+    SoftCrossEntropyLoss:
       init_params:
+        smooth_factor: 0.01
 
   optimizer:
     name: Adam # Adam, SGD, RAdam, AdamWarmup
@@ -71,10 +76,10 @@ train:
   batchsize: 2
   shuffle: True
   num_workers: 0
-  data_ratio: 0.001
+  data_ratio: 0.1
 
 validation:
   batchsize: 2
-  shuffle: True
+  shuffle: False
   num_workers: 0
-  data_ratio: 0.1
+  data_ratio: 1.0
