@@ -52,8 +52,14 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         lossesseg[idx] = losseg
         losstotal[idx] = loss_aux + losseg
 
+        num_classes = output.shape[1]
         if output.shape[1] > 1:
             output = torch.argmax(torch.softmax(output, dim=1), dim=1)
+            if num_classes == 3:
+                output[output == 2.0] = 0.0
+            elif num_classes == 4:
+                output[output == 2.0] = 1.0
+                output[output == 3.0] = 0.0
         else:
             output = torch.round(torch.sigmoid(output)).squeeze(1)
         label = label.squeeze(1)
@@ -134,7 +140,8 @@ def train(opts):
             new_transform = transforms[aug](opts["imagesize"])
             trainloader.dataset.set_transform(new_transform)
 
-        for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
+        pbar = tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0)
+        for idx, batch in pbar:
             if aux_head:
                 image, label, aux_label = batch.values() 
                 aux_label = aux_label.to(device)
@@ -172,6 +179,8 @@ def train(opts):
             losses_seg[idx] = loss_seg.item()
 
             loss = loss_aux + loss_seg
+
+            pbar.set_description("Train - Loss {:.4f}".format(loss.item()))
 
             optimizer.zero_grad()
             loss.backward()
@@ -253,7 +262,8 @@ if __name__ == "__main__":
         opts = {**opts, **vars(args)}
 
     print("Opts:", opts)
-    if opts["use_lidar_as_mask"]:
+    if opts["use_lidar_in_mask"]:
+        
         opts["num_classes"] = 3
 
     rundir = create_run_dir(opts, opts.get("dataset", ""))
