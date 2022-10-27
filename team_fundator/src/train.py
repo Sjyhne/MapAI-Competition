@@ -6,7 +6,7 @@ from tqdm import tqdm
 import torch
 import torchvision
 from tabulate import tabulate
-# from kornia.morphology import erosion, dilation
+from kornia.morphology import erosion, dilation
 import argparse
 import time
 #from competition_toolkit.dataloader import create_dataloader
@@ -29,9 +29,9 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
     ioutotal = np.zeros((len(dataloader)), dtype=float)
     bioutotal = np.zeros((len(dataloader)), dtype=float)
     scoretotal = np.zeros((len(dataloader)), dtype=float)
-    # erosionioutotal = np.zeros((len(dataloader)), dtype=float)
-    # erosionbioutotal = np.zeros((len(dataloader)), dtype=float)
-    # erosionscoretotal = np.zeros((len(dataloader)), dtype=float)
+    erosionioutotal = np.zeros((len(dataloader)), dtype=float)
+    erosionbioutotal = np.zeros((len(dataloader)), dtype=float)
+    erosionscoretotal = np.zeros((len(dataloader)), dtype=float)
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
         if aux_head:
@@ -73,21 +73,20 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         else:
             metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
 
-        # if erode:
-        #     kernel = torch.ones(5, 5).to(device)
-        #     new_output = erosion(output.unsqueeze(1), kernel)
-        #     new_output = dilation(new_output, kernel)
-        #     new_metrics = calculate_score(new_output.squeeze(1).detach().cpu().numpy().astype(np.uint8), label.detach().cpu().numpy().astype(np.uint8))
+        if erode:
+            kernel = torch.ones(5, 5).to(device)
+            new_output = erosion(output.unsqueeze(1), kernel)
+            new_output = dilation(new_output, kernel)
+            new_metrics = calculate_score(new_output.squeeze(1).detach().cpu().numpy().astype(np.uint8), label.detach().cpu().numpy().astype(np.uint8))
 
-            
-        #     erosionioutotal[idx] = new_metrics["iou"]
-        #     erosionbioutotal[idx] = new_metrics["biou"]
-        #     erosionscoretotal[idx] = new_metrics["score"]
+            erosionioutotal[idx] = new_metrics["iou"]
+            erosionbioutotal[idx] = new_metrics["biou"]
+            erosionscoretotal[idx] = new_metrics["score"]
         ioutotal[idx] = metrics["iou"]
         bioutotal[idx] = metrics["biou"]
         scoretotal[idx] = metrics["score"]
-    # print("Erotion, Dilation", "iou", erosionioutotal, "biou", new_metrics["biou"], "score", new_metrics["score"])
-
+    print("Erotion, Dilation", "iou", erosionioutotal.mean(), "biou", erosionbioutotal.mean(), "score", erosionscoretotal.mean())
+    
     iou = round(ioutotal.mean(), 4)
     loss = round(losstotal.mean(), 4)
     lossesseg = round(lossesseg.mean(), 4)
@@ -265,36 +264,36 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    init_params = {
-        "DiceLoss": {"mode": "binary"},
-        "JaccardLoss": {"mode": "binary"},
-        "TverskyLoss": {"mode": "binary"},
-        "FocalLoss": {"mode": "binary"},
-        "LovaszLoss": {"mode": "binary"},
-        "SoftBCEWithLogitsLoss": {"smooth_factor": 0.01},
-    }
-    losses_list = list(init_params.keys())
+    # init_params = {
+    #     "DiceLoss": {"mode": "binary"},
+    #     "JaccardLoss": {"mode": "binary"},
+    #     "TverskyLoss": {"mode": "binary"},
+    #     "FocalLoss": {"mode": "binary"},
+    #     "LovaszLoss": {"mode": "binary"},
+    #     "SoftBCEWithLogitsLoss": {"smooth_factor": 0.01},
+    # }
+    # losses_list = list(init_params.keys())
     
-    for loss in losses_list:
+    # for loss in losses_list:
         # Import config
-        opts = load(open(args.config, "r"), Loader)
+    opts = load(open(args.config, "r"), Loader)
 
-        # Combine args and opts in single dict
-        try:
-            opts = opts | vars(args)
-        except Exception as e:
-            opts = {**opts, **vars(args)}
+    # Combine args and opts in single dict
+    try:
+        opts = opts | vars(args)
+    except Exception as e:
+        opts = {**opts, **vars(args)}
 
-        if opts["use_lidar_in_mask"]:
-            opts["num_classes"] = 3
+    if opts["use_lidar_in_mask"]:
+        opts["num_classes"] = 3
 
-        opts["training"]["losses"]["names"] = [loss]
-        opts["training"]["losses"][loss] = {"init_params": init_params[loss]}
+    # opts["training"]["losses"]["names"] = [loss]
+    # opts["training"]["losses"][loss] = {"init_params": init_params[loss]}
 
-        rundir = create_run_dir(opts, opts.get("dataset", "") + loss)
-        #rundir = create_run_dir(opts, opts.get("dataset", ""))
-        opts["rundir"] = rundir
-        print("Opts:", opts)
-        dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
+    # rundir = create_run_dir(opts, opts.get("dataset", "") + loss)
+    rundir = create_run_dir(opts, opts.get("dataset", ""))
+    opts["rundir"] = rundir
+    print("Opts:", opts)
+    dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
-        train(opts)
+    train(opts)
