@@ -75,10 +75,6 @@ def get_losses(opts):
         "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
         "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
     }
-    losses_task3 = {
-        "MSE": torch.nn.MSELoss,
-    }
-    losses = losses_task3 if opts["task"] == 3 else losses
     used_losses = []
     weights = torch.tensor(losses_cfg["weights"])
     for loss_name in losses_cfg["names"]:
@@ -110,7 +106,9 @@ def get_model(opts):
     if "in_channels" not in model_cfg:
         model_cfg["in_channels"] = 4 if int(opts["task"]) == 2 else 3
     if opts["task"] == 3:
-        opts["num_classes"] = 1
+        model_cfg["aux_head"] = False
+
+    aux_params = model_cfg["aux_head_params"] if model_cfg["aux_head"] else None
 
     if model_cfg["name"] in smp_models.keys():
         model = smp_models[model_cfg["name"]](
@@ -118,7 +116,8 @@ def get_model(opts):
             encoder_weights=model_cfg.get("encoder_weights", "imagenet"),    
             in_channels=model_cfg["in_channels"],
             classes=opts.get("num_classes", 2),
-            encoder_depth=model_cfg.get("encoder_depth", 5)
+            encoder_depth=model_cfg.get("encoder_depth", 5),
+            aux_params=aux_params
         )
     else:
         print(f"Model {model_cfg['name']} is not available")

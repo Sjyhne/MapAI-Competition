@@ -59,9 +59,11 @@ class ImageAndLabelDataset(Dataset):
     def __init__(self,
                  opts: dict,
                  datatype: str = "validation",
-                 transforms=None):
+                 transforms=None,
+                 aux_head_labels=False):
 
         self.opts = opts
+        self.aux_head_labels = aux_head_labels
         self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
@@ -107,6 +109,10 @@ class ImageAndLabelDataset(Dataset):
             sample = self.transform(**sample)
         else:
             sample["image"] = sample["image"].transpose(2, 0, 1)
+
+        if self.aux_head_labels:
+            sample["aux_label"] = np.expand_dims(np.any(label == 1.0), 0).astype(np.float32)
+        sample["mask"] = np.expand_dims(sample["mask"], 0)
         return sample
     
     def set_transform(self, transform):
@@ -119,12 +125,14 @@ class ImageLabelAndLidarDataset(Dataset):
                  opts: dict,
                  datatype: str = "validation",
                  transform=None,
-                 lidar_transform=None):
+                 lidar_transform=None,
+                 aux_head_labels=False):
 
         self.opts = opts
         self.transform = transform
         self.lidar_transform = lidar_transform
         self.ratio = self.opts[datatype]["data_ratio"]
+        self.aux_head_labels = aux_head_labels
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
@@ -176,14 +184,17 @@ class ImageLabelAndLidarDataset(Dataset):
 
         # Concatenate lidar and image data
         lidar = self.lidar_transform(lidar)
-        # lidar = np.expand_dims(lidar, 0)
+        lidar = np.expand_dims(lidar, 0)
         image = np.concatenate((image, lidar), axis=0)
 
 
         sample = dict(
             image=image,
-            mask=label,
+            mask=np.expand_dims(label, 0),
         )
+
+        if self.aux_head_labels:
+            sample["aux_label"] = np.expand_dims(np.any(label == 1.0), 0).astype(np.float32)
         # image2 = image.transpose(1, 2, 0)[:, :, :3].astype(np.float32) * 255
         # print(np.max(image2), np.max(label), np.max(lidar))
         # print(image.shape)
@@ -201,14 +212,10 @@ class ImageAndLidarDataset(Dataset):
     def __init__(self,
                  opts: dict,
                  datatype: str = "validation",
-                 transform=None,
-                 lidar_transform=None,
-                 eps=math.e):
+                 transform=None):
 
-        self.eps = eps
         self.opts = opts
         self.transform = transform
-        self.lidar_transform = lidar_transform
         self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
@@ -217,9 +224,8 @@ class ImageAndLidarDataset(Dataset):
         self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
 
         self.image_size = (opts["imagesize"], opts["imagesize"])
-        self.label_size = self.image_size if datatype == "train" else (500, 500)
 
-        assert len(self.image_paths)  == len(self.lidar_paths) 
+        assert len(self.image_paths) == len(self.lidar_paths) 
         print(
             f"Using number of images in {datatype}dataset: {int(len(self.image_paths) * self.ratio)}/{len(self.image_paths) }")
 
@@ -251,12 +257,11 @@ class ImageAndLidarDataset(Dataset):
         else:
             image = image.transpose(2, 0, 1)
 
-        lidar = self.lidar_transform(lidar)
-        lidar = np.log(lidar + self.eps)
+        lidar = (lidar == 0).astype(np.int64)
         
         sample = dict(
             image=image,
-            mask=lidar,
+            mask=np.expand_dims(lidar, 0),
         )
         # image2 = image.transpose(1, 2, 0)[:, :, :3].astype(np.float32) * 255
         # print(np.max(image2), np.max(label), np.max(lidar))
@@ -293,14 +298,17 @@ class TestDataset(Dataset):
         return image, filename
 
 
-def create_dataloader(opts: dict, datatype: str = "test", transforms=None) -> DataLoader:
+def create_dataloader(opts: dict, datatype: str = "test", transforms=None, aux_head_labels=False) -> DataLoader:
     image_transforms, lidar_transform = transforms
     if opts["task"] == 1:
-        dataset = ImageAndLabelDataset(opts, datatype, image_transforms)
+        dataset = ImageAndLabelDataset(opts, datatype, image_transforms, aux_head_labels)
     elif opts["task"] == 2:
-        dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform)
+        dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels)
     elif opts["task"] == 3:
-        dataset = ImageAndLidarDataset(opts, datatype, image_transforms, lidar_transform)
+        if aux_head_labels:
+            print("aux_head_labels = True is not supported with task 3!")
+            exit()
+        dataset = ImageAndLidarDataset(opts, datatype, image_transforms)
 
     dataloader = DataLoader(dataset, batch_size=opts[datatype]["batchsize"], shuffle=opts[datatype]["shuffle"], num_workers=opts[datatype]["num_workers"])
 
