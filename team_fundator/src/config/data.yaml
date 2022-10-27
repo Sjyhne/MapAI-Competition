@@ -17,9 +17,12 @@ data_dirs:
   validation: 'validation'
   images: "images"
   lidar: "lidar"
+  # masks_train: "masks"
   masks: "masks"
 
-use_lidar_as_mask: True
+
+use_lidar_in_mask: False
+erode_val_preds: False
 dataset: "mapai" # "mapai", "landcover", "open_cities", "mapai_multiclass"
 num_classes: 2
 classes: ["background", "building"]
@@ -54,7 +57,7 @@ training:
         smooth_factor: 0.01
 
   optimizer:
-    name: Adam # Adam, SGD, RAdam, AdamWarmup
+    name: RAdam # Adam, SGD, RAdam, AdamWarmup
     init_params:
       lr: 0.0001
 
@@ -75,7 +78,7 @@ train:
   epochs: 5
   batchsize: 2
   shuffle: True
-  num_workers: 0
+  num_workers: 2
   data_ratio: 0.1
 
 validation:
