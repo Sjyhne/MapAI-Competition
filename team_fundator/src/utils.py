@@ -62,19 +62,20 @@ def get_optimizer(opts, model):
         exit()
     return optimizers[optimizer_cfg["name"]](model.parameters(), **optimizer_cfg["init_params"] )
 
+losses = {
+    "DiceLoss": smp.losses.DiceLoss,
+    "JaccardLoss": smp.losses.JaccardLoss,
+    "TverskyLoss": smp.losses.TverskyLoss,
+    "FocalLoss": smp.losses.FocalLoss,
+    "LovaszLoss": smp.losses.LovaszLoss,
+    "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
+    "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss,
+    "MCCLoss": smp.losses.MCCLoss
+}
 
 def get_losses(opts):
     losses_cfg = opts["training"]["losses"]
 
-    losses = {
-        "DiceLoss": smp.losses.DiceLoss,
-        "JaccardLoss": smp.losses.JaccardLoss,
-        "TverskyLoss": smp.losses.TverskyLoss,
-        "FocalLoss": smp.losses.FocalLoss,
-        "LovaszLoss": smp.losses.LovaszLoss,
-        "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
-        "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
-    }
     used_losses = []
     weights = torch.tensor(losses_cfg["weights"])
     for loss_name in losses_cfg["names"]:

@@ -6,7 +6,7 @@ from tqdm import tqdm
 import torch
 import torchvision
 from tabulate import tabulate
-
+# from kornia.morphology import erosion, dilation
 import argparse
 import time
 #from competition_toolkit.dataloader import create_dataloader
@@ -17,7 +17,7 @@ from competition_toolkit.eval_functions import calculate_score
 import transforms
 
 transforms = transforms.__dict__
-def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=torchvision.transforms.InterpolationMode.BILINEAR, antialias=True, aux_head=False):
+def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=torchvision.transforms.InterpolationMode.BILINEAR, antialias=True, aux_head=False, erode=False):
     model.eval()
 
     device = device
@@ -29,6 +29,9 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
     ioutotal = np.zeros((len(dataloader)), dtype=float)
     bioutotal = np.zeros((len(dataloader)), dtype=float)
     scoretotal = np.zeros((len(dataloader)), dtype=float)
+    # erosionioutotal = np.zeros((len(dataloader)), dtype=float)
+    # erosionbioutotal = np.zeros((len(dataloader)), dtype=float)
+    # erosionscoretotal = np.zeros((len(dataloader)), dtype=float)
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
         if aux_head:
@@ -70,17 +73,27 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         else:
             metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
 
+        # if erode:
+        #     kernel = torch.ones(5, 5).to(device)
+        #     new_output = erosion(output.unsqueeze(1), kernel)
+        #     new_output = dilation(new_output, kernel)
+        #     new_metrics = calculate_score(new_output.squeeze(1).detach().cpu().numpy().astype(np.uint8), label.detach().cpu().numpy().astype(np.uint8))
+
+            
+        #     erosionioutotal[idx] = new_metrics["iou"]
+        #     erosionbioutotal[idx] = new_metrics["biou"]
+        #     erosionscoretotal[idx] = new_metrics["score"]
         ioutotal[idx] = metrics["iou"]
         bioutotal[idx] = metrics["biou"]
         scoretotal[idx] = metrics["score"]
+    # print("Erotion, Dilation", "iou", erosionioutotal, "biou", new_metrics["biou"], "score", new_metrics["score"])
 
-
-    iou = round(ioutotal[0].mean(), 4)
-    loss = round(losstotal[0].mean(), 4)
-    lossesseg = round(lossesseg[0].mean(), 4)
-    lossesaux = round(lossesaux[0].mean(), 4)
-    biou = round(bioutotal[0].mean(), 4)
-    score = round(scoretotal[0].mean(), 4)
+    iou = round(ioutotal.mean(), 4)
+    loss = round(losstotal.mean(), 4)
+    lossesseg = round(lossesseg.mean(), 4)
+    lossesaux = round(lossesaux.mean(), 4)
+    biou = round(bioutotal.mean(), 4)
+    score = round(scoretotal.mean(), 4)
     return loss, lossesaux, lossesseg, iou, biou, score
 
 
@@ -206,7 +219,7 @@ def train(opts):
             scoretotal[idx] = trainmetrics["score"]
         scheduler.step()
 
-        testloss, testlossaux, testlosseg, testiou, testbiou, testscore = test(valloader, model, lossfn, device, aux_loss=aux_loss, aux_head=aux_head)
+        testloss, testlossaux, testlosseg, testiou, testbiou, testscore = test(valloader, model, lossfn, device, aux_loss=aux_loss, aux_head=aux_head, erode=opts["erode_val_preds"])
         trainloss = round(losstotal.mean(), 4)
         trainlosseg = round(losses_seg.mean(), 4)
         trainlossaux = round(losses_aux.mean(), 4)
@@ -220,12 +233,12 @@ def train(opts):
             store_model_weights(opts, model, f"best", epoch=e)
         else:
             store_model_weights(opts, model, f"last", epoch=e)
-        print("New learning rate", scheduler.get_lr())
-        print("")
         print(tabulate(
             [["train", trainloss, trainlossaux, trainlosseg, trainiou, trainbiou, trainscore], ["test", testloss, testlossaux, testlosseg, testiou, testbiou, testscore]],
             headers=["Type", "LossTotal", "LossAux", "LossSeg", "IoU", "BIoU", "Score"]))
 
+        print(f"Starting epoch {e + 1} with new learning rate", scheduler.get_lr())
+        print("")
         scoredict = {
             "epoch": e,
             "trainloss": trainloss,
@@ -252,22 +265,36 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Import config
-    opts = load(open(args.config, "r"), Loader)
+    init_params = {
+        "DiceLoss": {"mode": "binary"},
+        "JaccardLoss": {"mode": "binary"},
+        "TverskyLoss": {"mode": "binary"},
+        "FocalLoss": {"mode": "binary"},
+        "LovaszLoss": {"mode": "binary"},
+        "SoftBCEWithLogitsLoss": {"smooth_factor": 0.01},
+    }
+    losses_list = list(init_params.keys())
+    
+    for loss in losses_list:
+        # Import config
+        opts = load(open(args.config, "r"), Loader)
 
-    # Combine args and opts in single dict
-    try:
-        opts = opts | vars(args)
-    except Exception as e:
-        opts = {**opts, **vars(args)}
+        # Combine args and opts in single dict
+        try:
+            opts = opts | vars(args)
+        except Exception as e:
+            opts = {**opts, **vars(args)}
 
-    print("Opts:", opts)
-    if opts["use_lidar_in_mask"]:
-        
-        opts["num_classes"] = 3
+        if opts["use_lidar_in_mask"]:
+            opts["num_classes"] = 3
 
-    rundir = create_run_dir(opts, opts.get("dataset", ""))
-    opts["rundir"] = rundir
-    dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
+        opts["training"]["losses"]["names"] = [loss]
+        opts["training"]["losses"][loss] = {"init_params": init_params[loss]}
 
-    train(opts)
+        rundir = create_run_dir(opts, opts.get("dataset", "") + loss)
+        #rundir = create_run_dir(opts, opts.get("dataset", ""))
+        opts["rundir"] = rundir
+        print("Opts:", opts)
+        dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
+
+        train(opts)

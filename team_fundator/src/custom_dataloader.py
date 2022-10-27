@@ -70,8 +70,10 @@ class ImageAndLabelDataset(Dataset):
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
+        mask_dir = opts['data_dirs']['masks'] if datatype == "validation" or "masks_train" not in opts['data_dirs'] else opts['data_dirs']['masks_train'] 
+
         self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
-        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['masks']}").glob("*.tif"))
+        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{mask_dir}").glob("*.tif"))
         
         self.lidar_paths = None
         if self.use_lidar_in_mask:
@@ -148,7 +150,7 @@ class ImageLabelAndLidarDataset(Dataset):
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
-        mask_dir = opts['data_dirs']['masks'] if datatype == "train" or "masks_valid" not in opts['data_dirs'] else opts['data_dirs']['masks_valid'] 
+        mask_dir = opts['data_dirs']['masks'] if datatype == "validation" or "masks_train" not in opts['data_dirs'] else opts['data_dirs']['masks_train'] 
         self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
         self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{mask_dir}").glob("*.tif"))
         self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
