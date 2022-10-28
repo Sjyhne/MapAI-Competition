@@ -71,8 +71,8 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         label = label.squeeze(1)
 
         if device != "cpu":
-            metrics = calculate_multiclass_score(output.detach().cpu().numpy().astype(np.uint8),
-                                    label.detach().cpu().numpy().astype(np.uint8), 2)
+            metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
+                                    label.detach().cpu().numpy().astype(np.uint8))
         else:
             metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
 
