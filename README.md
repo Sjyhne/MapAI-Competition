@@ -8,7 +8,7 @@
 
 I was notified about a flaw in the evaluation functionality currently implemented, where the evaluation disregards
 the IoU of the background predictions. The issue is now fixed. Additionally I introduce a method for checking whether
-the current version of your fork is up-to-date with the newest version available on Github. Please see [Check Fork Version](https://github.com/Sjyhne/Check-Fork-Version)
+the current version of your fork is up-to-date with the newest version available on Github. Please see [Check Fork Version](https://github.com/Sjyhne/MapAI-Competition#check-fork-version)
 in the readme.
 
 This is the official repository for the MapAI competition arranged by 
