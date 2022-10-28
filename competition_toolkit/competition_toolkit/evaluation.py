@@ -78,7 +78,7 @@ if __name__ == "__main__":
         mask = cv.imread(str(mask_path), cv.IMREAD_GRAYSCALE)
 
         iou_score = iou(pred, mask)
-        biou_score = biou(mask, pred)
+        biou_score = biou(pred, mask)
 
         iou_scores += iou_score
         biou_scores += biou_score
