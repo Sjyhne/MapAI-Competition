@@ -31,9 +31,6 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
     ioutotal = np.zeros((len(dataloader)), dtype=float)
     bioutotal = np.zeros((len(dataloader)), dtype=float)
     scoretotal = np.zeros((len(dataloader)), dtype=float)
-    erosionioutotal = np.zeros((len(dataloader)), dtype=float)
-    erosionbioutotal = np.zeros((len(dataloader)), dtype=float)
-    erosionscoretotal = np.zeros((len(dataloader)), dtype=float)
     filenames = []
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
@@ -70,21 +67,17 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
             output = torch.round(torch.sigmoid(output)).squeeze(1)
         label = label.squeeze(1)
 
+        if erode:
+            kernel = torch.ones(5, 5).to(device)
+            output = erosion(output.unsqueeze(1), kernel)
+            output = dilation(output, kernel).squeeze(1)
+
         if device != "cpu":
             metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
                                     label.detach().cpu().numpy().astype(np.uint8))
         else:
             metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
 
-        if erode:
-            kernel = torch.ones(5, 5).to(device)
-            new_output = erosion(output.unsqueeze(1), kernel)
-            new_output = dilation(new_output, kernel)
-            new_metrics = calculate_score(new_output.squeeze(1).detach().cpu().numpy().astype(np.uint8), label.detach().cpu().numpy().astype(np.uint8))
-
-            erosionioutotal[idx] = new_metrics["iou"]
-            erosionbioutotal[idx] = new_metrics["biou"]
-            erosionscoretotal[idx] = new_metrics["score"]
         ioutotal[idx] = metrics["iou"]
         bioutotal[idx] = metrics["biou"]
         scoretotal[idx] = metrics["score"]
@@ -94,8 +87,6 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         #     for img_idx in range(img.shape[0]):
         #         cv2.imwrite("datatest/" + filename[img_idx], img[img_idx] * 255)
 
-    print("Erotion, Dilation", "iou", erosionioutotal.mean(), "biou", erosionbioutotal.mean(), "score", erosionscoretotal.mean())
-    
     # filenames = sorted(filenames, key=lambda x: x[1])
     # for files, scores in filenames[:10]:
     #     print(files, scores)
@@ -268,8 +259,10 @@ def train(opts):
         record_scores(opts, scoredict)
 
 
-if __name__ == "__main__":
 
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
@@ -279,36 +272,53 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # init_params = {
-    #     "DiceLoss": {"mode": "binary"},
-    #     "JaccardLoss": {"mode": "binary"},
-    #     "TverskyLoss": {"mode": "binary"},
-    #     "FocalLoss": {"mode": "binary"},
-    #     "LovaszLoss": {"mode": "binary"},
-    #     "SoftBCEWithLogitsLoss": {"smooth_factor": 0.01},
-    # }
-    # losses_list = list(init_params.keys())
-    
-    # for loss in losses_list:
+    singleclass = {}
+    threeclass = {
+        "use_lidar_in_mask": True,
+        "num_classes": 3,
+        "dataset": "lidar_masks"
+    }
+    fourclass = {
+        "num_classes": 4,
+        "data_dirs": {
+            "masks_train": "masks_reclassified"
+        },
+        "dataset": "masks_reclassified"
+    }
+    multihead = {
+        "model": {
+            "aux_head": True
+        },
+        "dataset": "multihead"
+    }
+
+    ds_list = [threeclass, fourclass, multihead, singleclass]
+
+    for idx, ds_params in enumerate(ds_list):
         # Import config
-    opts = load(open(args.config, "r"), Loader)
+        opts = load(open(args.config, "r"), Loader)
 
-    # Combine args and opts in single dict
-    try:
-        opts = opts | vars(args)
-    except Exception as e:
-        opts = {**opts, **vars(args)}
+        # Combine args and opts in single dict
+        try:
+            opts = opts | vars(args)
+        except Exception as e:
+            opts = {**opts, **vars(args)}
 
-    if opts["use_lidar_in_mask"]:
-        opts["num_classes"] = 3
+        if opts["use_lidar_in_mask"]:
+            opts["num_classes"] = 3
 
-    # opts["training"]["losses"]["names"] = [loss]
-    # opts["training"]["losses"][loss] = {"init_params": init_params[loss]}
+        if idx < 2:
+            opts["training"]["losses"]["DiceLoss"]["init_params"]["mode"] = "multiclass"
 
-    # rundir = create_run_dir(opts, opts.get("dataset", "") + loss)
-    rundir = create_run_dir(opts, opts.get("dataset", ""))
-    opts["rundir"] = rundir
-    print("Opts:", opts)
-    dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
+        for key, value in ds_params.items():
+            if type(value) == dict:
+                opts[key][list(value.keys())[0]] = list(value.values())[0]
+            else:
+                opts[key] = value
+        
+        rundir = create_run_dir(opts, opts.get("dataset", ""))
+        opts["rundir"] = rundir
+        print("Opts:", opts)
+        dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
-    train(opts)
+        train(opts)
