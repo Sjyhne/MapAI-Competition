@@ -54,7 +54,7 @@ def _mask_to_boundary(mask, dilation_ratio=0.02):
     return mask - mask_erode
 
 
-def biou(gt, dt, dilation_ratio=0.02):
+def biou(dt, gt, dilation_ratio=0.02):
     """
     Compute boundary iou between two binary masks.
     :param gt (numpy array, uint8): binary mask
@@ -110,3 +110,11 @@ def calculate_score(preds: np.array, tars: np.array) -> dict:
     score = (t_iou + t_biou) / 2
 
     return {"score": score, "iou": t_iou, "biou": t_biou}
+
+
+if __name__ == "__main__":
+
+    target = np.asarray([[0, 0, 0], [0, 0, 0]])
+    pred = np.asarray([[0, 0, 1], [0, 1, 1]])
+
+    print(biou(pred, target))
