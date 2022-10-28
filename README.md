@@ -4,6 +4,13 @@
 <a href="https://sjyhne.github.io/MapAI-Competition/"><img src="https://img.shields.io/badge/Competition-Results-brightgreen" ></a>
 <a href="https://huggingface.co/datasets/sjyhne/mapai_training_data"><img src="https://img.shields.io/badge/MapAI-Dataset-brightgreen" ></a>
 
+## Update!
+
+I was notified about a flaw in the evaluation functionality currently implemented, where the evaluation disregards
+the IoU of the background predictions. The issue is now fixed. Additionally I introduce a method for checking whether
+the current version of your fork is up-to-date with the newest version available on Github. Please see [Check Fork Version](https://github.com/Sjyhne/Check-Fork-Version)
+in the readme.
+
 This is the official repository for the MapAI competition arranged by 
 the Norwegian Mapping Authority, Centre for Artificial Intelligence Research at University of Agder (CAIR),
 Norwegian Artificial Intelligence Research Consortium (NORA), AI:Hub, Norkart, and the Danish Agency for 
@@ -110,6 +117,18 @@ The prizes will be 1200 euros for first place, 500 euros for second place, and 3
 3. 300 Euro
 
 Results will be presented at https://sjyhne.github.io/MapAI-Competition/ after evaluation.
+
+### Check Fork Version
+
+To verify that you're currently using the latest fork version, you can run the `check_latest_version.py` file
+and it will print whether or not you have to take action.
+
+If it says that you need to update, then you can update your repo with the following steps:
+
+1. ```git fetch submission```
+2. ```git rebase submission/master```
+3. ```git push origin master```
+   * It might be necessary to force push it to your own repository: ```git push -f origin master```
 
 ## Instructions
 

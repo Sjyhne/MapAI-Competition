@@ -1,23 +1,41 @@
 import numpy as np
 import cv2
 
+def class_wise(arr: np.array, c: int) -> np.array:
+
+    tmp = np.zeros(arr.shape)
+
+    tmp[arr == c] = True
+
+    return tmp
+
 def iou(prediction: np.array, target: np.array) -> float:
 
-    if prediction.dtype != bool:
-        prediction = np.asarray(prediction, dtype=bool)
+    miou = []
 
-    if target.dtype != bool:
-        target = np.asarray(target, dtype=bool)
+    for c in range(2):
 
-    overlap = prediction * target # Logical AND
-    union = prediction + target # Logical OR
+        pred = class_wise(prediction, c)
+        tar = class_wise(target, c)
 
-    if union.sum() != 0 and overlap.sum() != 0:
-        iou = (float(overlap.sum()) / float(union.sum()))
-    else:
-        iou = 0
+        if pred.dtype != bool:
+            pred = np.asarray(pred, dtype=bool)
 
-    return iou
+        if tar.dtype != bool:
+            tar = np.asarray(tar, dtype=bool)
+
+        overlap = pred * tar # Logical AND
+        union = pred + tar # Logical OR
+
+        if union.sum() != 0 and overlap.sum() != 0:
+            iou = (float(overlap.sum()) / float(union.sum()))
+        else:
+            iou = 0
+
+        if c in target:
+            miou.append(iou)
+
+    return np.asarray(miou).mean()
 
 # General util function to get the boundary of a binary mask.
 def _mask_to_boundary(mask, dilation_ratio=0.02):
@@ -49,16 +67,27 @@ def biou(gt, dt, dilation_ratio=0.02):
     :param dilation_ratio (float): ratio to calculate dilation = dilation_ratio * image_diagonal
     :return: boundary iou (float)
     """
-    gt_boundary = _mask_to_boundary(gt, dilation_ratio)
-    dt_boundary = _mask_to_boundary(dt, dilation_ratio)
-    intersection = ((gt_boundary * dt_boundary) > 0).sum()
-    union = ((gt_boundary + dt_boundary) > 0).sum()
-    if union == 0 or intersection == 0:
-        boundary_iou = 0
-    else:
-        boundary_iou = (intersection / union)
 
-    return boundary_iou
+    mboundary_iou = []
+
+    for c in range(2):
+
+        target = class_wise(gt, c)
+        prediction = class_wise(dt, c)
+
+        gt_boundary = _mask_to_boundary(target, dilation_ratio)
+        dt_boundary = _mask_to_boundary(prediction, dilation_ratio)
+        intersection = ((gt_boundary * dt_boundary) > 0).sum()
+        union = ((gt_boundary + dt_boundary) > 0).sum()
+        if union == 0 or intersection == 0:
+            boundary_iou = 0
+        else:
+            boundary_iou = (intersection / union)
+
+        if c in target:
+            mboundary_iou.append(boundary_iou)
+
+    return np.asarray(mboundary_iou).mean()
 
 def calculate_score(preds: np.array, tars: np.array) -> dict:
 
