@@ -125,9 +125,10 @@ and it will print whether or not you have to take action.
 
 If it says that you need to update, then you can update your repo with the following steps:
 
-1. ```git fetch submission```
-2. ```git rebase submission/master```
-3. ```git push origin master```
+1. ```git remote add upstream git@github.com:Sjyhne/MapAI-Competition.git```
+2. ```git fetch upstream```
+3. ```git rebase upstream/master```
+4. ```git push origin master```
    * It might be necessary to force push it to your own repository: ```git push -f origin master```
 
 ## Instructions
