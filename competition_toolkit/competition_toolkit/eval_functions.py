@@ -2,12 +2,7 @@ import numpy as np
 import cv2
 
 def class_wise(arr: np.array, c: int) -> np.array:
-
-    tmp = np.zeros(arr.shape)
-
-    tmp[arr == c] = True
-
-    return tmp
+    return arr == c
 
 def iou(prediction: np.array, target: np.array) -> float:
 
@@ -73,10 +68,13 @@ def biou(gt, dt, dilation_ratio=0.02):
     for c in range(2):
 
         target = class_wise(gt, c)
+        if not np.any(target):
+            continue
+
         prediction = class_wise(dt, c)
 
-        gt_boundary = _mask_to_boundary(target, dilation_ratio)
-        dt_boundary = _mask_to_boundary(prediction, dilation_ratio)
+        gt_boundary = _mask_to_boundary(target.astype(np.uint8), dilation_ratio)
+        dt_boundary = _mask_to_boundary(prediction.astype(np.uint8), dilation_ratio)
         intersection = ((gt_boundary * dt_boundary) > 0).sum()
         union = ((gt_boundary + dt_boundary) > 0).sum()
         if union == 0 or intersection == 0:
@@ -84,8 +82,7 @@ def biou(gt, dt, dilation_ratio=0.02):
         else:
             boundary_iou = (intersection / union)
 
-        if c in target:
-            mboundary_iou.append(boundary_iou)
+        mboundary_iou.append(boundary_iou)
 
     return np.asarray(mboundary_iou).mean()
 
