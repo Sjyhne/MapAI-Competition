@@ -21,10 +21,10 @@ data_dirs:
   masks: "masks"
 
 
-use_lidar_in_mask: False
+use_lidar_in_mask: True
 erode_val_preds: False
 dataset: "mapai" # "mapai", "landcover", "open_cities", "mapai_multiclass"
-num_classes: 2
+num_classes: 3
 classes: ["background", "building"]
 class_to_color:
   "background": 0
@@ -79,10 +79,10 @@ train:
   batchsize: 2
   shuffle: True
   num_workers: 2
-  data_ratio: 0.1
+  data_ratio: 0.0001
 
 validation:
   batchsize: 2
   shuffle: False
   num_workers: 0
-  data_ratio: 1.0
+  data_ratio: 0.5

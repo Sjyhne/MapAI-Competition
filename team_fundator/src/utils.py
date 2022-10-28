@@ -116,7 +116,7 @@ def get_model(opts):
             encoder_name=model_cfg.get("encoder", "resnet34"),        
             encoder_weights=model_cfg.get("encoder_weights", "imagenet"),    
             in_channels=model_cfg["in_channels"],
-            classes=opts.get("num_classes", 2),
+            classes=opts["num_classes"],
             encoder_depth=model_cfg.get("encoder_depth", 5),
             aux_params=aux_params
         )

@@ -9,11 +9,13 @@ from tabulate import tabulate
 from kornia.morphology import erosion, dilation
 import argparse
 import time
+# import cv2
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
 from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler, get_aug_names
 from transforms import valid_transform, get_lidar_transform
 from competition_toolkit.eval_functions import calculate_score
+from multiclass_metrics import calculate_multiclass_score
 import transforms
 
 transforms = transforms.__dict__
@@ -32,13 +34,14 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
     erosionioutotal = np.zeros((len(dataloader)), dtype=float)
     erosionbioutotal = np.zeros((len(dataloader)), dtype=float)
     erosionscoretotal = np.zeros((len(dataloader)), dtype=float)
+    filenames = []
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
         if aux_head:
-            image, label, aux_label = batch.values() 
+            filename, image, label, aux_label = batch.values() 
             aux_label = aux_label.to(device)
         else:
-            image, label = batch.values()
+            filename, image, label = batch.values()
         image = image.to(device)
         label = label.long().to(device)
         
@@ -68,8 +71,8 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         label = label.squeeze(1)
 
         if device != "cpu":
-            metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
-                                    label.detach().cpu().numpy().astype(np.uint8))
+            metrics = calculate_multiclass_score(output.detach().cpu().numpy().astype(np.uint8),
+                                    label.detach().cpu().numpy().astype(np.uint8), 2)
         else:
             metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
 
@@ -85,8 +88,20 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         ioutotal[idx] = metrics["iou"]
         bioutotal[idx] = metrics["biou"]
         scoretotal[idx] = metrics["score"]
+        # if metrics["score"] < 1.0:
+        #     filenames.append((filename, metrics["score"]))
+        #     img = output.detach().cpu().numpy().astype(np.uint8)
+        #     for img_idx in range(img.shape[0]):
+        #         cv2.imwrite("datatest/" + filename[img_idx], img[img_idx] * 255)
+
     print("Erotion, Dilation", "iou", erosionioutotal.mean(), "biou", erosionbioutotal.mean(), "score", erosionscoretotal.mean())
     
+    # filenames = sorted(filenames, key=lambda x: x[1])
+    # for files, scores in filenames[:10]:
+    #     print(files, scores)
+    # for files, scores in filenames[-10:]:
+    #     print(files, scores)
+
     iou = round(ioutotal.mean(), 4)
     loss = round(losstotal.mean(), 4)
     lossesseg = round(lossesseg.mean(), 4)
@@ -155,10 +170,10 @@ def train(opts):
         pbar = tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0)
         for idx, batch in pbar:
             if aux_head:
-                image, label, aux_label = batch.values() 
+                filename, image, label, aux_label = batch.values() 
                 aux_label = aux_label.to(device)
             else:
-                image, label = batch.values()
+                filename, image, label = batch.values()
             image = image.to(device)
             label = label.long().to(device) 
 
@@ -207,11 +222,11 @@ def train(opts):
             label = label.squeeze(1)
 
             if device != "cpu":
-                trainmetrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
-                                               label.detach().cpu().numpy().astype(np.uint8))
+                trainmetrics = calculate_multiclass_score(output.detach().cpu().numpy().astype(np.uint8),
+                                               label.detach().cpu().numpy().astype(np.uint8), opts["num_classes"])
             else:
-                trainmetrics = calculate_score(output.detach().numpy().astype(np.uint8),
-                                               label.detach().numpy().astype(np.uint8))
+                trainmetrics = calculate_multiclass_score(output.detach().numpy().astype(np.uint8),
+                                               label.detach().numpy().astype(np.uint8), opts["num_classes"])
 
             ioutotal[idx] = trainmetrics["iou"]
             bioutotal[idx] = trainmetrics["biou"]

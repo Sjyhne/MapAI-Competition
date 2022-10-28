@@ -73,8 +73,8 @@ class ImageAndLabelDataset(Dataset):
         mask_dir = opts['data_dirs']['masks'] if datatype == "validation" or "masks_train" not in opts['data_dirs'] else opts['data_dirs']['masks_train'] 
 
         self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
-        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{mask_dir}").glob("*.tif"))
-        
+        self.mask_paths = sorted(pathlib.Path(f"{root}/{folder}/{mask_dir}").glob("*.tif"))     
+
         self.lidar_paths = None
         if self.use_lidar_in_mask:
             self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
@@ -115,6 +115,7 @@ class ImageAndLabelDataset(Dataset):
             label[lidar == 0.0] = 2
 
         sample = dict(
+            id=filename,
             image=image,
             mask=label,
         )
@@ -204,6 +205,7 @@ class ImageLabelAndLidarDataset(Dataset):
 
 
         sample = dict(
+            id=filename,
             image=image,
             mask=np.expand_dims(label, 0),
         )
@@ -275,6 +277,7 @@ class ImageAndLidarDataset(Dataset):
         lidar = (lidar == 0).astype(np.int64)
         
         sample = dict(
+            id=filename,
             image=image,
             mask=np.expand_dims(lidar, 0),
         )
