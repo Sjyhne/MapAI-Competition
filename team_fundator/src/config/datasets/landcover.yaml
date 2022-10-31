@@ -1,0 +1,15 @@
+dataset: "landcover" 
+
+data_dirs:
+  root: './data'
+  train: 'landcover'
+  validation: 'mapai/validation'
+
+num_classes: 5
+classes: ["background", "building", "woodland", "water", "road"]
+class_to_color:
+  "background": 0
+  "building": 1
+  "woodland": 2
+  "water": 3
+  "road": 4

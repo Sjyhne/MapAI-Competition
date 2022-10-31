@@ -11,24 +11,8 @@ model:
     dropout: 0.2 # default 0.0
 
 
-data_dirs:
-  root: '..\..\data\overlapping_data'
-  train: 'train'
-  validation: 'validation'
-  images: "images"
-  lidar: "lidar"
-  # masks_train: "masks"
-  masks: "masks"
+dataset: 'landcover' # mapai, mapai_reclassified, mapai_lidar_masks, landcover
 
-
-use_lidar_in_mask: True
-erode_val_preds: False
-dataset: "mapai" # "mapai", "landcover", "open_cities", "mapai_multiclass"
-num_classes: 3
-classes: ["background", "building"]
-class_to_color:
-  "background": 0
-  "building": 1
 
 augmentation:
   initial: 'normal'  # None, 'normal', 'hard', 'very_hard'
@@ -41,6 +25,7 @@ lidar_augs:
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
 
+imagesize: 512
 training:
   losses:
     # "DiceLoss": smp.losses.DiceLoss,
@@ -48,11 +33,10 @@ training:
     # "TverskyLoss": smp.losses.TverskyLoss,
     # "FocalLoss": smp.losses.FocalLoss,
     # "LovaszLoss": smp.losses.LovaszLoss,
-    # "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
-    # "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
-    names: ['SoftCrossEntropyLoss']
+    # "CrossEntropy": smp.losses.SoftBCEWithLogitsLoss, OR smp.losses.SoftCrossEntropyLoss if num_classes > 1
+    names: ['CrossEntropy']
     weights: [1.0]
-    SoftCrossEntropyLoss:
+    CrossEntropy:
       init_params:
         smooth_factor: 0.01
 
@@ -69,13 +53,14 @@ training:
   #   epochs: 50
   #   accumulation_steps: 4
 
-imagesize: 512
 
-# label_downscale: Bilinear # Bicubic, Bilinear
-# antialiased_downscaling: True # Bicubic, and Bilinear only
+testing:
+  interpolation: bilinear # bicubic, bilinear
+  antialias: True
+  erode_val_preds: True
 
 train:
-  epochs: 5
+  epochs: 1
   batchsize: 2
   shuffle: True
   num_workers: 2
@@ -85,4 +70,4 @@ validation:
   batchsize: 2
   shuffle: False
   num_workers: 0
-  data_ratio: 0.5
+  data_ratio: 0.01

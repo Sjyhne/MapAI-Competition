@@ -12,17 +12,20 @@ import time
 # import cv2
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
-from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler, get_aug_names
+from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler, get_aug_names, get_dataset_config
 from transforms import valid_transform, get_lidar_transform
 from competition_toolkit.eval_functions import calculate_score
 from multiclass_metrics import calculate_multiclass_score
 import transforms
 
 transforms = transforms.__dict__
-def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=torchvision.transforms.InterpolationMode.BILINEAR, antialias=True, aux_head=False, erode=False):
+def test(test_opts, dataloader, model, lossfn, device, aux_loss=None, aux_head=False):
     model.eval()
 
-    device = device
+    interpolation_modes = {
+        "bicubic": torchvision.transforms.InterpolationMode.BICUBIC,
+        "bilinear": torchvision.transforms.InterpolationMode.BILINEAR
+    }
 
 
     losstotal = np.zeros((len(dataloader)), dtype=float)
@@ -31,9 +34,6 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
     ioutotal = np.zeros((len(dataloader)), dtype=float)
     bioutotal = np.zeros((len(dataloader)), dtype=float)
     scoretotal = np.zeros((len(dataloader)), dtype=float)
-    erosionioutotal = np.zeros((len(dataloader)), dtype=float)
-    erosionbioutotal = np.zeros((len(dataloader)), dtype=float)
-    erosionscoretotal = np.zeros((len(dataloader)), dtype=float)
     filenames = []
 
     for idx, batch in tqdm(enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"):
@@ -53,7 +53,7 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
             lossesaux[idx] = loss_aux
 
         if label.shape[-2:] != output.shape[-2:]:
-            output = torchvision.transforms.functional.resize(output, (500, 500), interpolation=interpolation_mode, antialias=antialias)
+            output = torchvision.transforms.functional.resize(output, (500, 500), interpolation=interpolation_modes[test_opts["interpolation"]], antialias=test_opts["antialias"])
         losseg = lossfn(output, label).item()
         lossesseg[idx] = losseg
         losstotal[idx] = loss_aux + losseg
@@ -61,14 +61,21 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         num_classes = output.shape[1]
         if output.shape[1] > 1:
             output = torch.argmax(torch.softmax(output, dim=1), dim=1)
-            if num_classes == 3:
+            if num_classes == 3: # mapai_lidar_masks
                 output[output == 2.0] = 0.0
-            elif num_classes == 4:
+            elif num_classes == 4: # mapai_reclassified
                 output[output == 2.0] = 1.0
                 output[output == 3.0] = 0.0
+            elif num_classes == 5: # landcover train
+                output[output != 1.0] = 0.0
         else:
             output = torch.round(torch.sigmoid(output)).squeeze(1)
         label = label.squeeze(1)
+
+        if test_opts["erode_val_preds"]:
+            kernel = torch.ones(5, 5).to(device)
+            output = erosion(output.unsqueeze(1), kernel)
+            output = dilation(output, kernel).squeeze(1)
 
         if device != "cpu":
             metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
@@ -76,15 +83,6 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         else:
             metrics = calculate_score(output.detach().numpy().astype(np.uint8), label.detach().numpy().astype(np.uint8))
 
-        if erode:
-            kernel = torch.ones(5, 5).to(device)
-            new_output = erosion(output.unsqueeze(1), kernel)
-            new_output = dilation(new_output, kernel)
-            new_metrics = calculate_score(new_output.squeeze(1).detach().cpu().numpy().astype(np.uint8), label.detach().cpu().numpy().astype(np.uint8))
-
-            erosionioutotal[idx] = new_metrics["iou"]
-            erosionbioutotal[idx] = new_metrics["biou"]
-            erosionscoretotal[idx] = new_metrics["score"]
         ioutotal[idx] = metrics["iou"]
         bioutotal[idx] = metrics["biou"]
         scoretotal[idx] = metrics["score"]
@@ -94,8 +92,6 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         #     for img_idx in range(img.shape[0]):
         #         cv2.imwrite("datatest/" + filename[img_idx], img[img_idx] * 255)
 
-    print("Erotion, Dilation", "iou", erosionioutotal.mean(), "biou", erosionbioutotal.mean(), "score", erosionscoretotal.mean())
-    
     # filenames = sorted(filenames, key=lambda x: x[1])
     # for files, scores in filenames[:10]:
     #     print(files, scores)
@@ -130,7 +126,6 @@ def train(opts):
     aux_loss = torch.nn.BCEWithLogitsLoss()
 
     epochs = opts["train"]["epochs"]
-
 
     augmentation_cfg = opts["augmentation"]
     initial_transform = transforms[augmentation_cfg.get("initial", "normal")](opts["imagesize"])
@@ -233,7 +228,7 @@ def train(opts):
             scoretotal[idx] = trainmetrics["score"]
         scheduler.step()
 
-        testloss, testlossaux, testlosseg, testiou, testbiou, testscore = test(valloader, model, lossfn, device, aux_loss=aux_loss, aux_head=aux_head, erode=opts["erode_val_preds"])
+        testloss, testlossaux, testlosseg, testiou, testbiou, testscore = test(opts["testing"], valloader, model, lossfn, device, aux_loss=aux_loss, aux_head=aux_head)
         trainloss = round(losstotal.mean(), 4)
         trainlosseg = round(losses_seg.mean(), 4)
         trainlossaux = round(losses_aux.mean(), 4)
@@ -268,8 +263,10 @@ def train(opts):
         record_scores(opts, scoredict)
 
 
-if __name__ == "__main__":
 
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
@@ -279,18 +276,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # init_params = {
-    #     "DiceLoss": {"mode": "binary"},
-    #     "JaccardLoss": {"mode": "binary"},
-    #     "TverskyLoss": {"mode": "binary"},
-    #     "FocalLoss": {"mode": "binary"},
-    #     "LovaszLoss": {"mode": "binary"},
-    #     "SoftBCEWithLogitsLoss": {"smooth_factor": 0.01},
-    # }
-    # losses_list = list(init_params.keys())
-    
-    # for loss in losses_list:
-        # Import config
+    # Import config
     opts = load(open(args.config, "r"), Loader)
 
     # Combine args and opts in single dict
@@ -299,13 +285,10 @@ if __name__ == "__main__":
     except Exception as e:
         opts = {**opts, **vars(args)}
 
-    if opts["use_lidar_in_mask"]:
-        opts["num_classes"] = 3
+    data_opts = get_dataset_config(opts)
 
-    # opts["training"]["losses"]["names"] = [loss]
-    # opts["training"]["losses"][loss] = {"init_params": init_params[loss]}
-
-    # rundir = create_run_dir(opts, opts.get("dataset", "") + loss)
+    opts.update(data_opts)
+            
     rundir = create_run_dir(opts, opts.get("dataset", ""))
     opts["rundir"] = rundir
     print("Opts:", opts)
