@@ -5,6 +5,7 @@ import torch
 import segmentation_models_pytorch as smp
 from optimizers import PolyLR, RAdam, AdamWarmup
 from torch.optim.lr_scheduler import MultiStepLR
+from yaml import load, Loader
 
 def create_run_dir(opts, dataset_dir=""):
 
@@ -69,8 +70,7 @@ losses = {
     "FocalLoss": smp.losses.FocalLoss,
     "LovaszLoss": smp.losses.LovaszLoss,
     "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
-    "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss,
-    "MCCLoss": smp.losses.MCCLoss
+    "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
 }
 
 def get_losses(opts):
@@ -80,6 +80,9 @@ def get_losses(opts):
     weights = torch.tensor(losses_cfg["weights"])
     for loss_name in losses_cfg["names"]:
         init_params = losses_cfg[loss_name]['init_params'] if losses_cfg[loss_name]['init_params'] is not None else {}
+        
+        if loss_name == "CrossEntropy":
+            loss_name = "SoftCrossEntropyLoss" if opts["num_classes"] > 1 else "SoftBCEWithLogitsLoss"
         used_losses.append(losses[loss_name](**init_params))
 
     def multiloss(preds, targets):
@@ -154,3 +157,28 @@ def get_aug_names(opts, augmentation_cfg, transforms):
             continue
         aug_list.append(augmentation_cfg.get("initial", "normal"))
     return aug_list
+
+
+data_configs = {
+    "mapai": "mapai.yaml",
+    "landcover": "landcover.yaml",
+    "mapai_lidar_masks": "mapai_lidar_masks.yaml",
+    "mapai_reclassified": "mapai_reclassified.yaml",
+}
+
+def merge_dict(base, extension):
+    for k, v in extension.items():
+        if type(v) == dict:
+            v =  merge_dict(base[k], v)
+        base[k] = v
+    return base
+
+
+def get_dataset_config(opts):
+    dataset = opts["dataset"]
+    base_opts = load(open("config/datasets/base_dataset.yaml", "r"), Loader)
+    dataset_opts = load(open(f"config/datasets/{data_configs[dataset]}", "r"), Loader)
+
+    dataset_opts = merge_dict(base_opts, dataset_opts)
+    return dataset_opts
+

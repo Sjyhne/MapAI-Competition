@@ -12,17 +12,20 @@ import time
 # import cv2
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
-from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler, get_aug_names
+from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler, get_aug_names, get_dataset_config
 from transforms import valid_transform, get_lidar_transform
 from competition_toolkit.eval_functions import calculate_score
 from multiclass_metrics import calculate_multiclass_score
 import transforms
 
 transforms = transforms.__dict__
-def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=torchvision.transforms.InterpolationMode.BILINEAR, antialias=True, aux_head=False, erode=False):
+def test(test_opts, dataloader, model, lossfn, device, aux_loss=None, aux_head=False):
     model.eval()
 
-    device = device
+    interpolation_modes = {
+        "bicubic": torchvision.transforms.InterpolationMode.BICUBIC,
+        "bilinear": torchvision.transforms.InterpolationMode.BILINEAR
+    }
 
 
     losstotal = np.zeros((len(dataloader)), dtype=float)
@@ -50,7 +53,7 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
             lossesaux[idx] = loss_aux
 
         if label.shape[-2:] != output.shape[-2:]:
-            output = torchvision.transforms.functional.resize(output, (500, 500), interpolation=interpolation_mode, antialias=antialias)
+            output = torchvision.transforms.functional.resize(output, (500, 500), interpolation=interpolation_modes[test_opts["interpolation"]], antialias=test_opts["antialias"])
         losseg = lossfn(output, label).item()
         lossesseg[idx] = losseg
         losstotal[idx] = loss_aux + losseg
@@ -58,16 +61,18 @@ def test(dataloader, model, lossfn, device, aux_loss=None, interpolation_mode=to
         num_classes = output.shape[1]
         if output.shape[1] > 1:
             output = torch.argmax(torch.softmax(output, dim=1), dim=1)
-            if num_classes == 3:
+            if num_classes == 3: # mapai_lidar_masks
                 output[output == 2.0] = 0.0
-            elif num_classes == 4:
+            elif num_classes == 4: # mapai_reclassified
                 output[output == 2.0] = 1.0
                 output[output == 3.0] = 0.0
+            elif num_classes == 5: # landcover train
+                output[output != 1.0] = 0.0
         else:
             output = torch.round(torch.sigmoid(output)).squeeze(1)
         label = label.squeeze(1)
 
-        if erode:
+        if test_opts["erode_val_preds"]:
             kernel = torch.ones(5, 5).to(device)
             output = erosion(output.unsqueeze(1), kernel)
             output = dilation(output, kernel).squeeze(1)
@@ -121,7 +126,6 @@ def train(opts):
     aux_loss = torch.nn.BCEWithLogitsLoss()
 
     epochs = opts["train"]["epochs"]
-
 
     augmentation_cfg = opts["augmentation"]
     initial_transform = transforms[augmentation_cfg.get("initial", "normal")](opts["imagesize"])
@@ -224,7 +228,7 @@ def train(opts):
             scoretotal[idx] = trainmetrics["score"]
         scheduler.step()
 
-        testloss, testlossaux, testlosseg, testiou, testbiou, testscore = test(valloader, model, lossfn, device, aux_loss=aux_loss, aux_head=aux_head, erode=opts["erode_val_preds"])
+        testloss, testlossaux, testlosseg, testiou, testbiou, testscore = test(opts["testing"], valloader, model, lossfn, device, aux_loss=aux_loss, aux_head=aux_head)
         trainloss = round(losstotal.mean(), 4)
         trainlosseg = round(losses_seg.mean(), 4)
         trainlossaux = round(losses_aux.mean(), 4)
@@ -272,53 +276,22 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    singleclass = {}
-    threeclass = {
-        "use_lidar_in_mask": True,
-        "num_classes": 3,
-        "dataset": "lidar_masks"
-    }
-    fourclass = {
-        "num_classes": 4,
-        "data_dirs": {
-            "masks_train": "masks_reclassified"
-        },
-        "dataset": "masks_reclassified"
-    }
-    multihead = {
-        "model": {
-            "aux_head": True
-        },
-        "dataset": "multihead"
-    }
+    # Import config
+    opts = load(open(args.config, "r"), Loader)
 
-    ds_list = [threeclass, fourclass, multihead, singleclass]
+    # Combine args and opts in single dict
+    try:
+        opts = opts | vars(args)
+    except Exception as e:
+        opts = {**opts, **vars(args)}
 
-    for idx, ds_params in enumerate(ds_list):
-        # Import config
-        opts = load(open(args.config, "r"), Loader)
+    data_opts = get_dataset_config(opts)
 
-        # Combine args and opts in single dict
-        try:
-            opts = opts | vars(args)
-        except Exception as e:
-            opts = {**opts, **vars(args)}
+    opts.update(data_opts)
+            
+    rundir = create_run_dir(opts, opts.get("dataset", ""))
+    opts["rundir"] = rundir
+    print("Opts:", opts)
+    dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
-        if opts["use_lidar_in_mask"]:
-            opts["num_classes"] = 3
-
-        if idx < 2:
-            opts["training"]["losses"]["DiceLoss"]["init_params"]["mode"] = "multiclass"
-
-        for key, value in ds_params.items():
-            if type(value) == dict:
-                opts[key][list(value.keys())[0]] = list(value.values())[0]
-            else:
-                opts[key] = value
-        
-        rundir = create_run_dir(opts, opts.get("dataset", ""))
-        opts["rundir"] = rundir
-        print("Opts:", opts)
-        dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
-
-        train(opts)
+    train(opts)
