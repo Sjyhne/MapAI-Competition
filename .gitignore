@@ -6,6 +6,8 @@ __pycache__/
 *.tif
 *.png
 
+*/base_dataset.yaml
+
 # C extensions
 *.so
 
