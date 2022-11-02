@@ -6,7 +6,7 @@ import torch
 from tqdm import tqdm
 from custom_dataloader import create_dataloader
 from ensemble_model import EnsembleModel, load_models_from_runs
-from transforms import valid_transform, get_lidar_transform
+from transforms import valid_transform, LidarAugComposer
 from competition_toolkit.eval_functions import calculate_score
 import torchvision
 import yaml
@@ -32,7 +32,8 @@ def test_ensemble(opts):
     aux_head = opts["model"]["aux_head"]
     lidar_transform = None
     if opts["task"] == 2:
-        lidar_transform = get_lidar_transform(opts)
+        aug_getter = LidarAugComposer(opts)
+        _, lidar_transform = aug_getter.get_transforms()
 
     dataloader = create_dataloader(
         opts,

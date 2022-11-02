@@ -1,12 +1,113 @@
 
-# -------------------------------------------------------------------------------------------
-#  orignially from https://github.com/qubvel/open-cities-challenge/blob/master/src/datasets/transforms.py
-# -------------------------------------------------------------------------------------------
+
 import warnings
 import albumentations as A
 import numpy as np
-
+import random
 warnings.simplefilter("ignore")
+
+
+class LidarAugComposer():
+    def __init__(self, opts):
+        lidar_opts = opts["lidar_augs"]
+
+        lidar_augs = {
+            "dropout": self.dropout,
+            "random_scaling": self.random_scaling,
+            "random_offset": self.random_offset,
+            "random_noise": self.random_noise,
+        }
+
+        self.aug_list = []
+
+        if len(lidar_opts.get("other_augs", [])):
+            for t_name in lidar_opts["other_augs"]:
+                self.aug_list.append(lidar_augs[t_name])
+
+        if len(lidar_opts.get("one_of", [])) > 0:
+            self.one_of_transforms = [lidar_augs[t_name] for t_name in lidar_opts["one_of"]]
+            self.aug_list.append(self.one_of)    
+
+
+        self.clip_min = lidar_opts.get("clip_min", 0.0)
+        self.clip_max = lidar_opts.get("clip_max", 30.0)
+        self.norm = lidar_opts.get("norm", "max")
+        self.norm_basis = lidar_opts.get("norm_basis", "clip")
+        
+        self.opts = lidar_opts
+
+    def normalize_lidar(self, lidar):
+        if self.norm == "max":
+            return self.max_lidar_transform(lidar)
+        return self.min_max_lidar_transform(lidar)
+
+    def max_lidar_transform(self, lidar):
+        lidar = np.clip(lidar, self.clip_min, self.clip_max)
+        lidar = lidar / (self.clip_max if self.norm_basis == "clip" else np.max(lidar))
+        return lidar
+
+    def min_max_lidar_transform(self, lidar):
+        lidar = np.clip(lidar, self.clip_min, self.clip_max)
+        minimum = self.clip_min if self.norm_basis == "clip" else np.min(lidar)
+        maximum = self.clip_max if self.norm_basis == "clip" else np.min(lidar)
+        return (lidar - minimum) / (maximum - minimum)
+
+    def dropout(self, lidar):
+        dropout_opts = self.opts["dropout"]
+        if random.random() <= dropout_opts["p"]:
+            size = lidar.shape[1] * lidar.shape[0]
+            apply_indices = np.random.choice(size, replace=False, size=int(size * dropout_opts["pixel_frac"]))
+
+            if dropout_opts["min_replacement"] != dropout_opts["max_replacement"]:
+                replace_vals = np.random.uniform(dropout_opts["min_replacement"], dropout_opts["max_replacement"], size=int(size * dropout_opts["pixel_frac"]))
+            else:
+                replace_vals = dropout_opts["min_replacement"]
+            lidar[np.unravel_index(apply_indices, lidar.shape)] = replace_vals
+
+        return lidar
+
+    def random_scaling(self, lidar):
+        rs_opts = self.opts["random_scaling"]
+        if random.random() <= rs_opts["p"]:
+            scale = random.uniform(rs_opts["min_scale"], rs_opts["max_scale"])
+            return lidar * scale
+        return lidar
+
+    def random_noise(self, lidar):
+        rn_opts = self.opts["random_noise"]
+        if random.random() <= rn_opts["p"]:
+            noise = np.random.normal(scale=rn_opts["std"], size=lidar.shape)
+
+            if rn_opts["keep_zero"]:
+                noise[lidar == 0.0] = 0.0
+
+            lidar += noise
+        return lidar
+
+    def random_offset(self, lidar):
+        ro_opts = self.opts["random_offset"]
+        if random.random() <= ro_opts["p"]:
+            offset = random.uniform(ro_opts["min_offset"], ro_opts["max_offset"])
+            lidar[lidar >= ro_opts["min_height"]] += offset
+        return lidar
+        
+    def one_of(self, lidar):
+        r = random.random()
+        for i, transform in enumerate(self.one_of_transforms):
+            if r <= (i + 1) / len(self.one_of_transforms):
+                return transform(lidar)
+    
+    def lidar_transform(self, lidar):
+        for transform in self.aug_list:
+            lidar = transform(lidar)
+        return self.normalize_lidar(lidar)
+    
+    def get_transforms(self):
+        return self.lidar_transform, self.normalize_lidar
+
+# -------------------------------------------------------------------------------------------
+#  orignially from https://github.com/qubvel/open-cities-challenge/blob/master/src/datasets/transforms.py
+# -------------------------------------------------------------------------------------------
 
 # --------------------------------------------------------------------
 # Helpful functions
@@ -24,35 +125,6 @@ def p_transform(image, **kwargs):
 # --------------------------------------------------------------------
 
 post_transform = A.Lambda(name="post_transform", image=p_transform, mask=p_transform)
-
-def get_lidar_transform(opts):
-    lidar_augs = opts["lidar_augs"]
-    clip_min = lidar_augs.get("clip_min", 0.0)
-    clip_max = lidar_augs.get("clip_max", 30.0)
-    norm = lidar_augs.get("norm", "max")
-    norm_basis = lidar_augs.get("norm_basis", "clip")
-
-    if norm not in ["min_max", "max"]:
-        print(f"Norm {norm} not recognized. Can only normalize with clip_max or image_max")
-        exit()
-    if norm_basis not in ["clip", "image"]:
-        print(f"Norm_basis {norm} not recognized. Can only normalize with clip values or image maxima/minima")
-        exit()
-
-    if norm == "max":
-        def max_lidar_transform(lidar):
-            lidar = np.clip(lidar, clip_min, clip_max)
-            lidar = lidar / (clip_max if norm_basis == "clip" else np.max(lidar))
-            return lidar
-        return max_lidar_transform
-
-    def min_max_lidar_transform(lidar):
-        lidar = np.clip(lidar, clip_min, clip_max)
-        minimum = clip_min if norm_basis == "clip" else np.min(lidar)
-        maximum = clip_max if norm_basis == "clip" else np.min(lidar)
-        lidar = (lidar - minimum) / (maximum - minimum)
-        return lidar
-    return min_max_lidar_transform
 
 
 # crop 512

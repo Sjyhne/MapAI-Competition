@@ -13,7 +13,7 @@ import time
 #from competition_toolkit.dataloader import create_dataloader
 from custom_dataloader import create_dataloader
 from utils import create_run_dir, store_model_weights, record_scores, get_model, get_optimizer, get_losses, get_scheduler, get_aug_names, get_dataset_config
-from transforms import valid_transform, get_lidar_transform
+from transforms import valid_transform, LidarAugComposer
 from competition_toolkit.eval_functions import calculate_score
 from multiclass_metrics import calculate_multiclass_score
 import transforms
@@ -26,7 +26,6 @@ def test(test_opts, dataloader, model, lossfn, device, aux_loss=None, aux_head=F
         "bicubic": torchvision.transforms.InterpolationMode.BICUBIC,
         "bilinear": torchvision.transforms.InterpolationMode.BILINEAR
     }
-
 
     losstotal = np.zeros((len(dataloader)), dtype=float)
     lossesseg = np.zeros((len(dataloader)), dtype=float)
@@ -131,12 +130,13 @@ def train(opts):
     initial_transform = transforms[augmentation_cfg.get("initial", "normal")](opts["imagesize"])
     aug_list = get_aug_names(opts, augmentation_cfg, transforms)
 
-    lidar_transform = None
+    lidar_transform, lidar_valid = (None, None)
     if opts["task"] == 2:
-        lidar_transform = get_lidar_transform(opts)
+        getter = LidarAugComposer(opts)
+        lidar_transform, lidar_valid = getter.get_transforms()
 
     trainloader = create_dataloader(opts, "train", transforms=(initial_transform, lidar_transform), aux_head_labels=aux_head)
-    valloader = create_dataloader(opts, "validation", transforms=(valid_transform, lidar_transform), aux_head_labels=aux_head)
+    valloader = create_dataloader(opts, "validation", transforms=(valid_transform, lidar_valid), aux_head_labels=aux_head)
 
     bestscore = 0
 
