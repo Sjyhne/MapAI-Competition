@@ -67,7 +67,7 @@ def test(test_opts, dataloader, model, lossfn, device, aux_loss=None, aux_head=F
                 output[output == 2.0] = 1.0
                 output[output == 3.0] = 0.0
             elif num_classes == 5: # landcover train
-                output[output != 1.0] = 0.0
+                output[output > 1.0] = 0.0
         else:
             output = torch.round(torch.sigmoid(output)).squeeze(1)
         label = label.squeeze(1)
