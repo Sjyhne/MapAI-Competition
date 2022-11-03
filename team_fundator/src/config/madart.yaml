@@ -3,7 +3,7 @@ version: 1.0
 model:
   name: "UNet"
   encoder_depth: 5
-  encoder: "efficientnet-b4"
+  encoder: "timm-resnest50d"
   aux_head: False
   aux_head_params:
     classes: 1 # binary building / no building classification
@@ -11,22 +11,7 @@ model:
     dropout: 0.2 # default 0.0
 
 
-data_dirs:
-  root: '/home/ml/MapAI-Private/data/overlapping_data'
-  train: 'train'
-  validation: 'validation'
-  images: "images"
-  lidar: "lidar"
-  masks: "masks"
-
-erode_val_preds: False
-use_lidar_in_mask: False
-dataset: "mapai" # "mapai", "landcover", "open_cities", "mapai_multiclass"
-num_classes: 1 
-classes: ["background", "building"]
-class_to_color:
-  "background": 0
-  "building": 1
+dataset: 'mapai_lidar_masks' # mapai, mapai_reclassified, mapai_lidar_masks, landcover
 
 augmentation:
   initial: 'normal'  # None, 'normal', 'hard', 'very_hard'
@@ -34,11 +19,37 @@ augmentation:
   cycle: ["hard", "normal", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
-  clip_min: -1.0
+  clip_min: -1.0 # normalizing (always applied as the last augmentation)
   clip_max: 30.0
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
 
+  other_augs: ["dropout", "random_noise"] # always applied first, in order
+  one_of: ["random_offset", "random_scaling"]
+
+  dropout:
+    p: 0.5 # with probability p,  num_pixels * pixel_prob pixels are dropped
+    pixel_frac: 0.01
+    min_replacement: -5.0
+    max_replacement: 0.0
+
+  random_noise:
+    p: 0.5 # with probability p, add gaussian noise
+    std: 0.2 # std in meters
+    keep_zero: True # do not add noise to orthorectified ground where lidar = 0
+
+  random_offset:
+    p: 0.5 # with probability p, add a an offset to all pixels greater than min_height
+    min_offset: 0.0
+    max_offset: 2.0
+    min_height: 3.5
+
+  random_scaling:
+    p: 0.5
+    min_scale: 0.85
+    max_scale: 1.15
+
+imagesize: 768 
 training:
   losses:
     # "DiceLoss": smp.losses.DiceLoss,
@@ -46,11 +57,10 @@ training:
     # "TverskyLoss": smp.losses.TverskyLoss,
     # "FocalLoss": smp.losses.FocalLoss,
     # "LovaszLoss": smp.losses.LovaszLoss,
-    # "SoftBCEWithLogitsLoss": smp.losses.SoftBCEWithLogitsLoss,
-    # "SoftCrossEntropyLoss": smp.losses.SoftCrossEntropyLoss
-    names: ['SoftCrossEntropyLoss']
+    # "CrossEntropy": smp.losses.SoftBCEWithLogitsLoss, OR smp.losses.SoftCrossEntropyLoss if num_classes > 1
+    names: ['CrossEntropy']
     weights: [1.0]
-    SoftCrossEntropyLoss:
+    CrossEntropy:
       init_params:
         smooth_factor: 0.01
 
@@ -62,25 +72,26 @@ training:
   scheduler:
     name: MultiStep # PolyLR, MultiStep
     init_params:
-      milestones: [4]
+      milestones: [3]
   # fit:
   #   epochs: 50
   #   accumulation_steps: 4
 
-imagesize: 768
 
-# label_downscale: Bilinear # Bicubic, Bilinear
-# antialiased_downscaling: True # Bicubic, and Bilinear only
+testing:
+  interpolation: bilinear # bicubic, bilinear
+  antialias: True
+  erode_val_preds: True
 
 train:
   epochs: 8
   batchsize: 6 
   shuffle: True
-  num_workers: 8
-  data_ratio: 0.5
+  num_workers: 2
+  data_ratio: 0.4
 
 validation:
-  batchsize: 2  
+  batchsize: 6
   shuffle: False
-  num_workers: 8
+  num_workers: 0
   data_ratio: 1.0
