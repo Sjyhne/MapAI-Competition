@@ -110,7 +110,7 @@ def get_model(opts):
     if "in_channels" not in model_cfg:
         model_cfg["in_channels"] = 4 if int(opts["task"]) == 2 else 3
     if opts["task"] == 3:
-        model_cfg["aux_head"] = False
+        model_cfg["in_channels"] = 1
 
     aux_params = model_cfg["aux_head_params"] if model_cfg["aux_head"] else None
 
@@ -146,6 +146,9 @@ def get_scheduler(opts, optimizer):
 
 def get_aug_names(opts, augmentation_cfg, transforms):
     aug_list = []
+    if opts["task"] == 3:
+        return ["lidar_task3_augs"] * opts["train"]["epochs"]
+        
     for i in range(opts["train"]["epochs"]):
         if i >= augmentation_cfg["warmup_epochs"]:
             aug = augmentation_cfg["cycle"][(i - augmentation_cfg["warmup_epochs"]) % len(augmentation_cfg["cycle"])]

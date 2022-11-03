@@ -131,7 +131,7 @@ def train(opts):
     aug_list = get_aug_names(opts, augmentation_cfg, transforms)
 
     lidar_transform, lidar_valid = (None, None)
-    if opts["task"] == 2:
+    if opts["task"] != 1:
         getter = LidarAugComposer(opts)
         lidar_transform, lidar_valid = getter.get_transforms()
 
@@ -275,23 +275,25 @@ if __name__ == "__main__":
     parser.add_argument("--weights", type=str, default=None)
 
     args = parser.parse_args()
+    DATASETS = ["mapai_lidar_masks"]
+    for dataset in DATASETS:
+        # Import config
+        opts = load(open(args.config, "r"), Loader)
 
-    # Import config
-    opts = load(open(args.config, "r"), Loader)
+        # Combine args and opts in single dict
+        try:
+            opts = opts | vars(args)
+        except Exception as e:
+            opts = {**opts, **vars(args)}
 
-    # Combine args and opts in single dict
-    try:
-        opts = opts | vars(args)
-    except Exception as e:
-        opts = {**opts, **vars(args)}
+        opts["dataset"] = dataset
+        data_opts = get_dataset_config(opts)
 
-    data_opts = get_dataset_config(opts)
+        opts.update(data_opts)
+                
+        rundir = create_run_dir(opts, opts.get("dataset", ""))
+        opts["rundir"] = rundir
+        print("Opts:", opts)
+        dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
-    opts.update(data_opts)
-            
-    rundir = create_run_dir(opts, opts.get("dataset", ""))
-    opts["rundir"] = rundir
-    print("Opts:", opts)
-    dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
-
-    train(opts)
+        train(opts)

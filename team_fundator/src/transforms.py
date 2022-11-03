@@ -144,6 +144,9 @@ test_transform = A.Compose([
     post_transform,
 ])
 
+def lidar_task3_augs(image_size):
+    return A.Flip(p=0.75)
+
 # crop 768 (original) and hard augs
 # ommited stage: crop 1024 (original) and same hard augs
 def hard(image_size):
@@ -185,7 +188,7 @@ def hard(image_size):
 def very_hard(image_size):
     return A.Compose([
         A.ShiftScaleRotate(scale_limit=0.2, rotate_limit=45, border_mode=0, value=0, p=0.7),
-        A.PadIfNeeded(512, 512, border_mode=0, value=0, p=1.),
+        A.PadIfNeeded(image_size, image_size, border_mode=0, value=0, p=1.),
         A.RandomCrop(image_size, image_size, p=1.),
         A.Flip(p=0.75),
         A.Downscale(scale_min=0.5, scale_max=0.75, p=0.05),

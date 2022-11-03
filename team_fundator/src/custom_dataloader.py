@@ -49,7 +49,7 @@ def load_lidar(lidarpath: str, size: tuple) -> torch.tensor:
     lidar = cv.imread(lidarpath, cv.IMREAD_UNCHANGED)
     lidar = cv.resize(lidar, size)
 
-    lidar = lidar.astype(np.float)
+    lidar = lidar.astype(np.float32)
 
     return lidar
 
@@ -141,13 +141,17 @@ class ImageLabelAndLidarDataset(Dataset):
                  datatype: str = "validation",
                  transform=None,
                  lidar_transform=None,
-                 aux_head_labels=False):
+                 aux_head_labels=False,
+                 use_lidar_in_mask=False,
+                 lidar_only=False):
 
         self.opts = opts
         self.transform = transform
         self.lidar_transform = lidar_transform
         self.ratio = self.opts[datatype]["data_ratio"]
         self.aux_head_labels = aux_head_labels
+        self.lidar_only = lidar_only
+        self.use_lidar_in_mask = use_lidar_in_mask
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
@@ -180,28 +184,39 @@ class ImageLabelAndLidarDataset(Dataset):
 
         filename = imagefilepath.split("/")[-1]
 
-        image = load_image(imagefilepath, self.image_size)
+        image = None
+        if not self.lidar_only:
+            image = load_image(imagefilepath, self.image_size)
         label = load_label(labelfilepath, self.label_size)
         lidar = load_lidar(lidarfilepath, self.image_size)
 
-        # assert image.shape[:2] == label.shape[
-        #                           :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
-        assert image.shape[:2] == lidar.shape[
-                                  :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
 
-        if self.transform is not None:
+        if self.use_lidar_in_mask:
+            label[lidar == 0.0] = 2
+
+        if self.transform is not None and not self.lidar_only:
             aug_sample = self.transform(image=image,  masks=[label, lidar]) # apply lidar augmentations as if it is a mask
             
             label, lidar = aug_sample['masks']
             image = aug_sample['image']
             assert image.dtype == lidar.dtype
+        elif self.lidar_only:
+            aug_sample = self.transform(image=lidar,  mask=label) # apply lidar augmentations as if it is an image
+            label= aug_sample['mask']
+            lidar = aug_sample['image']
         else:
             image = image.transpose(2, 0, 1)
 
+
+
         # Concatenate lidar and image data
         lidar = self.lidar_transform(lidar)
-        lidar = np.expand_dims(lidar, 0)
-        image = np.concatenate((image, lidar), axis=0)
+        if not self.lidar_only:
+            lidar = np.expand_dims(lidar, 0)
+            image = np.concatenate((image, lidar), axis=0)
+        else:
+            image = np.expand_dims(lidar, 0) # Use lidar as input, instead of image
+
 
 
         sample = dict(
@@ -224,74 +239,6 @@ class ImageLabelAndLidarDataset(Dataset):
     def set_transform(self, transform):
         self.transform = transform
 
-class ImageAndLidarDataset(Dataset):
-
-    def __init__(self,
-                 opts: dict,
-                 datatype: str = "validation",
-                 transform=None):
-
-        self.opts = opts
-        self.transform = transform
-        self.ratio = self.opts[datatype]["data_ratio"]
-
-        root = opts["data_dirs"]["root"]
-        folder = opts["data_dirs"][datatype]
-        self.image_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['images']}").glob("*.tif"))
-        self.lidar_paths = sorted(pathlib.Path(f"{root}/{folder}/{opts['data_dirs']['lidar']}").glob("*.tif"))
-
-        self.image_size = (opts["imagesize"], opts["imagesize"])
-
-        assert len(self.image_paths) == len(self.lidar_paths) 
-        print(
-            f"Using number of images in {datatype}dataset: {int(len(self.image_paths) * self.ratio)}/{len(self.image_paths) }")
-
-    def __len__(self):
-        return int(len(self.image_paths) * self.ratio)
-
-    def __getitem__(self, idx):
-        imagefilepath = self.image_paths[idx].as_posix()
-        lidarfilepath = self.lidar_paths[idx].as_posix()
-
-        assert imagefilepath.split("/")[-1] == lidarfilepath.split("/")[
-            -1], f"imagefilename and labelfilename does not match; {imagefilepath.split('/')[-1]} != {lidarfilepath.split('/')[-1]}"
-
-        filename = imagefilepath.split("/")[-1]
-
-        image = load_image(imagefilepath, self.image_size)
-        lidar = load_lidar(lidarfilepath, self.image_size)
-
-        # assert image.shape[:2] == label.shape[
-        #                           :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
-        assert image.shape[:2] == lidar.shape[
-                                  :2], f"image and label shape not the same; {image.shape[1:]} != {lidar.shape[:2]}"
-
-        if self.transform is not None:
-            aug_sample = self.transform(image=image,  mask=lidar) # apply lidar augmentations as if it is a mask
-            
-            lidar = aug_sample['mask']
-            image = aug_sample['image']
-        else:
-            image = image.transpose(2, 0, 1)
-
-        lidar = (lidar == 0).astype(np.int64)
-        
-        sample = dict(
-            id=filename,
-            image=image,
-            mask=np.expand_dims(lidar, 0),
-        )
-        # image2 = image.transpose(1, 2, 0)[:, :, :3].astype(np.float32) * 255
-        # print(np.max(image2), np.max(label), np.max(lidar))
-        # print(image.shape)
-        # cv.imwrite("datatest/image.png", image2.astype(np.uint8))
-        # cv.imwrite("datatest/lidar.tif", lidar.transpose(1, 2, 0).astype(np.float32))
-        # cv.imwrite("datatest/label.tif", np.expand_dims(label, -1).astype(np.float32))
-        # exit()
-        return sample
-    
-    def set_transform(self, transform):
-        self.transform = transform
 
 class TestDataset(Dataset):
     def __init__(self,
@@ -318,16 +265,11 @@ class TestDataset(Dataset):
 
 def create_dataloader(opts: dict, datatype: str = "test", transforms=None, aux_head_labels=False) -> DataLoader:
     image_transforms, lidar_transform = transforms
+    use_lidar_in_mask = datatype == "train" and opts.get("use_lidar_in_mask", False)
     if opts["task"] == 1:
-        use_lidar_in_mask = datatype == "train" and opts.get("use_lidar_in_mask", False)
         dataset = ImageAndLabelDataset(opts, datatype, image_transforms, aux_head_labels, use_lidar_in_mask)
-    elif opts["task"] == 2:
-        dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels)
-    elif opts["task"] == 3:
-        if aux_head_labels:
-            print("aux_head_labels = True is not supported with task 3!")
-            exit()
-        dataset = ImageAndLidarDataset(opts, datatype, image_transforms)
+    else:
+        dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels, use_lidar_in_mask, lidar_only=opts["task"] == 3)
 
     dataloader = DataLoader(dataset, batch_size=opts[datatype]["batchsize"], shuffle=opts[datatype]["shuffle"], num_workers=opts[datatype]["num_workers"])
 
