@@ -140,14 +140,14 @@ def get_scheduler(opts, optimizer):
     schedule_cfg = opts["training"]["scheduler"]
     scheduler = schedule_cfg.get("name", "PolyLR")
 
-    init_params = schedule_cfg.get("init_params", {"epochs": opts["epochs"]} if scheduler == "PolyLR" else {"milestones": [int(opts["epochs"] * 0.8)]})
+    init_params = schedule_cfg.get("init_params", {"epochs": opts["train"]["epochs"]} if scheduler == "PolyLR" else {"milestones": [int(opts["train"]["epochs"] * 0.8)]})
 
     return schedules[scheduler](optimizer, **init_params)
 
 def get_aug_names(opts, augmentation_cfg, transforms):
     aug_list = []
-    if opts["task"] == 3:
-        return ["lidar_task3_augs"] * opts["train"]["epochs"]
+    if opts["task"] > 2:
+        return ["task3_and_4_augs"] * opts["train"]["epochs"]
         
     for i in range(opts["train"]["epochs"]):
         if i >= augmentation_cfg["warmup_epochs"]:

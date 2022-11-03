@@ -127,11 +127,11 @@ def train(opts):
     epochs = opts["train"]["epochs"]
 
     augmentation_cfg = opts["augmentation"]
-    initial_transform = transforms[augmentation_cfg.get("initial", "normal")](opts["imagesize"])
     aug_list = get_aug_names(opts, augmentation_cfg, transforms)
+    initial_transform = transforms[aug_list[0]](opts["imagesize"])
 
     lidar_transform, lidar_valid = (None, None)
-    if opts["task"] != 1:
+    if opts["task"] != 1 and opts["task"] != 4:
         getter = LidarAugComposer(opts)
         lidar_transform, lidar_valid = getter.get_transforms()
 
@@ -170,8 +170,7 @@ def train(opts):
             else:
                 filename, image, label = batch.values()
             image = image.to(device)
-            label = label.long().to(device) 
-
+            label = label.long().to(device)
 
             loss_aux = 0
             output = model(image)
@@ -269,7 +268,6 @@ def train(opts):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--task", type=int, default=1)
     parser.add_argument("--weights", type=str, default=None)

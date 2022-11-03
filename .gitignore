@@ -5,6 +5,8 @@ __pycache__/
 
 *.tif
 *.png
+*.pickle
+*.npy
 
 */base_dataset.yaml
 
