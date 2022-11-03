@@ -2,8 +2,9 @@ import glob
 from pathlib import Path
 from typing import List, Union
 import torch
+import yaml
 
-from team_fundator.src.utils import get_model
+from utils import get_model
 
 
 class EnsembleModel(torch.nn.Module):
@@ -18,7 +19,7 @@ class EnsembleModel(torch.nn.Module):
         model_preds = []
         for model in self.models:
             y = model(x)
-            model_preds.append(y.to("cpu"))
+            model_preds.append(y)  # .to("cpu"))
             if result is None:
                 result = y
             else:
@@ -42,8 +43,10 @@ def load_models_from_runs(
         raise ValueError(
             f'Invalid run numbers argument: {run_numbers}. Must be "*" or list of run numbers'
         )
-    configs = [f"{run}/opts.yaml" for run in run_folders]
-    checkpoints = [f"{run}/best*.pt" for run in run_folders]  # TODO: Fix this
+    configs = [
+        yaml.load(open(f"{run}/opts.yaml", "r"), yaml.Loader) for run in run_folders
+    ]
+    checkpoints = [torch.load(glob.glob(f"{run}/best*.pt")[0]) for run in run_folders]
     models = []
     for config, checkpoint in zip(configs, checkpoints):
         model = get_model(config)
