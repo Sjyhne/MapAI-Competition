@@ -3,7 +3,7 @@ version: 1.0
 model:
   name: "UNet"
   encoder_depth: 5
-  encoder: "timm-resnest50d"
+  encoder: "timm-resnest26d"
   aux_head: False
   aux_head_params:
     classes: 1 # binary building / no building classification
@@ -16,7 +16,7 @@ dataset: 'mapai_lidar_masks' # mapai, mapai_reclassified, mapai_lidar_masks, lan
 augmentation:
   initial: 'normal'  # None, 'normal', 'hard', 'very_hard'
   warmup_epochs: 3 # number of epochs before switching to augmentation cycle
-  cycle: ["hard", "normal", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
+  cycle: ["hard", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
   clip_min: -1.0 # normalizing (always applied as the last augmentation)
@@ -58,11 +58,11 @@ training:
     # "FocalLoss": smp.losses.FocalLoss,
     # "LovaszLoss": smp.losses.LovaszLoss,
     # "CrossEntropy": smp.losses.SoftBCEWithLogitsLoss, OR smp.losses.SoftCrossEntropyLoss if num_classes > 1
-    names: ['CrossEntropy']
+    names: ['JaccardLoss']
     weights: [1.0]
     CrossEntropy:
       init_params:
-        smooth_factor: 0.01
+        mode: "binary"
 
   optimizer:
     name: RAdam # Adam, SGD, RAdam, AdamWarmup
@@ -84,14 +84,14 @@ testing:
   erode_val_preds: True
 
 train:
-  epochs: 8
-  batchsize: 6 
+  epochs: 15
+  batchsize: 12 
   shuffle: True
   num_workers: 2
   data_ratio: 0.4
 
 validation:
-  batchsize: 6
+  batchsize: 8
   shuffle: False
-  num_workers: 0
+  num_workers: 6
   data_ratio: 1.0
