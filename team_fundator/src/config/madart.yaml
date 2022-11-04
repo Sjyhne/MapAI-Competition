@@ -3,7 +3,7 @@ version: 1.0
 model:
   name: "UNet"
   encoder_depth: 5
-  encoder: "timm-resnest50d"
+  encoder: "timm-resnest26d"
   aux_head: False
   aux_head_params:
     classes: 1 # binary building / no building classification
@@ -19,13 +19,13 @@ augmentation:
   cycle: ["hard", "normal", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
-  clip_min: -1.0 # normalizing (always applied as the last augmentation)
-  clip_max: 30.0
+  clip_min: -5.0 # normalizing (always applied as the last augmentation)
+  clip_max: 40.0
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
 
-  other_augs: ["dropout", "random_noise"] # always applied first, in order
-  one_of: ["random_offset", "random_scaling"]
+  other_augs: [] # always applied first, in order
+  one_of: [] # ["random_offset", "random_scaling"]
 
   dropout:
     p: 0.5 # with probability p,  num_pixels * pixel_prob pixels are dropped
@@ -49,7 +49,7 @@ lidar_augs:
     min_scale: 0.85
     max_scale: 1.15
 
-imagesize: 768 
+imagesize: 512
 training:
   losses:
     # "DiceLoss": smp.losses.DiceLoss,
@@ -58,11 +58,11 @@ training:
     # "FocalLoss": smp.losses.FocalLoss,
     # "LovaszLoss": smp.losses.LovaszLoss,
     # "CrossEntropy": smp.losses.SoftBCEWithLogitsLoss, OR smp.losses.SoftCrossEntropyLoss if num_classes > 1
-    names: ['CrossEntropy']
+    names: ['JaccardLoss']
     weights: [1.0]
-    CrossEntropy:
+    JaccardLoss:
       init_params:
-        smooth_factor: 0.01
+        mode: "multiclass"
 
   optimizer:
     name: RAdam # Adam, SGD, RAdam, AdamWarmup
@@ -70,7 +70,7 @@ training:
       lr: 0.0001
 
   scheduler:
-    name: MultiStep # PolyLR, MultiStep
+    name: PolyLR # PolyLR, MultiStep
     init_params:
       milestones: [3]
   # fit:
@@ -84,14 +84,14 @@ testing:
   erode_val_preds: True
 
 train:
-  epochs: 8
-  batchsize: 6 
+  epochs: 12
+  batchsize: 4
   shuffle: True
-  num_workers: 2
-  data_ratio: 0.4
+  num_workers: 10
+  data_ratio: 0.2
 
 validation:
-  batchsize: 6
+  batchsize: 8
   shuffle: False
-  num_workers: 0
+  num_workers: 6
   data_ratio: 1.0

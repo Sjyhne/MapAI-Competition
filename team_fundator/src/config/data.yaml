@@ -3,7 +3,7 @@ version: 1.0
 model:
   name: "UNet"
   encoder_depth: 5
-  encoder: "efficientnet-b4"
+  encoder: "timm-resnest26d"
   aux_head: False
   aux_head_params:
     classes: 1 # binary building / no building classification
@@ -19,13 +19,13 @@ augmentation:
   cycle: ["hard", "normal", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
-  clip_min: -1.0 # normalizing (always applied as the last augmentation)
-  clip_max: 30.0
+  clip_min: -5.0 # normalizing (always applied as the last augmentation)
+  clip_max: 40.0
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
 
-  other_augs: ["dropout", "random_noise"] # always applied first, in order
-  one_of: ["random_offset", "random_scaling"]
+  other_augs: [] # always applied first, in order
+  one_of: []
 
   dropout:
     p: 0.5 # with probability p,  num_pixels * pixel_prob pixels are dropped
@@ -58,11 +58,11 @@ training:
     # "FocalLoss": smp.losses.FocalLoss,
     # "LovaszLoss": smp.losses.LovaszLoss,
     # "CrossEntropy": smp.losses.SoftBCEWithLogitsLoss, OR smp.losses.SoftCrossEntropyLoss if num_classes > 1
-    names: ['CrossEntropy']
+    names: ['JaccardLoss']
     weights: [1.0]
-    CrossEntropy:
+    JaccardLoss:
       init_params:
-        smooth_factor: 0.01
+        mode: "multiclass"
 
   optimizer:
     name: RAdam # Adam, SGD, RAdam, AdamWarmup
@@ -85,13 +85,13 @@ testing:
 
 train:
   epochs: 6
-  batchsize: 2
+  batchsize: 4
   shuffle: True
-  num_workers: 2
+  num_workers: 3
   data_ratio: 0.2
 
 validation:
-  batchsize: 2
+  batchsize: 4
   shuffle: False
-  num_workers: 0
+  num_workers: 2
   data_ratio: 1.0

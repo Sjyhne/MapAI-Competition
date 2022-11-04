@@ -263,9 +263,6 @@ def train(opts):
         record_scores(opts, scoredict)
 
 
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Training a segmentation model")
 
@@ -275,22 +272,36 @@ if __name__ == "__main__":
     parser.add_argument("--weights", type=str, default=None)
 
     args = parser.parse_args()
-    # Import config
-    opts = load(open(args.config, "r"), Loader)
+    
+    clip1 = {
+        "dropout": [0.01, 0.02, 0.05],
+        "random_noise": [0.05, 0.1, 0.2, 0.4]
+    }
 
-    # Combine args and opts in single dict
-    try:
-        opts = opts | vars(args)
-    except Exception as e:
-        opts = {**opts, **vars(args)}
+    lidar_clips = [("dropout", "pixel_frac"), ("random_noise", "std")]
 
-    data_opts = get_dataset_config(opts)
+    for aug, key in lidar_clips:
+        # Import config
+        for param in clip1[aug]:
+            opts = load(open(args.config, "r"), Loader)
 
-    opts.update(data_opts)
+            # Combine args and opts in single dict
+            try:
+                opts = opts | vars(args)
+            except Exception as e:
+                opts = {**opts, **vars(args)}
+
+            opts["lidar_augs"]["other_augs"] = [aug]
+            opts["lidar_augs"][aug][key] = param
+
+            data_opts = get_dataset_config(opts)
+
+            opts.update(data_opts)
+                    
+            rundir = create_run_dir(opts, opts.get("dataset", "") + aug)
+            opts["rundir"] = rundir
+            print("Opts:", opts)
             
-    rundir = create_run_dir(opts, opts.get("dataset", ""))
-    opts["rundir"] = rundir
-    print("Opts:", opts)
-    dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
+            dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
-    train(opts)
+            train(opts)
