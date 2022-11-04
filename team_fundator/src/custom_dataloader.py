@@ -5,7 +5,8 @@ import os
 import torch
 import cv2 as cv
 import numpy as np
-import math
+import pickle
+
 def get_paths_from_folder(folder: str) -> list:
     allowed_filetypes = ["jpg", "jpeg", "png", "tif", "tiff"]
 
@@ -53,6 +54,12 @@ def load_lidar(lidarpath: str, size: tuple) -> torch.tensor:
 
     return lidar
 
+def load_ensemble_pred(picklepath):
+    handle = open(picklepath, 'rb')
+    data = pickle.load(handle)
+    # data = [tens.detach().numpy() for tens in data]
+    data = np.vstack(data)
+    return data
 
 class ImageAndLabelDataset(Dataset):
 
@@ -208,7 +215,6 @@ class ImageLabelAndLidarDataset(Dataset):
             image = image.transpose(2, 0, 1)
 
 
-
         # Concatenate lidar and image data
         lidar = self.lidar_transform(lidar)
         if not self.lidar_only:
@@ -240,6 +246,89 @@ class ImageLabelAndLidarDataset(Dataset):
         self.transform = transform
 
 
+class EnsembleDataset(Dataset):
+
+    def __init__(self,
+                 opts: dict,
+                 datatype: str = "validation",
+                 transforms=None,
+                 aux_head_labels=False,
+                 use_lidar_in_mask=False):
+
+        self.opts = opts
+        self.aux_head_labels = aux_head_labels
+        self.use_lidar_in_mask = use_lidar_in_mask
+        self.ratio = self.opts[datatype]["data_ratio"]
+        self.datatype = datatype
+
+        root = opts["data_dirs"]["root"]
+        base_root = opts["data_dirs"]["base_root"]
+        folder = opts["data_dirs"][datatype]
+        
+        mask_dir = opts['data_dirs']['masks'] if datatype == "validation" or "masks_train" not in opts['data_dirs'] else opts['data_dirs']['masks_train'] 
+
+        self.pickle_paths = sorted(pathlib.Path(f"{base_root}/ensembles/task{opts['ensemble_task']}/{opts['ensemble_name']}/{datatype}").glob("*.pickle"))
+        mask_root = pathlib.Path(f"{root}/{folder}/{mask_dir}")
+        self.mask_paths = sorted([mask_root / pickle_filename.with_suffix(".tif").name for pickle_filename in self.pickle_paths])     
+
+        self.lidar_paths = None
+        if self.use_lidar_in_mask:
+            lidar_root = f"{root}/{folder}/{opts['data_dirs']['lidar']}"
+
+            self.lidar_paths = sorted([lidar_root / pickle_filename.stem + ".tif" for pickle_filename in self.pickle_paths])   
+            assert len(self.pickle_paths)  == len(self.lidar_paths) 
+
+        self.label_size = (opts["imagesize"], opts["imagesize"]) if datatype == "train" else (500, 500)
+        assert len(self.pickle_paths)  == len(self.mask_paths) 
+        print()
+
+        print(
+            f"Using number of images in {datatype}dataset: {int(len(self.pickle_paths) * self.ratio)}/{len(self.pickle_paths) }")
+        self.transform = transforms
+    
+    def __len__(self):
+        return int(len(self.pickle_paths) * self.ratio)
+
+    def __getitem__(self, idx):
+
+        picklefilepath = self.pickle_paths[idx].as_posix()
+        labelfilepath = self.mask_paths[idx].as_posix()
+
+        if self.use_lidar_in_mask:
+            lidarfilepath = self.lidar_paths[idx].as_posix()
+            assert picklefilepath.split("/")[-1][:-7] == lidarfilepath.split("/")[
+                -1][:-4], f"imagefilename and labelfilename does not match; {picklefilepath.split('/')[-1]} != {lidarfilepath.split('/')[-1]}"
+            lidar = load_lidar(lidarfilepath, self.label_size)
+
+        assert picklefilepath.split("/")[-1][:-7] == labelfilepath.split("/")[
+            -1][:-4], f"imagefilename and labelfilename does not match; {picklefilepath.split('/')[-1]} != {labelfilepath.split('/')[-1]}"
+
+        filename = picklefilepath.split("/")[-1]
+
+        image = load_ensemble_pred(picklefilepath)
+        label = load_label(labelfilepath, self.label_size)
+        
+        if self.use_lidar_in_mask:
+            label[lidar == 0.0] = 2
+
+        sample = dict(
+            id=filename,
+            image=image,
+            mask=label,
+        )
+
+
+        if self.transform is not None and self.datatype == "train":
+            sample = self.transform(**sample)
+
+        if self.aux_head_labels:
+            sample["aux_label"] = np.expand_dims(np.any(label == 1.0), 0).astype(np.float32)
+        sample["mask"] = np.expand_dims(sample["mask"], 0)
+        return sample
+    
+    def set_transform(self, transform):
+        self.transform = transform
+
 class TestDataset(Dataset):
     def __init__(self,
                  opts: dict,
@@ -268,6 +357,8 @@ def create_dataloader(opts: dict, datatype: str = "test", transforms=None, aux_h
     use_lidar_in_mask = datatype == "train" and opts.get("use_lidar_in_mask", False)
     if opts["task"] == 1:
         dataset = ImageAndLabelDataset(opts, datatype, image_transforms, aux_head_labels, use_lidar_in_mask)
+    elif opts["task"] == 4:
+        dataset = EnsembleDataset(opts, datatype, image_transforms, aux_head_labels, use_lidar_in_mask)
     else:
         dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels, use_lidar_in_mask, lidar_only=opts["task"] == 3)
 

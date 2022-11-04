@@ -144,8 +144,9 @@ test_transform = A.Compose([
     post_transform,
 ])
 
-def lidar_task3_augs(image_size):
+def task3_and_4_augs(image_size):
     return A.Flip(p=0.75)
+
 
 # crop 768 (original) and hard augs
 # ommited stage: crop 1024 (original) and same hard augs

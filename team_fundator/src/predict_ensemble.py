@@ -10,6 +10,7 @@ from transforms import valid_transform, LidarAugComposer
 from competition_toolkit.eval_functions import calculate_score
 import torchvision
 import yaml
+from utils import get_dataset_config
 
 
 def test_ensemble(opts):
@@ -29,9 +30,8 @@ def test_ensemble(opts):
     model.eval()
 
     # Load data
-    aux_head = opts["model"]["aux_head"]
     lidar_transform = None
-    if opts["task"] == 2:
+    if opts["task"] != 1:
         aug_getter = LidarAugComposer(opts)
         _, lidar_transform = aug_getter.get_transforms()
 
@@ -39,7 +39,7 @@ def test_ensemble(opts):
         opts,
         "validation",
         transforms=(valid_transform, lidar_transform),
-        aux_head_labels=aux_head,
+        aux_head_labels=False,
     )
 
     ioutotal = np.zeros((len(models) + 1, len(dataloader)), dtype=float)
@@ -49,11 +49,7 @@ def test_ensemble(opts):
     for idx, batch in tqdm(
         enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"
     ):
-        if aux_head:
-            image, label, aux_label = batch.values()
-            aux_label = aux_label.to(device)
-        else:
-            image, label = batch.values()
+        filename, image, label = batch.values()
         image = image.to(device)
         label = label.long().to(device)
 
@@ -74,10 +70,19 @@ def test_ensemble(opts):
             ]
 
         for i in range(len(model_preds)):
+            num_classes = model_preds[i].shape[1]
+            
             if model_preds[i].shape[1] > 1:
                 model_preds[i] = torch.argmax(
                     torch.softmax(model_preds[i], dim=1), dim=1
                 )
+                if num_classes == 3: # mapai_lidar_masks
+                    model_preds[i][model_preds[i] == 2.0] = 0.0
+                elif num_classes == 4: # mapai_reclassified
+                    model_preds[i][model_preds[i] == 2.0] = 1.0
+                    model_preds[i][model_preds[i] == 3.0] = 0.0
+                elif num_classes == 5: # landcover train
+                    model_preds[i][model_preds[i] > 1.0] = 0.0
             else:
                 model_preds[i] = torch.round(torch.sigmoid(model_preds[i])).squeeze(1)
         label = label.squeeze(1)
@@ -130,22 +135,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser("Testing of ensemble model")
 
     parser.add_argument(
-        "--epochs", type=int, default=10, help="Number of epochs for training"
-    )
-    parser.add_argument(
         "--config",
         type=str,
         default="config/data.yaml",
         help="Configuration file to be used",
     )
     parser.add_argument("--task", type=int, default=1)
-    parser.add_argument("--weights", type=str, default=None)
 
     args = parser.parse_args()
 
     # Import config
     opts = yaml.load(open(args.config, "r"), yaml.Loader)
 
+    data_opts = get_dataset_config(opts)
+
+    opts.update(data_opts)
     # Combine args and opts in single dict
     try:
         opts = opts | vars(args)
@@ -153,7 +157,5 @@ if __name__ == "__main__":
         opts = {**opts, **vars(args)}
 
     print("Opts:", opts)
-    if opts["use_lidar_as_mask"]:
-        opts["num_classes"] = 3
 
     test_ensemble(opts)

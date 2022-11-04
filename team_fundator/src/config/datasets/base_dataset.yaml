@@ -1,5 +1,6 @@
 
 data_dirs:
+  base_root: './data'
   root: './data/mapai'
   train: 'train'
   validation: 'validation'
