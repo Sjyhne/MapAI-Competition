@@ -1,4 +1,5 @@
 import os
+from symbol import break_stmt
 
 import numpy as np
 from yaml import load, dump, Loader, Dumper
@@ -58,10 +59,14 @@ def test(opts, dataloader, model, lossfn, get_output):
 def train(opts):
     device = opts["device"]
 
-    # model, get_output = load_unet(opts)
+    model, get_output = load_unet(opts)
     # model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
-    model, get_output = load_resnet101(opts)
+    # model, get_output = load_resnet101(opts)
+
+    #Load state dict from options resume
+    if opts["resume"] is not None:
+        model.load_state_dict(torch.load(opts["resume"]))
 
 
     if opts["task"] == 2:
@@ -74,18 +79,18 @@ def train(opts):
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
     # lossfn = torch.nn.CrossEntropyLoss()
     # lossfn = torch.nn.BCELoss()
-    lossfn = DiceLoss(mode="binary")
+    lossfn = DiceLoss(mode="multiclass")
 
 
     epochs = opts["epochs"]
 
-    trainloader = create_dataloader(opts, "train")
+    #trainloader = create_dataloader(opts, "train")
     valloader = create_dataloader(opts, "validation")
 
     bestscore = 0
 
     for e in range(epochs):
-
+        trainloader = create_dataloader(opts, "train")
         model.train()
 
         losstotal = np.zeros((len(trainloader)), dtype=float)
@@ -106,7 +111,7 @@ def train(opts):
             output = model(image)[get_output]
             # output is Size(1,2,512,512) need to be Size(1,512,512)
             #_thnn_log_sigmoid_forward not supported on CUDAType for Long
-            # output = torch.argmax(torch.softmax(output, dim=1), dim=1)
+            #output = torch.argmax(torch.softmax(output, dim=1), dim=1)
             
 
             loss = lossfn(output, label)
@@ -160,21 +165,34 @@ def train(opts):
 
         record_scores(opts, scoredict)
 
+ORIGINAL_DATASET_FOLDER = "D:/data/train/images"
+DATASET_ROOT_FOLDER = "team_morty/Stable Diffusion Augmentation/"
+DATASET_FOLDERS = ["1-5_inpainting_rooftops/images", "generated_dataset_1-5/images"]
+MASKS_FOLDER_PATH = "D:/data/train/masks"
+
+DATA_FOLDER_DICT = {
+    "original_images": "D:/data/train/images",
+    "original_masks": "D:/data/train/masks",
+    "generated_data_folders": ["team_morty/Stable Diffusion Augmentation/1-5_inpainting_rooftops/images"],
+    "generated_data_root": "team_morty/Stable Diffusion Augmentation/" 
+}
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("Training a segmentation model")
 
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
+    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training")
     parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--task", type=int, default=1)
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")
-
+    parser.add_argument("--resume", type=str, default="runs/task_1/run_116/last_task1_199.pt", help="Path to state dict to resume training from, default is None")
+    #parser.add_argument("--resume", type=str, default=None, help="Path to state dict to resume training from, default is None")
+    parser.add_argument("--original_dataset", type=dict, default=DATA_FOLDER_DICT, help="Path to original dataset")
+    
     args = parser.parse_args()
-
     # Import config
     opts = load(open(args.config, "r"), Loader)
 
