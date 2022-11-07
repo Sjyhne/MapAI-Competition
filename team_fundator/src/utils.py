@@ -80,6 +80,9 @@ def get_losses(opts):
     weights = torch.tensor(losses_cfg["weights"])
     for loss_name in losses_cfg["names"]:
         init_params = losses_cfg[loss_name]['init_params'] if losses_cfg[loss_name]['init_params'] is not None else {}
+
+        if "mode" in init_params:
+            init_params["mode"] = "multiclass" if opts["num_classes"] > 1 else "binary"
         
         if loss_name == "CrossEntropy":
             loss_name = "SoftCrossEntropyLoss" if opts["num_classes"] > 1 else "SoftBCEWithLogitsLoss"

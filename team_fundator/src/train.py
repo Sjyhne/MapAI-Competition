@@ -271,13 +271,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    datasets = ["mapai", "mapai_lidar_masks", "mapai_reclassified"]
+    datasets = ["mapai", "mapai_reclassified", "mapai_lidar_masks"]
 
-    backbones = ["timm-resnest26d", "efficientnet-b1"]
+    backbones = [("timm-resnest26d", 12), ("efficientnet-b1", 8)]
 
     for dataset in datasets:
         # Import config
-        for backbone in backbones:
+        for backbone, bs in backbones:
             opts = load(open(args.config, "r"), Loader)
 
             # Combine args and opts in single dict
@@ -288,12 +288,12 @@ if __name__ == "__main__":
 
             opts["model"]["encoder"] = backbone
             opts["dataset"] = dataset
-
+            opts["train"]["batchsize"] = bs
             data_opts = get_dataset_config(opts)
 
             opts.update(data_opts)
                     
-            rundir = create_run_dir(opts, opts.get("dataset", "") + aug)
+            rundir = create_run_dir(opts, opts.get("dataset", ""))
             opts["rundir"] = rundir
             print("Opts:", opts)
             

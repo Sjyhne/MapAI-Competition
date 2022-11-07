@@ -84,14 +84,14 @@ testing:
   erode_val_preds: True
 
 train:
-  epochs: 30
+  epochs: 1
   batchsize: 12 
   shuffle: True
   num_workers: 10
-  data_ratio: 0.4
+  data_ratio: 0.0004
 
 validation:
-  batchsize: 8
+  batchsize: 4
   shuffle: False
-  num_workers: 10
-  data_ratio: 1.0
+  num_workers: 8
+  data_ratio: 0.01
