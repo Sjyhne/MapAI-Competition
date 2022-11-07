@@ -27,6 +27,7 @@ dependencies = [
     "segmentation-models-pytorch",
     "kornia",
     "tabulate",
+    "albumentations",
 
 ]
 dynamic = ["readme"]
