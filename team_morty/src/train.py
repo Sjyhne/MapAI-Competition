@@ -90,6 +90,7 @@ def train(opts):
     bestscore = 0
 
     for e in range(epochs):
+        wandb.watch(model)
         trainloader = create_dataloader(opts, "train")
         model.train()
 
@@ -162,13 +163,9 @@ def train(opts):
             "trainscore": trainscore,
             "testscore": testscore
         }
+        wandb.log(scoredict)
 
         record_scores(opts, scoredict)
-
-ORIGINAL_DATASET_FOLDER = "D:/data/train/images"
-DATASET_ROOT_FOLDER = "team_morty/Stable Diffusion Augmentation/"
-DATASET_FOLDERS = ["1-5_inpainting_rooftops/images", "generated_dataset_1-5/images"]
-MASKS_FOLDER_PATH = "D:/data/train/masks"
 
 DATA_FOLDER_DICT = {
     "original_images": "D:/data/train/images",
@@ -177,15 +174,24 @@ DATA_FOLDER_DICT = {
     "generated_data_root": "team_morty/Stable Diffusion Augmentation/" 
 }
 
+import wandb
+wandb.init(project="MapAi-train")
+wandb.config = {
+    "epochs": 40,
+    "learning_rate": 5e-5,
+    "batch_size": 8,
+    "task": 1
+}
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("Training a segmentation model")
 
-    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=5e-5, help="Learning rate used during training")
+    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for t    parser.add_argument("--epochs", type=int, default=wandb.config["epochs"], help="Number of epochs for training")
+    parser.add_argument("--lr", type=float, default=wandb.config["learning_rate"], help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--task", type=int, default=1)
+    parser.add_argument("--device", type=str, default="cuda:2")
+    parser.add_argument("--task", type=int, default=wandb.config["task"])
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")
     parser.add_argument("--resume", type=str, default="runs/task_1/run_116/last_task1_199.pt", help="Path to state dict to resume training from, default is None")
