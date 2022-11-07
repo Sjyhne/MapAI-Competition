@@ -10,9 +10,17 @@ import gdown
 import os
 import shutil
 
+from kornia.morphology import erosion, dilation
+
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+from utils import get_model
+
+from ensemble_model import EnsembleModel, load_models_from_runs
+from transforms import LidarAugComposer
+
+import yaml
 
 def main(args):
     #########################################################################
@@ -31,14 +39,31 @@ def main(args):
     ###
     #########################################################################
 
-    pt_share_link = "https://drive.google.com/file/d/17YB5-KZVW-mqaQdz4xv7rioDr4DzhfOU/view?usp=sharing"
-    pt_id = pt_share_link.split("/")[-2]
+    pt_share_links = [
+            (
+            "https://drive.google.com/file/d/1AWduWlYKH0SdfMhZ0cT0Ymj9HBSGF18t/view?usp=share_link", # cp
+            "https://drive.google.com/file/d/1PXa7AlWPIOAUZEmHQyXGahK2MRIFIRXG/view?usp=share_link" # opts
+            ),
+        ]
 
-    # Download trained model ready for inference
-    url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
-    model_checkpoint = "pretrained_task1.pt"
+    model_names = []
+    configs = []
 
-    gdown.download(url_to_drive, model_checkpoint, quiet=False)
+    for i, (pt_share_link, opt_share_link) in enumerate(pt_share_links):
+        pt_id = pt_share_link.split("/")[-2]
+        opt_id = opt_share_link.split("/")[-2]
+
+        # Download trained model ready for inference
+        url_to_pt = f"https://drive.google.com/uc?id={pt_id}"
+        url_to_opt = f"https://drive.google.com/uc?id={opt_id}"
+        model_checkpoint = f"task1_pt{i + 1}.pt"
+        model_cfg = f"task1_pt{i + 1}.yaml"
+
+        gdown.download(url_to_pt, model_checkpoint, quiet=False)
+        gdown.download(url_to_opt, model_cfg, quiet=False)
+
+        model_names.append(model_checkpoint)
+        configs.append(model_cfg)
 
     #########################################################################
     ###
@@ -57,8 +82,18 @@ def main(args):
     # Setup Model
     ###
     #########################################################################
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    model.load_state_dict(torch.load(model_checkpoint))
+
+
+    models = []
+    for config, checkpoint in zip(configs, model_names):
+        config =  yaml.load(open(config, "r"), yaml.Loader)
+        model = get_model(config)
+        model.load_state_dict(torch.load(checkpoint))
+        models.append(model)
+
+    target_size = (500, 500) if opts["data_type"] == "test" else (opts["imagesize"], opts["imagesize"])
+
+    model = EnsembleModel(models, target_size=target_size)
     device = opts["device"]
     model = model.to(device)
     model.eval()
@@ -82,20 +117,25 @@ def main(args):
 
         # Send image and label to device (eg., cuda)
         image = image.to(device)
-        label = label.to(device)
 
         # Perform model prediction
-        prediction = model(image)["out"]
-        if opts["device"] == "cpu":
-            prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
-        else:
-            prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().cpu().detach().numpy()
-        # Postprocess prediction
+        output = model(image)["result"]
+        output = torch.round(output)
+
+        if opts["erode_val_preds"]:
+            kernel = torch.ones(5, 5).to(device)
+            output = erosion(output, kernel)
+            output = dilation(output, kernel).squeeze()
 
         if opts["device"] == "cpu":
-            label = label.squeeze().detach().numpy()
+            #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().detach().numpy()
+            prediction = output.squeeze().detach().numpy()
         else:
-            label = label.squeeze().cpu().detach().numpy()
+            #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().cpu().detach().numpy()
+            prediction = output.squeeze().cpu().detach().numpy()
+        # Postprocess prediction
+
+        label = label.squeeze().detach().numpy()
 
         prediction = np.uint8(prediction)
         label = np.uint8(label)

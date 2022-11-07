@@ -58,33 +58,6 @@ def test_ensemble(opts):
         ensemble_preds = output["result"]
         model_preds = model_preds + [ensemble_preds]
 
-        if label.shape[-2:] != output.shape[-2:]:
-            model_preds = [
-                torchvision.transforms.functional.resize(
-                    mp,
-                    (500, 500),
-                    interpolation=interpolation_mode,
-                    antialias=antialias,
-                )
-                for mp in model_preds
-            ]
-
-        for i in range(len(model_preds)):
-            num_classes = model_preds[i].shape[1]
-            
-            if model_preds[i].shape[1] > 1:
-                model_preds[i] = torch.argmax(
-                    torch.softmax(model_preds[i], dim=1), dim=1
-                )
-                if num_classes == 3: # mapai_lidar_masks
-                    model_preds[i][model_preds[i] == 2.0] = 0.0
-                elif num_classes == 4: # mapai_reclassified
-                    model_preds[i][model_preds[i] == 2.0] = 1.0
-                    model_preds[i][model_preds[i] == 3.0] = 0.0
-                elif num_classes == 5: # landcover train
-                    model_preds[i][model_preds[i] > 1.0] = 0.0
-            else:
-                model_preds[i] = torch.round(torch.sigmoid(model_preds[i])).squeeze(1)
         label = label.squeeze(1)
 
         for i in range(len(model_preds)):

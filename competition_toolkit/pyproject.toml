@@ -23,7 +23,11 @@ dependencies = [
     "pyarrow",
     "gdown",
     "matplotlib",
-    "datasets"
+    "datasets",
+    "segmentation-models-pytorch",
+    "kornia",
+    "tabulate",
+
 ]
 dynamic = ["readme"]
 

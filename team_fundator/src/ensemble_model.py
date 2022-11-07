@@ -5,14 +5,15 @@ import torch
 import yaml
 
 from utils import get_model
+import torchvision
 
 class EnsembleModel(torch.nn.Module):
     """Ensemble of torch models, pass tensor through all models and average results"""
 
-    def __init__(self, models: list, sum_outputs):
+    def __init__(self, models: list, target_size=(500, 500)):
         super().__init__()
         self.models = torch.nn.ModuleList(models)
-        self.sum_outputs = sum_outputs
+        self.target_size = target_size
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         result = None
@@ -26,18 +27,37 @@ class EnsembleModel(torch.nn.Module):
             elif in_channels == 3:
                 y = model(x[:, 0:3])
 
-            if len(y) == 2:
+            if isinstance(y, tuple):
                 y, aux_label = y
-            y = y.to("cpu")
-            model_preds.append(y)
-            if self.sum_outputs:
-                if result is None:
-                    result = y
-                    continue
-                result += y
 
-        if self.sum_outputs:
-            result /= torch.tensor(len(self.models)).to(result.device)
+
+            
+            if self.target_size != y.shape[-2:]:
+                y = torchvision.transforms.functional.resize(
+                    y,
+                    (500, 500),
+                    interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
+                    antialias=True,
+                )
+
+            num_classes = y.shape[1]      
+            if y.shape[1] > 1:
+                y = torch.softmax(y, dim=1)   
+                if num_classes == 4: # mapai_reclassified
+                    y = y[:, 1] + y[:, 2]
+                else: # landcover train, mapai_lidar_masks
+                    y = y[:, 1]
+            else:
+                y = torch.sigmoid(y)         
+
+            y = y.to("cpu")
+            model_preds.append(y.squeeze(1))
+            if result is None:
+                result = y
+                continue
+            result += y
+
+        result /= torch.tensor(len(self.models)).to(result.device)
         return {"result": result, "model_preds": model_preds}
 
 
@@ -63,8 +83,7 @@ def load_models_from_runs(
     checkpoints = [torch.load(glob.glob(f"{run}/best*.pt")[0]) for run in run_folders]
     models = []
     for config, checkpoint in zip(configs, checkpoints):
-        config =  load(open(config, "r"), Loader)
         model = get_model(config)
-        model.load_state_dict(torch.load(checkpoint[0]))
+        model.load_state_dict(checkpoint)
         models.append(model)
     return models, [Path(rf).name for rf in run_folders]
