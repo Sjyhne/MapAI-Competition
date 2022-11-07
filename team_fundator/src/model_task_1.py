@@ -17,9 +17,7 @@ from competition_toolkit.eval_functions import iou, biou
 
 from utils import get_model
 
-from ensemble_model import EnsembleModel, load_models_from_runs
-from transforms import LidarAugComposer
-
+from ensemble_model import EnsembleModel
 import yaml
 
 def main(args):

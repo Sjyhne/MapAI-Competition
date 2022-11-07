@@ -18,8 +18,8 @@ from competition_toolkit.eval_functions import iou, biou
 
 from utils import get_model
 
-from ensemble_model import EnsembleModel, load_models_from_runs
-from transforms import valid_transform, LidarAugComposer
+from ensemble_model import EnsembleModel
+from transforms import LidarAugComposer
 
 import yaml
 
@@ -83,6 +83,8 @@ def main(args):
     ###
     #########################################################################
 
+    lidar_augs = LidarAugComposer(opts)
+    _, lidar_valid = lidar_augs.get_transforms()
 
     models = []
     for config, checkpoint in zip(configs, model_names):
@@ -92,7 +94,7 @@ def main(args):
         models.append(model)
 
     target_size = (500, 500) if opts["data_type"] == "test" else (opts["imagesize"], opts["imagesize"])
-
+    
     model = EnsembleModel(models, target_size=target_size)
     device = opts["device"]
     model = model.to(device)
@@ -115,8 +117,16 @@ def main(args):
         # Split filename and extension
         filename_base, file_extension = os.path.splitext(filename[0])
 
+        image, lidar = torch.split(image, [3, 1], dim=1)
+        print(lidar.shape)
+        lidar = lidar_valid(lidar.numpy())
+
+        print(image.shape)
+        image = torch.cat([image, torch.tensor(lidar, dtype=image.dtype)], dim=1)
+
         # Send image and label to device (eg., cuda)
         image = image.to(device)
+        print(image.shape)
 
         # Perform model prediction
         output = model(image[:, :3])["result"]

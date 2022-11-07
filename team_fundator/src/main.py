@@ -30,7 +30,7 @@ if __name__ == "__main__":
     elif args.task == 2:
         evaluate_model_2(args=args)
     else:
-        evaluate_model_1(args=args)
+        # evaluate_model_1(args=args)
         evaluate_model_2(args=args)
 
     exit(0)

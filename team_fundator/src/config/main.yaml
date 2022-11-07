@@ -11,10 +11,14 @@ model:
     dropout: 0.2 # default 0.0
 
 lidar_augs:
-  clip_min: -5.0 # normalizing (always applied as the last augmentation)
+  clip_min: -1.0 # normalizing (always applied as the last augmentation)
   clip_max: 40.0
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
+
+  other_augs: []
+  one_of: []
+
 
 num_classes: 2
 classes: ["background", "building"]
