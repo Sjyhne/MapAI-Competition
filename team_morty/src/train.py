@@ -207,7 +207,9 @@ if __name__ == "__main__":
         opts = opts | vars(args)
     except Exception as e:
         opts = {**opts, **vars(args)}
-
+    
+    print("Overriding config batch size with wandb config batch size")
+    opts[f"task{opts['task']}"]["batchsize"] = wandb.config["batch_size"]
     print("Opts:", opts)
 
     rundir = create_run_dir(opts)
