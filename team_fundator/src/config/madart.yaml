@@ -19,12 +19,12 @@ augmentation:
   cycle: ["hard", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
-  clip_min: -5.0 # normalizing (always applied as the last augmentation)
+  clip_min: -1.0 # normalizing (always applied as the last augmentation)
   clip_max: 40.0
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
 
-  other_augs: [] # always applied first, in order
+  other_augs: ["random_scaling", "random_noise"] # always applied first, in order
   one_of: [] # ["random_offset", "random_scaling"]
 
   dropout:
@@ -35,7 +35,7 @@ lidar_augs:
 
   random_noise:
     p: 0.5 # with probability p, add gaussian noise
-    std: 0.2 # std in meters
+    std: 0.1 # std in meters
     keep_zero: True # do not add noise to orthorectified ground where lidar = 0
 
   random_offset:
@@ -49,7 +49,7 @@ lidar_augs:
     min_scale: 0.85
     max_scale: 1.15
 
-imagesize: 512
+imagesize: 768
 training:
   losses:
     # "DiceLoss": smp.losses.DiceLoss,
@@ -67,12 +67,12 @@ training:
   optimizer:
     name: RAdam # Adam, SGD, RAdam, AdamWarmup
     init_params:
-      lr: 0.0001
+      lr: 0.0002
 
   scheduler:
-    name: PolyLR # PolyLR, MultiStep
+    name: MultiStep # PolyLR, MultiStep
     init_params:
-      milestones: [3]
+        milestones: [25]
   # fit:
   #   epochs: 50
   #   accumulation_steps: 4
@@ -84,14 +84,14 @@ testing:
   erode_val_preds: True
 
 train:
-  epochs: 15
+  epochs: 30
   batchsize: 12 
   shuffle: True
   num_workers: 10
-  data_ratio: 0.2
+  data_ratio: 0.4
 
 validation:
   batchsize: 8
   shuffle: False
-  num_workers: 6
+  num_workers: 10
   data_ratio: 1.0

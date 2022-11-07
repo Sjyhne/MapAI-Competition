@@ -271,16 +271,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    clip1 = {
-        "dropout": [0.01, 0.02, 0.05],
-        "random_noise": [0.05, 0.1, 0.2, 0.4]
-    }
+    datasets = ["mapai", "mapai_lidar_masks", "mapai_reclassified"]
 
-    lidar_clips = [("dropout", "pixel_frac"), ("random_noise", "std")]
+    backbones = ["timm-resnest26d", "efficientnet-b1"]
 
-    for aug, key in lidar_clips:
+    for dataset in datasets:
         # Import config
-        for param in clip1[aug]:
+        for backbone in backbones:
             opts = load(open(args.config, "r"), Loader)
 
             # Combine args and opts in single dict
@@ -289,8 +286,8 @@ if __name__ == "__main__":
             except Exception as e:
                 opts = {**opts, **vars(args)}
 
-            opts["lidar_augs"]["other_augs"] = [aug]
-            opts["lidar_augs"][aug][key] = param
+            opts["model"]["encoder"] = backbone
+            opts["dataset"] = dataset
 
             data_opts = get_dataset_config(opts)
 
