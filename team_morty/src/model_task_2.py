@@ -61,7 +61,7 @@ def main(args):
     model = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=opts["num_classes"])
     new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
     model.backbone.conv1 = new_conv1
-    model.load_state_dict(torch.load(model_checkpoint))
+    model.load_state_dict(torch.load(model_checkpoint, map_location=torch.device(opts["device"])))
     device = opts["device"]
     model = model.to(device)
     model.eval()
@@ -78,9 +78,11 @@ def main(args):
     iou_scores = np.zeros((len(dataloader)))
     biou_scores = np.zeros((len(dataloader)))
 
+
     for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference", leave=False):
         # Split filename and extension
         filename_base, file_extension = os.path.splitext(filename[0])
+
 
         # Send image and label to device (eg., cuda)
         image = image.to(device)
@@ -134,6 +136,10 @@ def main(args):
         plt.savefig(str(predicted_sample_path_png))
         plt.close()
         cv.imwrite(str(predicted_sample_path_tif), prediction)
+        image = cv.imread(str(predicted_sample_path_tif), 1)
+        reszise = cv.resize(image, (500, 500))
+        cv.imwrite(str(predicted_sample_path_tif), reszise)
+
 
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
 

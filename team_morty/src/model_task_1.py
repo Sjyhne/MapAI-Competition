@@ -71,9 +71,9 @@ def main(args):
 
     iou_scores = np.zeros((len(dataloader)))
     biou_scores = np.zeros((len(dataloader)))
-
     for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference",
                                               leave=False):
+
         # Split filename and extension
         filename_base, file_extension = os.path.splitext(filename[0])
 
@@ -131,6 +131,10 @@ def main(args):
         plt.savefig(str(predicted_sample_path_png))
         plt.close()
         cv.imwrite(str(predicted_sample_path_tif), prediction)
+        image = cv.imread(str(predicted_sample_path_tif), 1)
+        reszise = cv.resize(image, (500, 500))
+        cv.imwrite(str(predicted_sample_path_tif), reszise)
+   
 
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
 

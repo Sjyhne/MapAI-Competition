@@ -59,8 +59,8 @@ def test(opts, dataloader, model, lossfn, get_output):
 def train(opts):
     device = opts["device"]
 
-    model, get_output = load_unet(opts)
-    # model, get_output = load_resnet50(opts)
+    # model, get_output = load_unet(opts)
+    model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
     # model, get_output = load_resnet101(opts)
 

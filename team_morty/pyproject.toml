@@ -22,7 +22,9 @@ dependencies = [
     "pandas",
     "pyarrow",
     "gdown",
-    "matplotlib"
+    "matplotlib",
+    "segmentation_models_pytorch",
+    "albumentations"
 ]
 dynamic = ["version", "readme"]
 

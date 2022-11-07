@@ -17,7 +17,7 @@ validation:
   batchsize: 1
   shuffle: False
 task1:
-  batchsize: 4
+  batchsize: 1
   shuffle: true
 task2:
   batchsize: 1
