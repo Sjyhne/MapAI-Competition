@@ -48,7 +48,7 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name: ___
+Team name: Fundator
 
 Team participants:  Lars Martin Hodne, Eivind Hovdegård Furdal
 
