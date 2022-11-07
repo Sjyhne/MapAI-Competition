@@ -85,7 +85,10 @@ class Task_One_Augmented_dataset(Dataset):
         #     paths.extend(self.construct_psuedo_paths(path, size_reducer=size_reduce, keep_original=keep_original))
 
         #self.paths = paths#self.construct_psuedo_paths(size_reducer=SIZE_REDUCER)
-        self.paths = self.draw_dataset_files(DATASET_FOLDERS, DATASET_ROOT_FOLDER, ORIGINAL_DATASET_FOLDER, MASKS_FOLDER_PATH)
+        self.paths = self.draw_dataset_files(opts["datasets"]["generated_data_folders"],
+                                             opts["datasets"]["generated_data_root"],
+                                             opts["datasets"]["original_images"],
+                                             opts["datasets"]["original_masks"])
 
         print(
             f"Using number of images in {datatype}dataset: {int(len(self.paths) * self.opts['data_ratio'])}/{len(self.paths)}")
@@ -159,10 +162,10 @@ class Task_One_Augmented_dataset(Dataset):
         label = load_label(labelfilepath, (self.opts["imagesize"], self.opts["imagesize"]))
         t = transform(image=image, mask=label)
         image = t["image"]
-        image = torch.tensor(image.astype(np.uint8), device="cuda") / 255
+        image = torch.tensor(image.astype(np.uint8), device=self.opts["device"]) / 255
         image = torch.permute(image, (2, 0, 1))
         label = t["mask"]
-        label = torch.tensor(label.astype(np.uint8), device="cuda").long()
+        label = torch.tensor(label.astype(np.uint8), device=self.opts["device"]).long()
         assert image.shape[1:] == label.shape[
                                   :2], f"image and label shape not the same; {image.shape[1:]} != {label.shape[:2]}"
 

@@ -59,8 +59,8 @@ def test(opts, dataloader, model, lossfn, get_output):
 def train(opts):
     device = opts["device"]
 
-    # model, get_output = load_unet(opts)
-    model, get_output = load_resnet50(opts)
+    model, get_output = load_unet(opts)
+    # model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
     # model, get_output = load_resnet101(opts)
 
@@ -90,7 +90,8 @@ def train(opts):
     bestscore = 0
 
     for e in range(epochs):
-        wandb.watch(model)
+        if LOG_WANDB:
+            wandb.watch(model)
         trainloader = create_dataloader(opts, "train")
         model.train()
 
@@ -163,19 +164,23 @@ def train(opts):
             "trainscore": trainscore,
             "testscore": testscore
         }
-        wandb.log(scoredict)
+        if LOG_WANDB:
+            wandb.log(scoredict)
 
         record_scores(opts, scoredict)
 
 DATA_FOLDER_DICT = {
-    "original_images": "D:/data/train/images",
-    "original_masks": "D:/data/train/masks",
-    "generated_data_folders": ["team_morty/Stable Diffusion Augmentation/1-5_inpainting_rooftops/images"],
-    "generated_data_root": "team_morty/Stable Diffusion Augmentation/" 
+    "original_images": "../../data/train/images/",
+    "original_masks": "../../data/train/masks/",
+    "generated_data_folders": ["1-5_inpainting_rooftops/images"],
+    "generated_data_root": "/home/kaborg15/Stable_Diffusion/MapAI_Generated_images/"
 }
 
+import os
 import wandb
-wandb.init(project="MapAi-train")
+LOG_WANDB = True
+if LOG_WANDB:
+    wandb.init(project="MapAi-train")
 wandb.config = {
     "epochs": 40,
     "learning_rate": 5e-5,
@@ -184,19 +189,21 @@ wandb.config = {
 }
 
 if __name__ == "__main__":
-
+    os.chdir("..")
+    os.chdir("..")
+    
     parser = argparse.ArgumentParser("Training a segmentation model")
 
-    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs for t    parser.add_argument("--epochs", type=int, default=wandb.config["epochs"], help="Number of epochs for training")
+    parser.add_argument("--epochs", type=int, default=wandb.config["epochs"], help="Number of epochs for training")
     parser.add_argument("--lr", type=float, default=wandb.config["learning_rate"], help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cuda:2")
+    parser.add_argument("--device", type=str, default="cuda:1")
     parser.add_argument("--task", type=int, default=wandb.config["task"])
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")
-    parser.add_argument("--resume", type=str, default="runs/task_1/run_116/last_task1_199.pt", help="Path to state dict to resume training from, default is None")
-    #parser.add_argument("--resume", type=str, default=None, help="Path to state dict to resume training from, default is None")
-    parser.add_argument("--original_dataset", type=dict, default=DATA_FOLDER_DICT, help="Path to original dataset")
+    #parser.add_argument("--resume", type=str, default="runs/task_1/run_116/last_task1_199.pt", help="Path to state dict to resume training from, default is None")
+    parser.add_argument("--resume", type=str, default=None, help="Path to state dict to resume training from, default is None")
+    parser.add_argument("--datasets", type=dict, default=DATA_FOLDER_DICT, help="Path to original dataset")
     
     args = parser.parse_args()
     # Import config
@@ -211,7 +218,8 @@ if __name__ == "__main__":
     print("Overriding config batch size with wandb config batch size")
     opts[f"task{opts['task']}"]["batchsize"] = wandb.config["batch_size"]
     print("Opts:", opts)
-
+    
+    os.chdir("team_morty/src")
     rundir = create_run_dir(opts)
     opts["rundir"] = rundir
     dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
