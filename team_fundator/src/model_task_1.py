@@ -88,7 +88,7 @@ def main(args):
     for config, checkpoint in zip(configs, model_names):
         config =  yaml.load(open(config, "r"), yaml.Loader)
         model = get_model(config)
-        model.load_state_dict(torch.load(checkpoint))
+        model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
         models.append(model)
 
     target_size = (500, 500) if opts["data_type"] == "test" else (opts["imagesize"], opts["imagesize"])
