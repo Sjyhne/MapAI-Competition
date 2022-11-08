@@ -3,9 +3,9 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "team-template"
+name = "team-fundator"
 description = "Configuring the environment for running python and ML"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 keywords = []
 license = {text = "MIT"}
 classifiers = [
@@ -22,7 +22,11 @@ dependencies = [
     "pandas",
     "pyarrow",
     "gdown",
-    "matplotlib"
+    "matplotlib",
+    "segmentation-models-pytorch",
+    "kornia",
+    "tabulate",
+    "albumentations",
 ]
 dynamic = ["version", "readme"]
 
