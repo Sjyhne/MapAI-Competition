@@ -93,7 +93,7 @@ def main(args):
         model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
         models.append(model)
 
-    target_size = (500, 500) if opts["data_type"] == "test" else (opts["imagesize"], opts["imagesize"])
+    target_size = (500, 500) 
     
     model = EnsembleModel(models, resize_first=True, target_size=target_size)
     device = opts["device"]
