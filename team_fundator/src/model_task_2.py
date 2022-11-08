@@ -95,7 +95,7 @@ def main(args):
 
     target_size = (500, 500) if opts["data_type"] == "test" else (opts["imagesize"], opts["imagesize"])
     
-    model = EnsembleModel(models, target_size=target_size)
+    model = EnsembleModel(models, resize_first=True, target_size=target_size)
     device = opts["device"]
     model = model.to(device)
     model.eval()

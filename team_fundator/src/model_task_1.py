@@ -91,7 +91,7 @@ def main(args):
 
     target_size = (500, 500)
 
-    model = EnsembleModel(models, target_size=target_size)
+    model = EnsembleModel(models, resize_first=False, target_size=target_size)
     device = opts["device"]
     model = model.to(device)
     model.eval()
