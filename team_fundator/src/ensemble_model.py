@@ -29,8 +29,6 @@ class EnsembleModel(torch.nn.Module):
 
             if isinstance(y, tuple):
                 y, aux_label = y
-
-
             
             if self.target_size != y.shape[-2:]:
                 y = torchvision.transforms.functional.resize(
@@ -48,9 +46,8 @@ class EnsembleModel(torch.nn.Module):
                 else: # landcover train, mapai_lidar_masks
                     y = y[:, 1]
             else:
-                y = torch.sigmoid(y)         
+                y = torch.sigmoid(y)
 
-            y = y.to("cpu")
             model_preds.append(y)
             if result is None:
                 result = y

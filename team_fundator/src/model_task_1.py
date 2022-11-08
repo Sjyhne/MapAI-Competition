@@ -89,7 +89,7 @@ def main(args):
         model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
         models.append(model)
 
-    target_size = (500, 500) if opts["data_type"] == "test" else (opts["imagesize"], opts["imagesize"])
+    target_size = (500, 500)
 
     model = EnsembleModel(models, target_size=target_size)
     device = opts["device"]
@@ -105,8 +105,6 @@ def main(args):
     dataloader = create_dataloader(opts, opts["data_type"])
     print(dataloader)
 
-    iou_scores = np.zeros((len(dataloader)))
-    biou_scores = np.zeros((len(dataloader)))
 
     for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference",
                                               leave=False):
@@ -127,33 +125,18 @@ def main(args):
 
         if opts["device"] == "cpu":
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().detach().numpy()
-            prediction = output.detach()
+            prediction = output.squeeze().detach().numpy().astype(np.uint8)
         else:
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().cpu().detach().numpy()
-            prediction = output.cpu().detach()
-        # Postprocess prediction
-
-        prediction_resized =  torchvision.transforms.functional.resize(
-            prediction,
-            (500, 500),
-            interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
-            antialias=True,
-        ).squeeze().numpy().astype(np.uint8)
+            prediction = output.squeeze().detach().cpu().numpy().astype(np.uint8)
+        
 
         label = label.squeeze().detach().numpy()
 
-        prediction = np.uint8(prediction.squeeze().numpy())
         label = np.uint8(label)
-        assert prediction.shape == label.shape, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {label.shape}]"
+        assert prediction.shape == target_size, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {target_size}]"
 
-        # Predict score
-        iou_score = iou(prediction, label)
-        biou_score = biou(label, prediction)
-
-        iou_scores[idx] = np.round(iou_score, 6)
-        biou_scores[idx] = np.round(biou_score, 6)
-
-        prediction_visual = np.copy(prediction_resized)
+        prediction_visual = np.copy(prediction)
 
         for idx, value in enumerate(opts["classes"]):
             prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
@@ -178,9 +161,6 @@ def main(args):
         predicted_sample_path_tif = predictions_path.joinpath(filename[0])
         plt.savefig(str(predicted_sample_path_png))
         plt.close()
-        cv.imwrite(str(predicted_sample_path_tif), prediction_resized)
-
-    print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
-
+        cv.imwrite(str(predicted_sample_path_tif), prediction)
     # Dump file configuration
     yaml.dump(opts, open(opts_file, "w"), Dumper=yaml.Dumper)
