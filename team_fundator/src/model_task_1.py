@@ -127,15 +127,22 @@ def main(args):
 
         if opts["device"] == "cpu":
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().detach().numpy()
-            prediction = output.squeeze().detach().numpy()
+            prediction = output.squeeze().detach()
         else:
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().cpu().detach().numpy()
-            prediction = output.squeeze().cpu().detach().numpy()
+            prediction = output.squeeze().cpu().detach()
         # Postprocess prediction
+
+        prediction_visual =  torchvision.transforms.functional.resize(
+            prediction,
+            (500, 500),
+            interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
+            antialias=True,
+        ).numpy().astype(np.uint8)
 
         label = label.squeeze().detach().numpy()
 
-        prediction = np.uint8(prediction)
+        prediction = np.uint8(prediction.numpy())
         label = np.uint8(label)
         assert prediction.shape == label.shape, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {label.shape}]"
 
@@ -145,8 +152,6 @@ def main(args):
 
         iou_scores[idx] = np.round(iou_score, 6)
         biou_scores[idx] = np.round(biou_score, 6)
-
-        prediction_visual = np.copy(prediction)
 
         for idx, value in enumerate(opts["classes"]):
             prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]

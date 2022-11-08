@@ -35,7 +35,7 @@ class EnsembleModel(torch.nn.Module):
             if self.target_size != y.shape[-2:]:
                 y = torchvision.transforms.functional.resize(
                     y,
-                    (500, 500),
+                    self.target_size,
                     interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
                     antialias=True,
                 )
