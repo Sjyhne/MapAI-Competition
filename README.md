@@ -36,6 +36,21 @@ competition consists of two different tasks:
 
 1. Building segmentation only using aerial images.
 2. Building segmentation using lidar data (it is allowed to combine the lidar with aerial images).
+### Task Rules
+
+You are allowed to use additional training data for both tasks. The datasets used for training must be open and accessible to everyone and follow the specific rules for each task.
+
+**Task 1:**
+- You are allowed to use pretrained models trained on RGB images which are open and accessible to everyone. 
+	- E.g. ImageNet pretrained backbones/networks.
+- You are allowed to use other open datasets for training the models, however, they must be datasets with RGB-images. Therefore, you cannot use other types of data for training the models for this specific task.
+
+**Task 2:**
+- You are allowed to use pretrained models trained on RGB images and/or LiDAR data which are open and accessible to everyone.
+	- E.g. ImageNet pretrained backbones/networks.
+- You are allowed to use other open datasets for training the models, however, they must be datasets with RGB-images and/or LiDAR-data. 
+
+To be eligible for prizes both the source-code and a 2-page paper must be submitted, allowing us to verify the submission according to the rules.
 
 ### Dataset
 
@@ -230,7 +245,8 @@ on a github page.
 #### Step 7 - 2 Page Paper
 
 All participants are asked to submit a 2 page paper (double column, plus 1 additional page
-for references) describing their method and results. The submitted papers will be 
+for references) describing their method and results. The 2-pager must include a description 
+of the datasets that have been used to train the models. The submitted papers will be 
 reviewed single blind and will be published. Outstanding submissions will be invited 
 to submit a full length paper to a special issue about the competition in the Nordic 
 Machine Intelligence Journal.
