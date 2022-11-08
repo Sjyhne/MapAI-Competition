@@ -142,7 +142,7 @@ def main(args):
             prediction = output.cpu().detach()
         # Postprocess prediction
 
-        prediction_visual =  torchvision.transforms.functional.resize(
+        prediction_resized =  torchvision.transforms.functional.resize(
             prediction,
             (500, 500),
             interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
@@ -161,6 +161,8 @@ def main(args):
 
         iou_scores[idx] = np.round(iou_score, 6)
         biou_scores[idx] = np.round(biou_score, 6)
+
+        prediction_visual = np.copy(prediction_resized)
 
         for idx, value in enumerate(opts["classes"]):
             prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
@@ -184,7 +186,7 @@ def main(args):
         predicted_sample_path_tif = predictions_path.joinpath(filename[0])
         plt.savefig(str(predicted_sample_path_png))
         plt.close()
-        cv.imwrite(str(predicted_sample_path_tif), prediction)
+        cv.imwrite(str(predicted_sample_path_tif), prediction_resized)
 
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
 
