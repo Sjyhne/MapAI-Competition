@@ -95,7 +95,7 @@ def main(args):
 
     target_size = (500, 500) 
     
-    model = EnsembleModel(models, resize_first=True, target_size=target_size)
+    model = EnsembleModel(models, target_size=target_size)
     device = opts["device"]
     model = model.to(device)
     model.eval()
@@ -130,6 +130,8 @@ def main(args):
             kernel = torch.ones(5, 5).to(device)
             output = erosion(output, kernel)
             output = dilation(output, kernel)
+            output = dilation(output, kernel)
+            output = erosion(output, kernel)
 
         if opts["device"] == "cpu":
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().detach().numpy()

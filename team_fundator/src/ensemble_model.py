@@ -10,11 +10,10 @@ import torchvision
 class EnsembleModel(torch.nn.Module):
     """Ensemble of torch models, pass tensor through all models and average results"""
 
-    def __init__(self, models: list, resize_first, target_size=(500, 500)):
+    def __init__(self, models: list, target_size=(500, 500)):
         super().__init__()
         self.models = torch.nn.ModuleList(models)
         self.target_size = target_size
-        self.resize_first = resize_first
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         result = None
@@ -31,7 +30,7 @@ class EnsembleModel(torch.nn.Module):
             if isinstance(y, tuple):
                 y, aux_label = y
             
-            if self.target_size != y.shape[-2:] and self.resize_first:
+            if self.target_size != y.shape[-2:]:
                 y = torchvision.transforms.functional.resize(
                     y,
                     self.target_size,
@@ -48,14 +47,7 @@ class EnsembleModel(torch.nn.Module):
                     y = y[:, 1]
             else:
                 y = torch.sigmoid(y)
-            
-            if self.target_size != y.shape[-2:] and not self.resize_first:
-                y = torchvision.transforms.functional.resize(
-                    y,
-                    self.target_size,
-                    interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
-                    antialias=True,
-                )
+
 
             model_preds.append(y)
             if result is None:
