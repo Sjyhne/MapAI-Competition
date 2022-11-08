@@ -123,14 +123,14 @@ def main(args):
         if opts["erode_val_preds"]:
             kernel = torch.ones(5, 5).to(device)
             output = erosion(output, kernel)
-            output = dilation(output, kernel).squeeze()
+            output = dilation(output, kernel)
 
         if opts["device"] == "cpu":
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().detach().numpy()
-            prediction = output.squeeze().detach()
+            prediction = output.detach()
         else:
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().cpu().detach().numpy()
-            prediction = output.squeeze().cpu().detach()
+            prediction = output.cpu().detach()
         # Postprocess prediction
 
         prediction_visual =  torchvision.transforms.functional.resize(
@@ -138,11 +138,11 @@ def main(args):
             (500, 500),
             interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
             antialias=True,
-        ).numpy().astype(np.uint8)
+        ).squeeze().numpy().astype(np.uint8)
 
         label = label.squeeze().detach().numpy()
 
-        prediction = np.uint8(prediction.numpy())
+        prediction = np.uint8(prediction.squeeze().numpy())
         label = np.uint8(label)
         assert prediction.shape == label.shape, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {label.shape}]"
 

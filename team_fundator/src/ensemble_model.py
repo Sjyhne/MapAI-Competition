@@ -51,7 +51,7 @@ class EnsembleModel(torch.nn.Module):
                 y = torch.sigmoid(y)         
 
             y = y.to("cpu")
-            model_preds.append(y.squeeze(1))
+            model_preds.append(y)
             if result is None:
                 result = y
                 continue
