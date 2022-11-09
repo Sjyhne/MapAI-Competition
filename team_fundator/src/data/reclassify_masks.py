@@ -37,7 +37,7 @@ class TreeNode():
             self.root.link_trees(node2.root)        
 
 
-def get_nswe_neighbours(y, x, ymax, xmax):
+def get_nswe_neighbours(y:  int, x: int, ymax: int, xmax: int):
     nbs = []
     if y - 1 >= 0:
         nbs.append((y - 1, x))
@@ -49,7 +49,7 @@ def get_nswe_neighbours(y, x, ymax, xmax):
         nbs.append((y, x + 1))
     return nbs
 
-def get_all_neighbours(y, x, ymax, xmax):
+def get_all_neighbours(y: int, x: int, ymax: int, xmax: int):
     nbs = []
     for ny in range(max(0, y - 1), min(y + 2, ymax)):
         for nx in range(max(0, x - 1), min(x + 2, xmax)):
@@ -58,12 +58,58 @@ def get_all_neighbours(y, x, ymax, xmax):
             nbs.append((ny, nx))
     return nbs
 
-def l2(y_diff, x_diff):
+def l2(y_diff: int, x_diff: int):
     return sqrt(y_diff**2 + x_diff**2)
     #return abs(y_diff) + abs(x_diff)
 
+def find_buildings(grid: np.ndarray):
+    forest = defaultdict(lambda: defaultdict(lambda: TreeNode()))
+    edges_list = set()
+    
+    #find all pixels on the edge of a building, i.e. pixels neighbouring an empty pixel, or the edge of the image
+    #also join pixels which are labelled building with the disjoint set class
+    for y in range(grid.shape[0] - 1):
+        for x in range(grid.shape[1] - 1):
+            if grid[y][x] != grid[y][x + 1]:
+                offset = grid[y][x + 1]
+                edges_list.add((y, x + offset))
+            elif grid[y][x] == 1:
+                node = forest[y][x]
+                node.joinTrees(forest[y][x + 1])
+                if y == 0 or x == 0:
+                    edges_list.add((y, x))
+
+            if grid[y][x] != grid[y + 1][x]:
+                offset = grid[y + 1][x]
+                edges_list.add((y + offset, x))
+            elif grid[y][x] == 1:
+                node = forest[y][x]
+                node.joinTrees(forest[y + 1][x])
+                if y == 0 or x == 0:
+                    edges_list.add((y, x))
+        x += 1
+        if grid[y][x] == 1:
+            edges_list.add((y, x))
+            if y + 1 < grid.shape[0] and grid[y + 1][x] == 1:
+                node = forest[y][x]
+                node.joinTrees(forest[y + 1][x])
+    y += 1
+    for x in range(grid.shape[1] - 1):
+        if grid[y][x] == 1:
+            edges_list.add((y, x))
+            if x + 1 < grid.shape[1] and grid[y][x + 1] == 1:
+                node = forest[y][x]
+                node.joinTrees(forest[y][x + 1])
+    if grid[grid.shape[0] - 1][grid.shape[1] - 1] == 1:
+        edges_list.add((grid.shape[0] - 1, grid.shape[1] - 1))
+
+    return forest, edges_list
+
 class gtDataset(Dataset):
-    def __init__(self, dir, max_dist, min_building_size):
+    """
+    A torch dataset to support multithreading of the reclassification code
+    """
+    def __init__(self, dir: str, max_dist: float, min_building_size: int):
         self.max_dist = max_dist
         self.images = glob.glob(dir)
         self.min_building_size = min_building_size
@@ -79,45 +125,8 @@ class gtDataset(Dataset):
         full_grid = np.stack([grid, grid, grid], axis=-1)
 
         assert np.max(grid) <= 1
-        forest = defaultdict(lambda: defaultdict(lambda: TreeNode()))
-        edges_list = set()
-        
-        #find all pixels on the edge of a building, i.e. neighbouring an empty pixel, or the edge of the image
-        #also join pixels which are labelled building with the disjoint set
-        for y in range(grid.shape[0] - 1):
-            for x in range(grid.shape[1] - 1):
-                if grid[y][x] != grid[y][x + 1]:
-                    offset = grid[y][x + 1]
-                    edges_list.add((y, x + offset))
-                elif grid[y][x] == 1:
-                    node = forest[y][x]
-                    node.joinTrees(forest[y][x + 1])
-                    if y == 0 or x == 0:
-                        edges_list.add((y, x))
+        forest, edges_list = find_buildings(grid)
 
-                if grid[y][x] != grid[y + 1][x]:
-                    offset = grid[y + 1][x]
-                    edges_list.add((y + offset, x))
-                elif grid[y][x] == 1:
-                    node = forest[y][x]
-                    node.joinTrees(forest[y + 1][x])
-                    if y == 0 or x == 0:
-                        edges_list.add((y, x))
-            x += 1
-            if grid[y][x] == 1:
-                edges_list.add((y, x))
-                if y + 1 < grid.shape[0] and grid[y + 1][x] == 1:
-                    node = forest[y][x]
-                    node.joinTrees(forest[y + 1][x])
-        y += 1
-        for x in range(grid.shape[1] - 1):
-            if grid[y][x] == 1:
-                edges_list.add((y, x))
-                if x + 1 < grid.shape[1] and grid[y][x + 1] == 1:
-                    node = forest[y][x]
-                    node.joinTrees(forest[y][x + 1])
-        if grid[grid.shape[0] - 1][grid.shape[1] - 1] == 1:
-            edges_list.add((grid.shape[0] - 1, grid.shape[1] - 1))
         if len(edges_list) == 0:
             return {'gt': full_grid, "path": self.images[idx]}
 
@@ -151,8 +160,6 @@ class gtDataset(Dataset):
                     if grid[nny][nnx] != 0:
                         continue
                     first_fronts[root].add((nny, nnx))
-        
-
 
         for root, circumference in tree_circumferences.items():
             if circumference < self.min_building_size:

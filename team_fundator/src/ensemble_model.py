@@ -1,6 +1,6 @@
 import glob
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Tuple
 import torch
 import yaml
 
@@ -10,7 +10,7 @@ import torchvision
 class EnsembleModel(torch.nn.Module):
     """Ensemble of torch models, pass tensor through all models and average results"""
 
-    def __init__(self, models: list, target_size=(500, 500)):
+    def __init__(self, models: list, target_size: Tuple[int, int]=(500, 500)):
         super().__init__()
         self.models = torch.nn.ModuleList(models)
         self.target_size = target_size
@@ -22,14 +22,16 @@ class EnsembleModel(torch.nn.Module):
             in_channels = next(model.parameters()).shape[1]
             if in_channels == x.shape[1]:
                 y = model(x)
-            elif in_channels == 1:
+            elif in_channels == 1: # lidar only model
                 y = model(x[:, -1])
-            elif in_channels == 3:
+            elif in_channels == 3: # rgb only model
                 y = model(x[:, 0:3])
-
+            
+            # remove auxilliary output from two headed models
             if isinstance(y, tuple):
                 y, aux_label = y
             
+            #resize logits for best performance
             if self.target_size != y.shape[-2:]:
                 y = torchvision.transforms.functional.resize(
                     y,
@@ -39,13 +41,14 @@ class EnsembleModel(torch.nn.Module):
                 )
 
             num_classes = y.shape[1]      
-            if y.shape[1] > 1:
+            if y.shape[1] > 1: # map softmax probabilities for multiclass models
                 y = torch.softmax(y, dim=1)   
                 if num_classes == 4: # mapai_reclassified
                     y = y[:, 1] + y[:, 2]
                 else: # landcover train, mapai_lidar_masks
                     y = y[:, 1]
             else:
+                # return sigmoid probabilities for single class models
                 y = torch.sigmoid(y)
 
 
@@ -53,6 +56,7 @@ class EnsembleModel(torch.nn.Module):
             if result is None:
                 result = y
                 continue
+            # use majority voting for ensemble predictions
             result += y
 
         result /= torch.tensor(len(self.models)).to(result.device)

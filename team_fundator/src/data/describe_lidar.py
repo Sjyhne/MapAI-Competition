@@ -2,7 +2,7 @@ import numpy as np
 import glob
 import cv2
 from tqdm import tqdm
-masks = glob.glob(r"C:\Users\LARHOD\Documents\GIS\MapAI-Competition\data\overlapping_data\validation\lidar\*.tif")
+lidar = glob.glob(r"C:\Users\LARHOD\Documents\GIS\MapAI-Competition\data\overlapping_data\validation\lidar\*.tif")
 
 
 min_all = float("inf")
@@ -13,7 +13,7 @@ max_file = None
 
 not_zero = []
 
-for path in tqdm(masks):
+for path in tqdm(lidar):
     gt = cv2.imread(path, cv2.IMREAD_UNCHANGED)
     minimum = np.min(gt)
     if minimum < 0:

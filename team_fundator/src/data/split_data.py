@@ -2,12 +2,9 @@
 
 import glob
 import os
-
 import cv2
 
-
-
-OUTPUT_DIR = "./overlapping_data/"
+OUTPUT_DIR = "./mapai/"
 
 TARGET_SIZE = 500
 STRIDE = TARGET_SIZE // 3
@@ -47,7 +44,6 @@ for split in ["train", "validation"]:
             for x in range(0, img.shape[1], STRIDE):
                 img_tile = img[y:y + TARGET_SIZE, x:x + TARGET_SIZE]
                 mask_tile = mask[y:y + TARGET_SIZE, x:x + TARGET_SIZE]
-                
                 lidar_tile = lidar[y:y + TARGET_SIZE, x:x + TARGET_SIZE]
 
                 if img_tile.shape[0] == TARGET_SIZE and img_tile.shape[1] == TARGET_SIZE:

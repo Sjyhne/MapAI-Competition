@@ -1,4 +1,5 @@
 import pathlib
+from typing import Callable, Optional
 
 from torch.utils.data import Dataset, DataLoader
 import os
@@ -54,10 +55,10 @@ def load_lidar(lidarpath: str, size: tuple) -> torch.tensor:
 
     return lidar
 
-def load_ensemble_pred(picklepath):
+def load_ensemble_pred(picklepath: str):
+    # loads pickle files to train a metaensemble on stored predictions with shape N * H * W
     handle = open(picklepath, 'rb')
     data = pickle.load(handle)
-    # data = [tens.detach().numpy() for tens in data]
     data = np.vstack(data)
     return data
 
@@ -66,13 +67,13 @@ class ImageAndLabelDataset(Dataset):
     def __init__(self,
                  opts: dict,
                  datatype: str = "validation",
-                 transforms=None,
-                 aux_head_labels=False,
-                 use_lidar_in_mask=False):
+                 transforms: Optional[Callable]=None,
+                 aux_head_labels: bool=False,
+                 use_lidar_in_mask: bool=False):
 
         self.opts = opts
-        self.aux_head_labels = aux_head_labels
-        self.use_lidar_in_mask = use_lidar_in_mask
+        self.aux_head_labels = aux_head_labels # wheter to add a label for an auxilliary classification head
+        self.use_lidar_in_mask = use_lidar_in_mask # whether to use lidar to create a third class 
         self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
@@ -88,7 +89,7 @@ class ImageAndLabelDataset(Dataset):
             assert len(self.image_paths)  == len(self.lidar_paths) 
 
         self.image_size = (opts["imagesize"], opts["imagesize"])
-        self.label_size = self.image_size if datatype == "train" else (500, 500)
+        self.label_size = self.image_size if datatype == "train" else (500, 500) # validate on the mask resolution sued in the competition
         assert len(self.image_paths)  == len(self.mask_paths) 
         print()
 
@@ -119,7 +120,8 @@ class ImageAndLabelDataset(Dataset):
         label = load_label(labelfilepath, self.label_size)
         
         if self.use_lidar_in_mask:
-            label[lidar == 0.0] = 2
+            # lidar == 0 indicates regions where a DTM and DSM are equal, therefore we give the option to add scuh regions as a new class
+            label[lidar == 0.0] = 2 
 
         sample = dict(
             id=filename,
@@ -133,6 +135,7 @@ class ImageAndLabelDataset(Dataset):
             sample["image"] = sample["image"].transpose(2, 0, 1)
 
         if self.aux_head_labels:
+            # the auxilliary head takes binary labels which represent the prescence of buildings (1) in the GT mask
             sample["aux_label"] = np.expand_dims(np.any(label == 1.0), 0).astype(np.float32)
         sample["mask"] = np.expand_dims(sample["mask"], 0)
         return sample
@@ -146,11 +149,11 @@ class ImageLabelAndLidarDataset(Dataset):
     def __init__(self,
                  opts: dict,
                  datatype: str = "validation",
-                 transform=None,
-                 lidar_transform=None,
-                 aux_head_labels=False,
-                 use_lidar_in_mask=False,
-                 lidar_only=False):
+                 transform: Optional[Callable]=None,
+                 lidar_transform: Optional[Callable]=None,
+                 aux_head_labels: bool=False,
+                 use_lidar_in_mask: bool=False,
+                 lidar_only: bool=False):
 
         self.opts = opts
         self.transform = transform
@@ -251,15 +254,15 @@ class EnsembleDataset(Dataset):
     def __init__(self,
                  opts: dict,
                  datatype: str = "validation",
-                 transforms=None,
-                 aux_head_labels=False,
-                 use_lidar_in_mask=False):
+                 transforms: Optional[Callable]=None,
+                 aux_head_labels: bool=False,
+                 use_lidar_in_mask: bool=False):
 
         self.opts = opts
-        self.aux_head_labels = aux_head_labels
-        self.use_lidar_in_mask = use_lidar_in_mask
-        self.ratio = self.opts[datatype]["data_ratio"]
         self.datatype = datatype
+        self.aux_head_labels = aux_head_labels # wheater to add a binary building / no building label for models with an auxilliary classification head
+        self.use_lidar_in_mask = use_lidar_in_mask # whether to add a lidar-related class in the labels
+        self.ratio = self.opts[datatype]["data_ratio"]
 
         root = opts["data_dirs"]["root"]
         base_root = opts["data_dirs"]["base_root"]

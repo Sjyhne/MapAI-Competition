@@ -44,6 +44,7 @@ def main(args):
             ),
         ]
 
+    # models and configs for the ensemble
     model_names = []
     configs = []
 
@@ -51,7 +52,7 @@ def main(args):
         pt_id = pt_share_link.split("/")[-2]
         opt_id = opt_share_link.split("/")[-2]
 
-        # Download trained model ready for inference
+        # Download trained model
         url_to_pt = f"https://drive.google.com/uc?id={pt_id}"
         url_to_opt = f"https://drive.google.com/uc?id={opt_id}"
         model_checkpoint = f"task1_pt{i + 1}.pt"
@@ -89,7 +90,7 @@ def main(args):
         model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
         models.append(model)
 
-    target_size = (500, 500)
+    target_size = (500, 500) # for resizing the predictions
 
     model = EnsembleModel(models, target_size=target_size)
     device = opts["device"]
