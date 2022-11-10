@@ -38,10 +38,22 @@ def main(args):
     #########################################################################
 
     pt_share_links = [
+            # (
+            # "https://drive.google.com/file/d/1AWduWlYKH0SdfMhZ0cT0Ymj9HBSGF18t/view?usp=share_link", # cp
+            # "https://drive.google.com/file/d/1PXa7AlWPIOAUZEmHQyXGahK2MRIFIRXG/view?usp=share_link" # opts
+            # ),
             (
-            "https://drive.google.com/file/d/1AWduWlYKH0SdfMhZ0cT0Ymj9HBSGF18t/view?usp=share_link", # cp
-            "https://drive.google.com/file/d/1PXa7AlWPIOAUZEmHQyXGahK2MRIFIRXG/view?usp=share_link" # opts
+                "https://drive.google.com/file/d/1cdFRQ12R5MziMVrE1vNKTqRL3_1Toh3x/view?usp=share_link",
+                "https://drive.google.com/file/d/1jKOqHwRWNFYF67P9VFgJV9zDQ1-VJsTd/view?usp=share_link"
             ),
+            (
+                "https://drive.google.com/file/d/1173maCZwYTYcbbML0aGY0MCh4WXHe6p2/view?usp=sharing",
+                "https://drive.google.com/file/d/1CteVOt7fatjHdobtuk3toaRMS6nYEU7s/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1Aqr9LnAZHMKsOZkoUp583Q3VzuTYaaUV/view?usp=share_link",
+                "https://drive.google.com/file/d/1-id3l8kd1QwBOE6KDLb4FBadrUKypFpT/view?usp=share_link"
+            )
         ]
 
     # models and configs for the ensemble
@@ -89,6 +101,11 @@ def main(args):
         model = get_model(config)
         model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
         models.append(model)
+
+        if config["imagesize"] != opts["imagesize"]:
+            opts["imagesize"] = config["imagesize"]
+            print(f"Using image resolution: {opts['imagesize']} * {opts['imagesize']}")
+
 
     target_size = (500, 500) # for resizing the predictions
 

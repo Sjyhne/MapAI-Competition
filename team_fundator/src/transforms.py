@@ -8,6 +8,9 @@ warnings.simplefilter("ignore")
 
 
 class LidarAugComposer():
+    """
+    Provides normalization and augmentation of lidar data
+    """
     def __init__(self, opts):
         lidar_opts = opts["lidar_augs"]
 
@@ -36,23 +39,23 @@ class LidarAugComposer():
         
         self.opts = lidar_opts
 
-    def normalize_lidar(self, lidar):
+    def normalize_lidar(self, lidar: np.ndarray):
         if self.norm == "max":
             return self.max_lidar_transform(lidar)
         return self.min_max_lidar_transform(lidar)
 
-    def max_lidar_transform(self, lidar):
+    def max_lidar_transform(self, lidar: np.ndarray):
         lidar = np.clip(lidar, self.clip_min, self.clip_max)
         lidar = lidar / (self.clip_max if self.norm_basis == "clip" else np.max(lidar))
         return lidar
 
-    def min_max_lidar_transform(self, lidar):
+    def min_max_lidar_transform(self, lidar: np.ndarray):
         lidar = np.clip(lidar, self.clip_min, self.clip_max)
         minimum = self.clip_min if self.norm_basis == "clip" else np.min(lidar)
         maximum = self.clip_max if self.norm_basis == "clip" else np.min(lidar)
         return (lidar - minimum) / (maximum - minimum)
 
-    def dropout(self, lidar):
+    def dropout(self, lidar: np.ndarray):
         dropout_opts = self.opts["dropout"]
         if random.random() <= dropout_opts["p"]:
             size = lidar.shape[1] * lidar.shape[0]
@@ -66,14 +69,14 @@ class LidarAugComposer():
 
         return lidar
 
-    def random_scaling(self, lidar):
+    def random_scaling(self, lidar: np.ndarray):
         rs_opts = self.opts["random_scaling"]
         if random.random() <= rs_opts["p"]:
             scale = random.uniform(rs_opts["min_scale"], rs_opts["max_scale"])
             return lidar * scale
         return lidar
 
-    def random_noise(self, lidar):
+    def random_noise(self, lidar: np.ndarray):
         rn_opts = self.opts["random_noise"]
         if random.random() <= rn_opts["p"]:
             noise = np.random.normal(scale=rn_opts["std"], size=lidar.shape)
@@ -84,20 +87,20 @@ class LidarAugComposer():
             lidar += noise
         return lidar
 
-    def random_offset(self, lidar):
+    def random_offset(self, lidar: np.ndarray):
         ro_opts = self.opts["random_offset"]
         if random.random() <= ro_opts["p"]:
             offset = random.uniform(ro_opts["min_offset"], ro_opts["max_offset"])
             lidar[lidar >= ro_opts["min_height"]] += offset
         return lidar
         
-    def one_of(self, lidar):
+    def one_of(self, lidar: np.ndarray):
         r = random.random()
         for i, transform in enumerate(self.one_of_transforms):
             if r <= (i + 1) / len(self.one_of_transforms):
                 return transform(lidar)
     
-    def lidar_transform(self, lidar):
+    def lidar_transform(self, lidar: np.ndarray):
         for transform in self.aug_list:
             lidar = transform(lidar)
         return self.normalize_lidar(lidar)

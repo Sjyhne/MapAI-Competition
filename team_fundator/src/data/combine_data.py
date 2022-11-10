@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 import re
-batch_size = 100 # images are either 10 * 10 or (10 * 2) * 10
+batch_size = 10**2 # images are either 10 * 10 or (10 * 2) * 10
 
 if __name__ == "__main__":
     for type in ["images", "lidar", "masks"]:
@@ -12,7 +12,7 @@ if __name__ == "__main__":
         image_paths = sorted(image_paths, key = lambda x: [int(k) if k.isdigit() else k for k in re.split('([0-9]+)', x.stem)])
 
         assert len(image_paths) % batch_size == 0
-        left_half = None # use left half when combining two adjacent 10 * 10 image tiles
+        left_half = None # used when combining two adjacent 10 * 10 image tiles
         for i in tqdm(range(0, len(image_paths), batch_size)):
             paths = image_paths[i:i+batch_size]
             image_slices = []
@@ -24,7 +24,7 @@ if __name__ == "__main__":
             # stack horisontal image slices
             image = np.vstack(image_slices)
             if left_half is not None:
-                # if left half is not None, the image is adjacent and can be stackd into a 10000 x 5000 image
+                # if left half is not None, the current image is adjacent and can be stacked into a 10000 x 5000 image
                 image = np.hstack([left_half, image])
                 left_half = None
             # check filename of the next image tile to see if it is adjacent to image

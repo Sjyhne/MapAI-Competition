@@ -127,18 +127,32 @@ class gtDataset(Dataset):
         assert np.max(grid) <= 1
         forest, edges_list = find_buildings(grid)
 
-        if len(edges_list) == 0:
+        if len(edges_list) == 0: # no buildings in the image
             return {'gt': full_grid, "path": self.images[idx]}
 
         classified_building_edges = np.zeros(grid.shape[:2], dtype=np.uint8)
-        
 
-        first_fronts = defaultdict(lambda: set())
-        closest_from_tree = defaultdict(lambda: defaultdict(lambda: set()))
-        visited_by_tree = defaultdict(lambda: defaultdict(lambda: False))
-        tree_circumferences = defaultdict(lambda: 0)
+        first_fronts = defaultdict(lambda: set()) # stores the current front in the distance search.
+        closest_from_tree = defaultdict(lambda: defaultdict(lambda: set())) # stores the n closest edge pixels from a building for each pixel
+        # for each pixel, it denotes if the iterative search from a given building has already visited the pixel
+        visited_by_tree = defaultdict(lambda: defaultdict(lambda: False)) 
+        tree_circumferences = defaultdict(lambda: 0) # counts the number of pixels in edges_list from each building
 
         all_dists = defaultdict(lambda: np.ones(grid.shape) * self.max_dist)
+
+        # perform an iterative search starting in the edge of a building to find the closest edge pixel for each pixel reached by the search.
+        # based on the intuition that for a given pixel its closest edge pixel must be the closest edge pixel of one of its neighbours
+
+        # each iteration is based on the current front, which is given by the unvisited neigbours of the previous front:
+        #      f_1       f_2           f_3     
+        #                           # # # # #
+        #               # # #       #       #
+        #       #       #   #       #       #          ...
+        #               # # #       #       #
+        #                           # # # # #
+        # this is repeated for every building
+
+        # generate the first front, and label the edge class for the final mask
         for y, x in edges_list:
             classified_building_edges[y][x] = 1
             root = forest[y][x].get_root()
@@ -161,10 +175,12 @@ class gtDataset(Dataset):
                         continue
                     first_fronts[root].add((nny, nnx))
 
+        # remove buildings which are deemed to small. These will not influence the squeezed buildings class, but do contribute to the edges class
         for root, circumference in tree_circumferences.items():
             if circumference < self.min_building_size:
                 del first_fronts[root]
 
+        # if there is not two buildings, no need to continue the search
         if len(first_fronts.keys()) < 2:
             return {'gt': full_grid, "path": self.images[idx]}
 
@@ -178,21 +194,26 @@ class gtDataset(Dataset):
             while len(front) > 0:
                 next_front = set()
                 for y, x in front:
+                    # for the current pixel, we want to add its unvisited neighborus to the next front, and find the closest edge pixels from its visited neigbours
                     visited[(y, x)] = True
-                    next_front_candidates = set()
+                    next_front_candidates = set() # we only update the next front with unvisited neighbours, if we can improve the current closest pixel
                     best_dist = all_dists[y][x][r_idx]
                     best_nodes = closest[(y, x)]
                     for ny, nx in get_all_neighbours(y, x, grid.shape[0], grid.shape[1]):
-                        if grid[ny][nx] != 0:
+                        if grid[ny][nx] != 0: # ignore building pixels
                             continue
                         if not visited[(ny, nx)]:
-                            if (ny, nx) in front:
+                            if (ny, nx) in front: 
+                                # edge case, when a neighbour is not visited but in the current front,
+                                # if our closest edge pixel is their closest (currently unknown) edge pixel, this is problematic
                                 next_front_candidates.add((y, x))
                                 next_front_candidates.add((ny, nx))
+                                # therefore we add both the current pixel and neighbour pixel to  the next front and hope for the best
+                                # TODO: find out if this works, / is necessary 
                                 continue
                             next_front_candidates.add((ny, nx))
                             continue
-                        if len(closest[(ny, nx)]) == 0:
+                        if len(closest[(ny, nx)]) == 0: # the neighbour is visited, but has no edge_pixels which are close enough to pass the max_dist threshhold
                             continue
                         for neighbours_closest_y, ncx in closest[(ny, nx)]:
                             dist = l2(y - neighbours_closest_y, x - ncx)
@@ -206,6 +227,8 @@ class gtDataset(Dataset):
                         next_front = next_front.union(next_front_candidates)
                         closest[(y, x)] = best_nodes
                 front = next_front
+
+        # find the combined distance of the two closest buildings for each pixel
         if all_dists.shape[-1] > 2:
             shortest_dists_idx = np.argpartition(all_dists, 2)
             best_dists = np.take_along_axis(all_dists, shortest_dists_idx[:, :, :2], axis=-1)
@@ -232,7 +255,7 @@ class gtDataset(Dataset):
 
 def main(max_dist, replace_folder="masks", min_building_size=30):
     for split in ["validation"]:
-        gt_ds = gtDataset(f"overlapping_data/{split}/masks/*.tif", max_dist, min_building_size)
+        gt_ds = gtDataset(f"mapai/{split}/masks/*.tif", max_dist, min_building_size)
         dataloader = DataLoader(gt_ds, batch_size=1, shuffle=False, num_workers=8)
 
         for new_gt in tqdm(dataloader):

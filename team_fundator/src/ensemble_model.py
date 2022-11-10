@@ -27,11 +27,11 @@ class EnsembleModel(torch.nn.Module):
             elif in_channels == 3: # rgb only model
                 y = model(x[:, 0:3])
             
-            # remove auxilliary output from two headed models
+            # ignore auxilliary output from two headed models
             if isinstance(y, tuple):
                 y, aux_label = y
             
-            #resize logits for best performance
+            #resize logits (not the bitmask) for best performance
             if self.target_size != y.shape[-2:]:
                 y = torchvision.transforms.functional.resize(
                     y,
