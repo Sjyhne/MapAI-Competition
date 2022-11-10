@@ -142,10 +142,8 @@ def main(args):
             output = dilation(output, kernel)
 
         if opts["device"] == "cpu":
-            #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().detach().numpy()
             prediction = output.squeeze().detach().numpy().astype(np.uint8)
         else:
-            #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().cpu().detach().numpy()
             prediction = output.squeeze().detach().cpu().numpy().astype(np.uint8)
         
 
