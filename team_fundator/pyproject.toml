@@ -24,7 +24,6 @@ dependencies = [
     "gdown",
     "matplotlib",
     "segmentation-models-pytorch",
-    "kornia",
     "tabulate",
     "albumentations",
 ]

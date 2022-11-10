@@ -6,7 +6,6 @@ from tqdm import tqdm
 import torch
 import torchvision
 from tabulate import tabulate
-from kornia.morphology import erosion, dilation
 import argparse
 import time
 # import cv2
@@ -70,11 +69,6 @@ def test(test_opts, dataloader, model, lossfn, device, aux_loss=None, aux_head=F
         else:
             output = torch.round(torch.sigmoid(output)).squeeze(1)
         label = label.squeeze(1)
-
-        if test_opts["erode_val_preds"]:
-            kernel = torch.ones(5, 5).to(device)
-            output = erosion(output.unsqueeze(1), kernel)
-            output = dilation(output, kernel).squeeze(1)
 
         if device != "cpu":
             metrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),

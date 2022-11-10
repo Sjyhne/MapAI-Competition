@@ -1,24 +1,18 @@
 import argparse
 import numpy as np
 from tabulate import tabulate
-import torch
 
 from tqdm import tqdm
 from custom_dataloader import create_dataloader
 from ensemble_model import EnsembleModel, load_models_from_runs
 from transforms import valid_transform, LidarAugComposer
 from competition_toolkit.eval_functions import calculate_score
-import torchvision
 import yaml
 from utils import get_dataset_config
 
 
 def test_ensemble(opts):
     device = opts["device"]
-    antialias = opts.get("antialias", True)
-    interpolation_mode = opts.get(
-        "interpolation_mode", torchvision.transforms.InterpolationMode.BILINEAR
-    )
 
     # Load models and create ensemble
     models, runs = load_models_from_runs(

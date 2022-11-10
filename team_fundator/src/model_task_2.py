@@ -2,7 +2,6 @@ import pathlib
 
 from tqdm import tqdm
 import torch
-import torchvision
 import numpy as np
 import cv2 as cv
 import yaml
@@ -11,12 +10,10 @@ import gdown
 import os
 import shutil
 
-from kornia.morphology import erosion, dilation
 
 from competition_toolkit.dataloader import create_dataloader
-from competition_toolkit.eval_functions import iou, biou
 
-from utils import get_model
+from utils import get_model, post_process_mask
 
 from ensemble_model import EnsembleModel
 from transforms import LidarAugComposer
@@ -126,19 +123,15 @@ def main(args):
         output = model(image[:, :3])["result"]
         output = torch.round(output)
 
-        if opts["erode_val_preds"]:
-            kernel = torch.ones(5, 5).to(device)
-            output = erosion(output, kernel)
-            output = dilation(output, kernel)
-            output = dilation(output, kernel)
-            output = erosion(output, kernel)
-
         if opts["device"] == "cpu":
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().detach().numpy()
             prediction = output.squeeze().detach().numpy().astype(np.uint8)
         else:
             #prediction = torch.argmax(torch.softmax(output, dim=1), dim=1).squeeze().cpu().detach().numpy()
             prediction = output.squeeze().detach().cpu().numpy().astype(np.uint8)
+
+        if opts["post_process_preds"]:
+            prediction = post_process_mask(prediction)
         
 
         label = label.squeeze().detach().numpy()
