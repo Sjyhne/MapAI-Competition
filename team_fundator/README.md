@@ -1,35 +1,75 @@
-# Example code for team_example
-This folder contain the example code that you can use as a base.
-## File structure
-Following is the mandatory file structure:
-```
-team_<NAME>
-│   README.md
-│   pyproject.toml    
-│
-└───src
-│   │   main.py
-│   │   <other files and folders. Include program in main.py section>
-```
+# Team_fundator MapAI Submission
 
-In this particular example, we have added following custom code, that encompasses what would be a fully functional submission:
-```
-config/data.yml
-model_task_1.py
-model_task_2.py
-train.py
-utils.py
-```
-In `main.py`, you should import your code submission, e.g.,
-```python
-from model_task_1 import main as evaluate_model_1  
-from model_task_2 import main as evaluate_model_2  
-if args.task == 1:  
-    evaluate_model_1(args=args)  
-elif args.task == 2:  
-    evaluate_model_2(args=args)  
-else:  
-    evaluate_model_1(args=args)  
-    evaluate_model_2(args=args)
-``` 
-When you pull request to the main repository, the code is checked for errors and if everything is OK, it should pass tests and be available for merging into the main repository. When the pull-request is merged, you can consider your code delivered.
+This repository contains all files related to our submission for the MapAI Building segmentation competition.
+
+Our solution is based on UNet ensembles with heterogneity from differing backbones and training data.
+
+An archive with pretrained models is available in [Google Drive](https://drive.google.com/drive/folders/1SQnS-cczKYae0_FpBFchFGpZ3X4QFyZo?usp=share_link)
+
+## Requirements
+
+### Software
+The code has been tested on Ubuntu and Windows 10 with CUDA 11.7 and python 3.8.
+
+We provide .sh scripts (tested on Ubuntu 20.04 LTS) to replicate the training for our final submission.
+
+### Hardware
+Our implementation was trained using an RTX 3090 GPU with 24 GB of VRAM. If you have less than 8GB available consider lowering the imagesize to 512 in the config, and use a batch size no greater than 4.
+
+Our data preparation consumes ~100GB of disk space.
+
+## Installation
+
+In the competitions root folder install the competition toolkit and our dependencies:
+
+    pip install competition_toolkit/ team_fundator/
+
+## Data preparation
+We have made a script, `prepare_data.sh`, to complete our data-preprocessing steps:
+* Download the dataset if it isn't already.
+* Stitch the data into the original 10000 * 5000 and 5000 * 5000 images.
+* Split the images with a stride of 500/3
+
+To run the script, simply write:
+    sh prepare_data.sh
+
+The script `reclassify_masks.sh` reclassifies the masks with building edges and regions in-between two adjacent buildlings as separate classes.
+
+## Training
+
+From the data preparation you shoulw have the following data structure:
+    
+    MapAI-Competition
+    |
+    └─── data 
+    |   └───  big_tiles
+    |   |   |   ...
+    |   └─── mapai
+    |   |   └─── train
+    |   |       | images/
+    |   |       | lidar/
+    |   |       | masks/
+    |   |       | mask_reclassified/
+    |   | train
+    |   | validation
+    └─── team_fundator
+    │   │   <other files and folders. Include program in main.py section>
+    
+To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard parameters, no arguments are needed:
+    sh train_task1.sh
+    sh train_task2.sh
+    
+    
+## Description
+The ensembles for task 1 and to are desdcribed here.
+### Task 1
+The ensemble contains four models, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
+    Encoders: (timm-resnest-26d, efficientnet-b1)
+    Datasets: (mapai, mapai_reclassified)
+
+### Task 1
+The ensemble contains seven model, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
+    Encoders: (timm-resnest-26d, efficientnet-b1)
+    Datasets: (mapai, mapai_reclassified, mapai_lidar_masks)
+
+The seventh model has a `timm-resnest-26d` encoder, trained on the ``mapai` dataset, but only using LIDAR input.
