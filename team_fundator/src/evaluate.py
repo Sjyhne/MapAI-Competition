@@ -13,12 +13,11 @@ from competition_toolkit.eval_functions import iou, biou
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=int, default=1, help="Which task to evaluate")
     parser.add_argument("--data-ratio", type=float, default=1.0)
 
     args = parser.parse_args()
 
-    dataset_path = Path('data/mapai/validation')
+    dataset_path = Path('../../data/mapai/validation')
     mask_path = dataset_path.joinpath("masks")
 
 

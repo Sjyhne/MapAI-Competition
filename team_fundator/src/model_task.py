@@ -29,7 +29,7 @@ def main(args, pt_share_links):
         opts = {**opts, **vars(args)}
 
 
-        #########################################################################
+    #########################################################################
     ###
     # Create needed directories for data
     ###
@@ -78,7 +78,6 @@ def main(args, pt_share_links):
 
         model_name_list.append([model_checkpoint])
         model_cfg_list.append([model_cfg])
-
 
 
     #########################################################################
@@ -144,53 +143,49 @@ def main(args, pt_share_links):
             else:
                 prediction = prediction.squeeze().detach().cpu().numpy()
             
-
             assert prediction.shape == target_size, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {target_size}]"
 
             
             #Load and save temp prediction
             temp_pred_path = temp_path.joinpath(f"{filename_base}.npy")
             if len(model_cfg_list) > 1 and i > 0:
-                    prediction += np.load(str(temp_pred_path))
+                prediction += np.load(str(temp_pred_path))
 
             if i < len(model_cfg_list) - 1:
                 np.save(str(temp_pred_path), prediction)
             else:
-                # Save final prediction
-                if opts["device"] == "cpu":
-                    image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)
-                else:
-                    image = image.squeeze().cpu().detach().numpy()[:3, :, :].transpose(1, 2, 0)
-
-                
                 prediction = np.rint(prediction / len(model_cfg_list)).astype(np.uint8)
                 if opts["post_process_preds"]:
                     prediction = post_process_mask(prediction)
                 
-                prediction_visual = np.copy(prediction)
+                # prediction_visual = np.copy(prediction)
 
-                for idx, value in enumerate(opts["classes"]):
-                    prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
+                # for idx, value in enumerate(opts["classes"]):
+                #     prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
 
-                label = label.squeeze().detach().numpy()
+                # Save final prediction
+                # if opts["device"] == "cpu":
+                #     image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)
+                # else:
+                #     image = image.squeeze().cpu().detach().numpy()[:3, :, :].transpose(1, 2, 0)
+                # label = label.squeeze().detach().numpy().astype(np.uint8)
 
-                label = np.uint8(label)
-
-                fig, ax = plt.subplots(1, 3)
-                ax[0].set_title("Input (RGB)")
-                ax[0].imshow(image)
-                ax[1].set_title("Prediction")
-                ax[1].imshow(prediction_visual)
-                ax[2].set_title("Label")
-                ax[2].imshow(label)
+                # fig, ax = plt.subplots(1, 3)
+                # ax[0].set_title("Input (RGB)")
+                # ax[0].imshow(image)
+                # ax[1].set_title("Prediction")
+                # ax[1].imshow(prediction_visual)
+                # ax[2].set_title("Label")
+                # ax[2].imshow(label)
 
                 # Save to file.
-                predicted_sample_path_png = predictions_path.joinpath(f"{filename_base}.png")
+                # predicted_sample_path_png = predictions_path.joinpath(f"{filename_base}.png")
+                # plt.savefig(str(predicted_sample_path_png))
+                # plt.close()
+
                 predicted_sample_path_tif = predictions_path.joinpath(filename[0])
-                plt.savefig(str(predicted_sample_path_png))
-                plt.close()
                 cv.imwrite(str(predicted_sample_path_tif), prediction)
-        print()
+        print("\n")
         del model
     # Dump file configuration
     yaml.dump(opts, open(opts_file, "w"), Dumper=yaml.Dumper)
