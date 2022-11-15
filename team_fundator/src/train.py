@@ -267,6 +267,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--dataset", type=str, default=None)
     parser.add_argument("--backbone", type=str, default=None)
+    parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--data-ratio", type=float, default=None)
 
     args = parser.parse_args()
@@ -276,6 +277,7 @@ if __name__ == "__main__":
     dataset = args.pop("dataset")
     backbone = args.pop("backbone")
     dr = args.pop("data_ratio")
+    bs = args.pop("batch_size")
 
     opts = load(open(args["config"], "r"), Loader)
 
@@ -296,6 +298,10 @@ if __name__ == "__main__":
 
     if dr is not None:
         opts["train"]["data_ratio"] = dr
+
+    if bs is not None:
+        opts["train"]["batchsize"] = bs
+        opts["validation"]["batchsize"] = bs
     
     data_opts = get_dataset_config(opts)
 
