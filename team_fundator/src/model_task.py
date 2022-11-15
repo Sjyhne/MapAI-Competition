@@ -114,15 +114,13 @@ def main(args, pt_share_links):
         model = EnsembleModel(models, target_size=target_size)
         model = model.to(device)
         model.eval()
-        pbar = tqdm(enumerate(dataloader), total=len(dataloader), miniters=int(len(dataloader)/100), desc="Inference", leave=False)
+        pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc="Inference", leave=False)
 
         del models
-        for idx, (image, label, filename) in pbar:
+        for image, label, filename in pbar:
             # Split filename and extension
             filename_base, file_extension = os.path.splitext(filename[0])
 
-            # Send image and label to device (eg., cuda)
-            image = image.to(device)
 
             if opts["task"] == 2:
                 image, lidar = torch.split(image, [3, 1], dim=1)
@@ -130,6 +128,8 @@ def main(args, pt_share_links):
 
                 image = torch.cat([image, torch.tensor(lidar, dtype=image.dtype)], dim=1)
 
+            # Send image and label to device (eg., cuda)
+            image = image.to(device)
 
             # Perform model prediction
             prediction = model(image)["result"]
