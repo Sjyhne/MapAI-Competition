@@ -75,3 +75,5 @@ The ensemble contains seven models, which are trained with different combination
     Datasets: (mapai, mapai_reclassified, mapai_lidar_masks)
 
 The seventh model has a `timm-resnest-26d` encoder, trained on the `mapai` dataset, but only using LIDAR input.
+
+The dataset `mapai_lidar_masks` has a tird class for the case where the LIDAR height is 0.
