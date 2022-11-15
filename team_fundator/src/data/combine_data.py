@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
         assert len(image_paths) % batch_size == 0
         left_half = None # used when combining two adjacent 10 * 10 image tiles
-        for i in tqdm(range(0, len(image_paths), batch_size)):
+        for i in tqdm(range(0, len(image_paths), batch_size), desc=f"Stitching {type}"):
             paths = image_paths[i:i+batch_size]
             image_slices = []
             for k in range(0, 100, 10):
@@ -34,7 +34,7 @@ if __name__ == "__main__":
             
             # save the big tile
             new_stem = paths[0].stem[:-2] 
-            new_path = Path('./../../../data/big_tiles').joinpath(paths[0]).with_name(new_stem + ".tif")
+            new_path = Path('./../../../data/big_tiles').joinpath("/".join(paths[0].parents[:2])).with_name(new_stem + ".tif")
             new_path.parent.mkdir(parents=True, exist_ok=True)
 
             cv2.imwrite(new_path.as_posix(), image)
