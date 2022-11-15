@@ -4,7 +4,7 @@ import glob
 import os
 import cv2
 
-OUTPUT_DIR = "./../../data/mapai/"
+OUTPUT_DIR = "./../../../data/mapai/"
 
 TARGET_SIZE = 500
 STRIDE = TARGET_SIZE // 3
@@ -23,7 +23,10 @@ for split in ["train"]: #, "validation"]:
     lidar_paths.sort()
 
     print(len(img_paths), len(lidar_paths), len(mask_paths))
-    os.makedirs(OUTPUT_DIR + split, exist_ok=True)
+    
+    os.makedirs(OUTPUT_DIR + split + f'/{IMGS_DIR}', exist_ok=True)
+    os.makedirs(OUTPUT_DIR + split + f'/{MASKS_DIR}', exist_ok=True)
+    os.makedirs(OUTPUT_DIR + split + f'/{LIDAR_DIR}', exist_ok=True)
 
     for i in range(len(img_paths)):
         img_path = img_paths[i]
