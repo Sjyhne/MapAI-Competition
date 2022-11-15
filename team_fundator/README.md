@@ -31,6 +31,7 @@ We have made a script, `prepare_data.sh`, to complete our data-preprocessing ste
 * Split the images with a stride of 500/3
 
 To run the script, simply write:
+
     sh prepare_data.sh
 
 The script `reclassify_data.sh` reclassifies the masks with building edges and regions in-between two adjacent buildlings as separate classes.
@@ -56,6 +57,7 @@ From the data preparation you should have the following data structure:
     │   │   <other files and folders. Include program in main.py section>
     |   └───
 To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard parameters, no arguments are needed:
+
     sh train_task1.sh
     sh train_task2.sh
     
