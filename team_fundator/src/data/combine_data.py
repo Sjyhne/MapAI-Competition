@@ -34,7 +34,8 @@ if __name__ == "__main__":
             
             # save the big tile
             new_stem = paths[0].stem[:-2] 
-            new_path = Path('./../../../data/big_tiles').joinpath("/".join(paths[0].parents[:2])).with_name(new_stem + ".tif")
+            new_parent = "/".join([paths[0].parents[0], paths[0].parents[1]])
+            new_path = Path('./../../../data/big_tiles').joinpath(new_parent).with_name(new_stem + ".tif")
             new_path.parent.mkdir(parents=True, exist_ok=True)
 
             cv2.imwrite(new_path.as_posix(), image)
