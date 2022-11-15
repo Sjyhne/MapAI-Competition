@@ -4,7 +4,7 @@ import glob
 import os
 import cv2
 
-OUTPUT_DIR = "./mapai/"
+OUTPUT_DIR = "./../../data/mapai/"
 
 TARGET_SIZE = 500
 STRIDE = TARGET_SIZE // 3

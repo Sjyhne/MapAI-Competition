@@ -365,6 +365,6 @@ def create_dataloader(opts: dict, datatype: str = "test", transforms=None, aux_h
     else:
         dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels, use_lidar_in_mask, lidar_only=opts["task"] == 3)
 
-    dataloader = DataLoader(dataset, batch_size=opts[datatype]["batchsize"], shuffle=opts[datatype]["shuffle"], num_workers=opts[datatype]["num_workers"])
+    dataloader = DataLoader(dataset, batch_size=opts[datatype]["batchsize"], shuffle=opts[datatype]["shuffle"], num_workers=opts[datatype]["num_workers"], drop_last=True)
 
     return dataloader
