@@ -54,7 +54,7 @@ From the data preparation you should have the following data structure:
     |   | train
     |   | validation
     └─── team_fundator
-    │   │   <other files and folders. Include program in main.py section>
+    │   │   ...
     |   └───
 To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard parameters, no arguments are needed:
 
