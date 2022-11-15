@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    dataset_path = Path('../../data/mapai/validation')
+    dataset_path = Path('../../data/validation')
     mask_path = dataset_path.joinpath("masks")
 
 
