@@ -9,7 +9,7 @@ An archive with pretrained models is available in [Google Drive](https://drive.g
 ## Requirements
 
 ### Software
-The code has been tested on Ubuntu and Windows 10 with CUDA 11.7 and python 3.8.
+The code has been tested on Ubuntu 20.04 LTS and Windows 10 with CUDA 11.7 and python 3.8.
 
 We provide .sh scripts (tested on Ubuntu 20.04 LTS) to replicate the training for our final submission.
 
