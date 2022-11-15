@@ -2,7 +2,7 @@ import numpy as np
 import glob
 import cv2
 from tqdm import tqdm
-lidar = glob.glob(r".\..\..\data\validation\lidar\*.tif")
+lidar = glob.glob(r".\..\..\..\data\validation\lidar\*.tif")
 
 
 min_all = float("inf")

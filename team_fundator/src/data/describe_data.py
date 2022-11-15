@@ -6,7 +6,7 @@ from tqdm import tqdm
 batch_size = 64
 
 if __name__ == "__main__":
-    image_folder = r"./../../data/"
+    image_folder = r"./../../../data/"
     image_paths = glob.glob(image_folder +"train/lidar/*.tif") + glob.glob(image_folder +"validation/lidar/*.tif")
 
     channels_sum, channels_squared_sum, num_batches = 0, 0, 0
