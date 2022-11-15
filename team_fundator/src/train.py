@@ -301,7 +301,7 @@ if __name__ == "__main__":
 
     opts.update(data_opts)
             
-    rundir = create_run_dir(opts, opts.get("dataset", "") + backbone)
+    rundir = create_run_dir(opts, opts.get("dataset", ""))
     opts["rundir"] = rundir
     print("Opts:", opts)
     
