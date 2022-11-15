@@ -1,5 +1,7 @@
 cd src
 
+mkdir -p ../data/mapai
+
 echo "Downloading dataset"
 python download.py
 
