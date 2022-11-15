@@ -122,7 +122,7 @@ class gtDataset(Dataset):
             idx = idx.tolist()
         full_grid = cv2.imread(self.images[idx], cv2.IMREAD_UNCHANGED)
         grid = full_grid.copy()
-        full_grid = np.stack([grid, grid, grid], axis=-1)
+        grid = full_grid[:, :, 0]
 
         assert np.max(grid) <= 1
         forest, edges_list = find_buildings(grid)
