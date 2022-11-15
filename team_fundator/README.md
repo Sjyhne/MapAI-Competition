@@ -37,13 +37,13 @@ The script `reclassify_data.sh` reclassifies the masks with building edges and r
 
 ## Training
 
-From the data preparation you shoulw have the following data structure:
+From the data preparation you should have the following data structure:
     
     MapAI-Competition
     |
     └─── data 
     |   └───  big_tiles
-    |   |   |   ...
+    |   |   └─── ...
     |   └─── mapai
     |   |   └─── train
     |   |       | images/
@@ -54,7 +54,7 @@ From the data preparation you shoulw have the following data structure:
     |   | validation
     └─── team_fundator
     │   │   <other files and folders. Include program in main.py section>
-    
+    |   └───
 To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard parameters, no arguments are needed:
     sh train_task1.sh
     sh train_task2.sh
