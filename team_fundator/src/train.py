@@ -263,34 +263,48 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=int, default=1)
     parser.add_argument("--weights", type=str, default=None)
 
-    args = parser.parse_args()
     
-    datasets = ["mapai", "mapai_reclassified", "mapai_lidar_masks"]
+    parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--dataset", type=str, default=None)
+    parser.add_argument("--backbone", type=str, default=None)
+    parser.add_argument("--data-ratio", type=float, default=None)
 
-    backbones = [("timm-resnest26d", 12), ("efficientnet-b1", 8)]
+    args = parser.parse_args()
+    args = vars(args)
 
-    for dataset in datasets:
-        # Import config
-        for backbone, bs in backbones:
-            opts = load(open(args.config, "r"), Loader)
+    epochs = args.pop("epochs")
+    dataset = args.pop("dataset")
+    backbone = args.pop("backbone")
+    dr = args.pop("data_ratio")
 
-            # Combine args and opts in single dict
-            try:
-                opts = opts | vars(args)
-            except Exception as e:
-                opts = {**opts, **vars(args)}
+    opts = load(open(args["config"], "r"), Loader)
 
-            opts["model"]["encoder"] = backbone
-            opts["dataset"] = dataset
-            opts["train"]["batchsize"] = bs
-            data_opts = get_dataset_config(opts)
+    # Combine args and opts in single dict
+    try:
+        opts = opts | args
+    except Exception as e:
+        opts = {**opts, **args}
+    
+    if epochs is not None:
+        opts["train"]["epochs"] = epochs
+    
+    if backbone is not None:
+        opts["model"]["encoder"] = backbone
 
-            opts.update(data_opts)
-                    
-            rundir = create_run_dir(opts, opts.get("dataset", ""))
-            opts["rundir"] = rundir
-            print("Opts:", opts)
+    if dataset is not None:
+        opts["dataset"] = dataset
+
+    if dr is not None:
+        opts["train"]["data_ratio"] = dr
+    
+    data_opts = get_dataset_config(opts)
+
+    opts.update(data_opts)
             
-            dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
+    rundir = create_run_dir(opts, opts.get("dataset", "") + backbone)
+    opts["rundir"] = rundir
+    print("Opts:", opts)
+    
+    dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
-            train(opts)
+    train(opts)
