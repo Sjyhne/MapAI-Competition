@@ -33,7 +33,7 @@ We have made a script, `prepare_data.sh`, to complete our data-preprocessing ste
 To run the script, simply write:
     sh prepare_data.sh
 
-The script `reclassify_masks.sh` reclassifies the masks with building edges and regions in-between two adjacent buildlings as separate classes.
+The script `reclassify_data.sh` reclassifies the masks with building edges and regions in-between two adjacent buildlings as separate classes.
 
 ## Training
 
@@ -72,4 +72,4 @@ The ensemble contains seven model, which are trained with different combinations
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_lidar_masks)
 
-The seventh model has a `timm-resnest-26d` encoder, trained on the ``mapai` dataset, but only using LIDAR input.
+The seventh model has a `timm-resnest-26d` encoder, trained on the `mapai` dataset, but only using LIDAR input.
