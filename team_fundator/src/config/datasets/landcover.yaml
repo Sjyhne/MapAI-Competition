@@ -3,7 +3,7 @@ dataset: "landcover"
 data_dirs:
   root: './../../data'
   train: 'landcover'
-  validation: 'mapai/validation'
+  validation: 'validation'
 
 num_classes: 5
 classes: ["background", "building", "woodland", "water", "road"]
