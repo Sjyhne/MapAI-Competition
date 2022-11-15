@@ -255,7 +255,7 @@ class gtDataset(Dataset):
 
 def main(max_dist, replace_folder="masks", min_building_size=30):
     for split in ["validation"]:
-        gt_ds = gtDataset(f"mapai/{split}/masks/*.tif", max_dist, min_building_size)
+        gt_ds = gtDataset(f"./../../data/mapai/{split}/masks/*.tif", max_dist, min_building_size)
         dataloader = DataLoader(gt_ds, batch_size=1, shuffle=False, num_workers=8)
 
         for new_gt in tqdm(dataloader):

@@ -28,42 +28,8 @@ def main(args, pt_share_links):
         opts = yaml.load(f, Loader=yaml.Loader)
         opts = {**opts, **vars(args)}
 
-    #########################################################################
-    ###
-    # Download Model Weights
-    # Use a mirror that is publicly available. This example uses Google Drive
-    ###
-    #########################################################################
 
-
-
-    # models and configs for the ensemble
-    model_name_list = [[]]
-    model_cfg_list = [[]]
-
-    max_ensemble_size = opts["models_per_ensemble"]
-    for i, (pt_share_link, opt_share_link) in enumerate(pt_share_links):
-        pt_id = pt_share_link.split("/")[-2]
-        opt_id = opt_share_link.split("/")[-2]
-
-        # Download trained model
-        url_to_pt = f"https://drive.google.com/uc?id={pt_id}"
-        url_to_opt = f"https://drive.google.com/uc?id={opt_id}"
-        model_checkpoint = f"task1_pt{i + 1}.pt"
-        model_cfg = f"task1_pt{i + 1}.yaml"
-
-        gdown.download(url_to_pt, model_checkpoint, quiet=False)
-        gdown.download(url_to_opt, model_cfg, quiet=False)
-
-        if len(model_cfg_list[-1]) < max_ensemble_size:
-            model_name_list[-1].append(model_checkpoint)
-            model_cfg_list[-1].append(model_cfg)
-            continue
-
-        model_name_list.append([model_checkpoint])
-        model_cfg_list.append([model_cfg])
-
-    #########################################################################
+        #########################################################################
     ###
     # Create needed directories for data
     ###
@@ -80,6 +46,39 @@ def main(args, pt_share_links):
     
     temp_path.mkdir(exist_ok=True, parents=True)
     predictions_path.mkdir(exist_ok=True, parents=True)
+
+    #########################################################################
+    ###
+    # Download Model Weights
+    ###
+    #########################################################################
+
+    # models and configs for the ensemble
+    model_name_list = [[]]
+    model_cfg_list = [[]]
+
+    max_ensemble_size = opts["models_per_ensemble"]
+    for i, (pt_share_link, opt_share_link) in enumerate(pt_share_links):
+        pt_id = pt_share_link.split("/")[-2]
+        opt_id = opt_share_link.split("/")[-2]
+
+        # Download trained model
+        url_to_pt = f"https://drive.google.com/uc?id={pt_id}"
+        url_to_opt = f"https://drive.google.com/uc?id={opt_id}"
+        model_checkpoint = temp_path.joinpath(f"task1_pt{i + 1}.pt").absolute()
+        model_cfg = temp_path.joinpath(f"task1_pt{i + 1}.yaml").absolute()
+
+        gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
+        gdown.download(url_to_opt, str(model_cfg), quiet=False)
+
+        if len(model_cfg_list[-1]) < max_ensemble_size:
+            model_name_list[-1].append(model_checkpoint)
+            model_cfg_list[-1].append(model_cfg)
+            continue
+
+        model_name_list.append([model_checkpoint])
+        model_cfg_list.append([model_cfg])
+
 
 
     #########################################################################
@@ -148,15 +147,15 @@ def main(args, pt_share_links):
 
             assert prediction.shape == target_size, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {target_size}]"
 
-            if len(model_cfg_list) > 1:
-                #Load and save temp prediction
-                temp_pred_path = temp_path.joinpath(f"{filename_base}.npy")
-                if i != 0:
+            
+            #Load and save temp prediction
+            temp_pred_path = temp_path.joinpath(f"{filename_base}.npy")
+            if len(model_cfg_list) > 1 and i > 0:
                     prediction += np.load(str(temp_pred_path))
-                if i < len(model_cfg_list) - 1:
-                    np.save(str(temp_pred_path), prediction)
 
-            if i == len(model_cfg_list) - 1:
+            if i < len(model_cfg_list) - 1:
+                np.save(str(temp_pred_path), prediction)
+            else:
                 # Save final prediction
                 if opts["device"] == "cpu":
                     image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)

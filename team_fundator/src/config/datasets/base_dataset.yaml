@@ -1,7 +1,7 @@
 
 data_dirs:
-  base_root: './data'
-  root: './data/mapai'
+  base_root: './../../data'
+  root: './../../data/mapai'
   train: 'train'
   validation: 'validation'
   images: "images"

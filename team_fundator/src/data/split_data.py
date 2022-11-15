@@ -14,9 +14,9 @@ MASKS_DIR = "masks"
 LIDAR_DIR = "lidar"
 
 for split in ["train", "validation"]:
-    img_paths = glob.glob(os.path.join(f"big_tiles/{split}/{IMGS_DIR}", "*.tif"))
-    mask_paths = glob.glob(os.path.join(f"big_tiles/{split}/{MASKS_DIR}", "*.tif"))
-    lidar_paths = glob.glob(os.path.join(f"big_tiles/{split}/{LIDAR_DIR}", "*.tif"))
+    img_paths = glob.glob(os.path.join(f"./../../data/big_tiles/{split}/{IMGS_DIR}", "*.tif"))
+    mask_paths = glob.glob(os.path.join(f"./../../data/big_tiles/{split}/{MASKS_DIR}", "*.tif"))
+    lidar_paths = glob.glob(os.path.join(f"./../../data/big_tiles/{split}/{LIDAR_DIR}", "*.tif"))
 
     img_paths.sort()
     mask_paths.sort()

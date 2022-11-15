@@ -7,7 +7,7 @@ batch_size = 10**2 # images are either 10 * 10 or (10 * 2) * 10
 
 if __name__ == "__main__":
     for type in ["images", "lidar", "masks"]:
-        image_paths = [*Path(f"./train/{type}/").glob("*.tif")] + [*Path(f"./validation/{type}").glob("*.tif")]
+        image_paths = [*Path(f"./../../train/{type}/").glob("*.tif")] + [*Path(f"./../../validation/{type}").glob("*.tif")]
 
         image_paths = sorted(image_paths, key = lambda x: [int(k) if k.isdigit() else k for k in re.split('([0-9]+)', x.stem)])
 
