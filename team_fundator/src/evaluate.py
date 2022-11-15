@@ -13,7 +13,7 @@ from competition_toolkit.eval_functions import iou, biou
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-ratio", type=float, default=1.0)
+    parser.add_argument("--task", type=int, default=1, help="Which task to evaluate")
 
     args = parser.parse_args()
 
