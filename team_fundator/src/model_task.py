@@ -114,7 +114,7 @@ def main(args, pt_share_links):
         model = EnsembleModel(models, target_size=target_size)
         model = model.to(device)
         model.eval()
-        pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc="Inference", leave=False)
+        pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc="Inference")
 
         del models
         for image, label, filename in pbar:
@@ -185,7 +185,7 @@ def main(args, pt_share_links):
 
                 predicted_sample_path_tif = predictions_path.joinpath(filename[0])
                 cv.imwrite(str(predicted_sample_path_tif), prediction)
-        print("\n")
+
         del model
     # Dump file configuration
     yaml.dump(opts, open(opts_file, "w"), Dumper=yaml.Dumper)
