@@ -65,8 +65,8 @@ def main(args, pt_share_links):
         # Download trained model
         url_to_pt = f"https://drive.google.com/uc?id={pt_id}"
         url_to_opt = f"https://drive.google.com/uc?id={opt_id}"
-        model_checkpoint = temp_path.joinpath(f"task1_pt{i + 1}.pt").absolute()
-        model_cfg = temp_path.joinpath(f"task1_pt{i + 1}.yaml").absolute()
+        model_checkpoint = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.pt").absolute()
+        model_cfg = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.yaml").absolute()
 
         gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
         gdown.download(url_to_opt, str(model_cfg), quiet=False)
@@ -114,7 +114,7 @@ def main(args, pt_share_links):
         model = EnsembleModel(models, target_size=target_size)
         model = model.to(device)
         model.eval()
-        pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc="Inference")
+        pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc=f"Inference - Iter {i + 1}/{len(model_cfg_list)}")
 
         del models
         for image, label, filename in pbar:
@@ -134,9 +134,9 @@ def main(args, pt_share_links):
             # Perform model prediction
             prediction = model(image)["result"]
 
-            # routput = model(torch.rot90(image, dims=[2, 3]))["result"]
-            # routput = torch.rot90(routput, k=-1, dims=[2, 3])
-            # prediction = (prediction + routput) / 2
+            routput = model(torch.rot90(image, dims=[2, 3]))["result"]
+            routput = torch.rot90(routput, k=-1, dims=[2, 3])
+            prediction = (prediction + routput) / 2
 
             if opts["device"] == "cpu":
                 prediction = prediction.squeeze().detach().numpy()

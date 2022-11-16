@@ -119,9 +119,10 @@ class ImageAndLabelDataset(Dataset):
         image = load_image(imagefilepath, self.image_size)
         label = load_label(labelfilepath, self.label_size)
         
+        # lidar == 0 indicates regions where a DTM and DSM are equal, therefore we give the option to add scuh regions as a new class
         if self.use_lidar_in_mask:
-            # lidar == 0 indicates regions where a DTM and DSM are equal, therefore we give the option to add scuh regions as a new class
-            label[lidar == 0.0] = 2 
+            condition = np.logical_and(lidar == 0.0, label != 1)
+            label[condition] = 2
 
         sample = dict(
             id=filename,
@@ -202,7 +203,8 @@ class ImageLabelAndLidarDataset(Dataset):
 
 
         if self.use_lidar_in_mask:
-            label[lidar == 0.0] = 2
+            condition = np.logical_and(lidar == 0.0, label != 1)
+            label[condition] = 2
 
         if self.transform is not None and not self.lidar_only:
             aug_sample = self.transform(image=image,  masks=[label, lidar]) # apply lidar augmentations as if it is a mask
@@ -225,8 +227,6 @@ class ImageLabelAndLidarDataset(Dataset):
             image = np.concatenate((image, lidar), axis=0)
         else:
             image = np.expand_dims(lidar, 0) # Use lidar as input, instead of image
-
-
 
         sample = dict(
             id=filename,

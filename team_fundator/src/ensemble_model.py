@@ -37,16 +37,17 @@ class EnsembleModel(torch.nn.Module):
                     y,
                     self.target_size,
                     interpolation=torchvision.transforms.InterpolationMode.BILINEAR,
-                    antialias=True,
+                    antialias=False,
                 )
 
             num_classes = y.shape[1]      
             if y.shape[1] > 1: # map softmax probabilities for multiclass models
-                y = torch.softmax(y, dim=1)   
+                y = torch.softmax(y, dim=1)
                 if num_classes == 4: # mapai_reclassified
                     y = y[:, 1] + y[:, 2]
                 else: # landcover train, mapai_lidar_masks
                     y = y[:, 1]
+                y = y.unsqueeze(0)
             else:
                 # return sigmoid probabilities for single class models
                 y = torch.sigmoid(y)
