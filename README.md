@@ -4,6 +4,14 @@
 <a href="https://sjyhne.github.io/MapAI-Competition/"><img src="https://img.shields.io/badge/Competition-Results-brightgreen" ></a>
 <a href="https://huggingface.co/datasets/sjyhne/mapai_training_data"><img src="https://img.shields.io/badge/MapAI-Dataset-brightgreen" ></a>
 
+
+## Important dates (Deadline Extension)
+
+* Participant's submission of results: ~~25th of November~~ -> Extended to **_2nd of December_**.
+* Feedback on the evaluation results: ~~5th of December~~ -> Extended to **_9th of December_**.
+* Deadline for the 2-pager description paper: ~~15th of December~~ -> Extended to **_22nd of December_**.
+
+
 ## Update!
 
 I was notified about a flaw in the evaluation functionality currently implemented, where the evaluation disregards
