@@ -1,0 +1,28 @@
+class_to_color:
+  background: 0
+  building: 255
+classes:
+- background
+- building
+config: config/data.yaml
+data_ratio: 0.1
+device: cuda
+epochs: 10
+imagesize: 500
+lr: 0.001
+num_classes: 2
+rundir: runs/task_1/run_2
+task: 1
+task1:
+  batchsize: 1
+  shuffle: false
+task2:
+  batchsize: 1
+  shuffle: false
+train:
+  batchsize: 8
+  shuffle: true
+validation:
+  batchsize: 1
+  shuffle: false
+version: 1.0
