@@ -11,6 +11,7 @@ import argparse
 import time
 
 from competition_toolkit.dataloader import create_dataloader
+from model import AutoEncoder
 from utils import create_run_dir, store_model_weights, record_scores
 
 from competition_toolkit.eval_functions import calculate_score
@@ -59,7 +60,7 @@ def train(opts):
     device = opts["device"]
 
     # The current model should be swapped with a different one of your choice
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
+    model = AutoEncoder()
 
     if opts["task"] == 2:
         new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
@@ -96,14 +97,18 @@ def train(opts):
 
             output = model(image)["out"]
 
-            loss = lossfn(output, label)
+
+            print(output.shape)
+            print(label.shape)
+
+            loss = lossfn(output, label.float())
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             lossitem = loss.item()
-            output = torch.argmax(torch.softmax(output, dim=1), dim=1)
+            output = torch.softmax(output, dim=1)
             if device != "cpu":
                 trainmetrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
                                                label.detach().cpu().numpy().astype(np.uint8))
