@@ -97,14 +97,14 @@ def train(opts):
 
             output = model(image)["out"]
 
-            loss = lossfn(output, label.float())
+            loss = lossfn(output, label)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             lossitem = loss.item()
-            output = torch.softmax(output, dim=1)
+            output = torch.argmax(torch.softmax(output, dim=1), dim=1)
             if device != "cpu":
                 trainmetrics = calculate_score(output.detach().cpu().numpy().astype(np.uint8),
                                                label.detach().cpu().numpy().astype(np.uint8))
@@ -157,9 +157,9 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cuda")
+    parser.add_argument("--device", type=str, default=("cuda" if torch.cuda.is_available() else "cpu"))
     parser.add_argument("--task", type=int, default=1)
-    parser.add_argument("--data_ratio", type=float, default=1.0,
+    parser.add_argument("--data_ratio", type=float, default=0.1,
                         help="Percentage of the whole dataset that is used")
 
     args = parser.parse_args()

@@ -7,8 +7,8 @@ class AutoEncoder(nn.Module):
     def __init__(self):
         super().__init__()
 
-        # 500 x 500 x 3 input
-        # 500 x 500 output
+        # 3 x 500 x 500 input RGB 3 channels
+        # 2 x 500 x 500 output with 2 classes
 
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 8, 3, stride=2, padding=1),
@@ -45,11 +45,10 @@ class AutoEncoder(nn.Module):
             nn.ConvTranspose2d(12, 8, 4, stride=1),
             nn.BatchNorm2d(8),
             nn.ReLU(),
-            nn.ConvTranspose2d(8, 1, 2, stride=1),
-            nn.Tanh()
+            nn.ConvTranspose2d(8, 2, 2, stride=1)
         ) 
 
     def forward(self, x):
         x = self.encoder(x)
-        x = torch.squeeze(self.decoder(x), dim=1)
+        x = self.decoder(x)
         return {"out": x}
