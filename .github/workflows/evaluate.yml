@@ -19,7 +19,7 @@ jobs:
     env:
       ACCESS_TOKEN: ${{ secrets.HF_EVAL_ACCESS_TOKEN }}
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -80,7 +80,7 @@ jobs:
             # Create submission directory (temporary)
             submission_path="/tmp/MapAI-$team-submission"
             rm -rf $submission_path
-            mkdir -p submission_path
+            mkdir -p $submission_path
                     
             # Enter team directory
             cd $team/src
