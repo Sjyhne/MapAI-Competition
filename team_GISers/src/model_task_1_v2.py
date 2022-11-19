@@ -75,10 +75,11 @@ def main(args):
     if torch.cuda.is_available():
         model.load_state_dict(torch.load(model_checkpoint))
         device = 'cuda' # opts["device"]
-        model = model.to(device)
     else:
         model.load_state_dict(torch.load(model_checkpoint, map_location='cpu'))
+        device = 'cpu'
 
+    model = model.to(device)
     model.eval()
 
     #########################################################################
