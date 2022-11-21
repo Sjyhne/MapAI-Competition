@@ -20,9 +20,6 @@ python train.py --epochs $epochs --data-ratio $data_ratio --dataset "mapai_lidar
 echo "Training sixth model"
 python train.py --epochs $epochs --data-ratio $data_ratio --dataset "mapai_lidar_masks" --task 2 --backbone "efficientnet-b1"
 
-echo "Training seventh model"
-python train.py --epochs $epochs --data-ratio $data_ratio --dataset "mapai" --task 3 --backbone "timm-resnest26d"
-
 
 
 
