@@ -65,8 +65,8 @@ class PredDataset(Dataset):
     def set_weights(self, arr):
         self.weights = np.expand_dims(arr, (-1, -2))
 
-POP_SIZE = 100 # 
-IND_SIZE = 6 # Number of weights to evolve / number of models in the ensemble
+POP_SIZE = None
+IND_SIZE = None # Number of weights to evolve / number of models in the ensemble
 GENS = 30 
 
 INIT_DROP_PROB = 0.1 # Probability of setting a weight to zero during initialisation of the population
@@ -93,11 +93,14 @@ def bump_mutation(ind):
 def noise_mutation(ind):
     # With equal probability:
     # Add (or subtract) some noise on the entire chromosome or a little more noise on one index
+    
+    scalar = 7 / POP_SIZE # scales the domain of the added noise to be appropriate for the POP SIZE
+
     if prob(0.5):
-        ind += np.random.normal(scale=0.04, size=IND_SIZE)
+        ind += np.random.normal(scale=0.04 * scalar, size=IND_SIZE)
         return ind
     k = random.randint(0, IND_SIZE- 1)
-    ind[k] += 0.05 * random.random() - 0.1
+    ind[k] += scalar * (0.05 * random.random() - 0.1)
     return ind
 
 
@@ -106,7 +109,7 @@ def dist(ind1, ind2):
     return np.linalg.norm(ind1 - ind2, ord=1)
 
 def crossover(p1, p2):
-    c_index = random.randint(1, IND_SIZE - 2)
+    c_index = random.randint(1, IND_SIZE - 1)
 
     #crossover
     c1 = p1.copy()
@@ -119,7 +122,7 @@ def crossover(p1, p2):
     c1 = mutate(c1)
     c2 = mutate(c2)
 
-    # crowd based on distance
+    # crowding
     crowd_1_dist = dist(c1, p1) + dist(c2, p2)
     crowd_2_dist = dist(c1, p2) + dist(c2, p1)
     
@@ -130,11 +133,11 @@ def crossover(p1, p2):
         crowd_1 = np.array([p1, c2])    
         crowd_2 = np.array([p2, c1])
 
-    #return parent, child pais
+    #return parent, child pairs
     return crowd_1, crowd_2
 
 def uncrowd(crowd, p_fitnesses, dataloader):
-    # select individuals from parent, child paris based on best fit
+    # select individuals from parent, child pairs based on best fit
     c_fit = fitness(crowd[1], dataloader)
     crowd_fit = np.array([p_fitnesses, c_fit])
     indeces = np.argmax(crowd_fit, axis=0)
@@ -156,9 +159,12 @@ def init_pop():
     # Initialise the population
     pop = np.zeros((POP_SIZE, IND_SIZE))
 
+    scalar = 7 / POP_SIZE
     for i in range(POP_SIZE):
         ind = np.ones(IND_SIZE)
-        ind += np.random.normal(scale=0.1, size=IND_SIZE)
+        
+
+        ind += np.random.normal(scale=0.1 * scalar, size=IND_SIZE)
         if prob(INIT_DROP_PROB):
             k = random.randint(0, IND_SIZE - 1)
             ind[k] = 0
