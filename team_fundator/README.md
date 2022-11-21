@@ -56,7 +56,7 @@ From the data preparation you should have the following data structure:
     └─── team_fundator
     │   │   ...
     |   └───
-To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard parameters, no arguments are needed:
+To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard parameters with 50 epochs and 0.4 data ratio, no arguments are needed:
 
     sh train_task1.sh
     sh train_task2.sh
@@ -78,4 +78,4 @@ The ensemble contains seven models, which are trained with different combination
 
 The seventh model has a `timm-resnest-26d` encoder, trained on the `mapai` dataset, but only using LIDAR input.
 
-The dataset `mapai_lidar_masks` has a tird class for the case where the LIDAR height is 0.
+The dataset `mapai_lidar_masks` has a third class for the case where the LIDAR height is 0.
