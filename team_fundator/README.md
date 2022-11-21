@@ -71,11 +71,10 @@ The ensemble contains four modelss, which are trained with different combination
     Datasets: (mapai, mapai_reclassified)
 
 ### Task 1
-The ensemble contains seven models, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
+The ensemble contains six models, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_lidar_masks)
 
-The seventh model has a `timm-resnest-26d` encoder, trained on the `mapai` dataset, but only using LIDAR input.
 
 The dataset `mapai_lidar_masks` has a third class for the case where the LIDAR height is 0.
