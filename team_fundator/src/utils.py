@@ -210,12 +210,13 @@ def get_dataset_config(opts):
     return dataset_opts
 
 def post_process_mask(pred: np.ndarray) -> np.ndarray:
-    min_total_area = 2000
-    fill_threshold = 110
+    min_total_area = 1500
+    fill_threshold = 10
 
     remove_treshhold = 180
     max_edge_ratio = 0.05
-            
+
+
     contours, hierarchy = cv2.findContours(pred, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     if hierarchy is None:
         hierarchy = [[]]
@@ -242,5 +243,5 @@ def post_process_mask(pred: np.ndarray) -> np.ndarray:
         
         if edges == 0 or area == 0 or edges / area < max_edge_ratio:
             cv2.drawContours(pred, contours, i, color=0, thickness=-1)
-
+    
     return pred

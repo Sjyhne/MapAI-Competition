@@ -169,23 +169,7 @@ def train(opts):
             loss_aux = 0
             output = model(image)
             
-            if opts["task"] == 3:
-                pass
-                # output = output.squeeze(dim=1)
-                # img = output.squeeze().detach().cpu().numpy().copy()
-                # img = np.exp(img) + math.e
-                # maximum = np.max(img)
-                # img = img * (255.0/maximum)
-
-                # img = np.stack([img, img, img], axis=-1).astype(np.uint8)
-                # print(img.shape)
-                # cv2.imwrite(opts["rundir"] + f"/pred{idx}.png", img)
-
-                # pred_img = image.squeeze().cpu().numpy() * 255.0
-                # cv2.imwrite(opts["rundir"] + f"/pred{idx}img.png", pred_img.transpose(1, 2, 0).astype(np.uint8))
-                # if idx == 20:
-                #     exit()
-            elif aux_head:
+            if aux_head:
                 output, aux_pred = output
                 loss_aux = aux_loss(aux_pred, aux_label)
                 losses_aux[idx] = loss_aux.item()

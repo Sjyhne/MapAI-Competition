@@ -134,9 +134,10 @@ def main(args, pt_share_links):
             # Perform model prediction
             prediction = model(image)["result"]
 
-            routput = model(torch.rot90(image, dims=[2, 3]))["result"]
-            routput = torch.rot90(routput, k=-1, dims=[2, 3])
-            prediction = (prediction + routput) / 2
+            if opts["task"] == 2:
+                routput = model(torch.rot90(image, dims=[2, 3]))["result"]
+                routput = torch.rot90(routput, k=-1, dims=[2, 3])
+                prediction = (prediction + routput) / 2
 
             if opts["device"] == "cpu":
                 prediction = prediction.squeeze().detach().numpy()
@@ -148,13 +149,22 @@ def main(args, pt_share_links):
             
             #Load and save temp prediction
             temp_pred_path = temp_path.joinpath(f"{filename_base}.npy")
-            if len(model_cfg_list) > 1 and i > 0:
+            if i > 0 and i < len(model_cfg_list) - 1:
                 prediction += np.load(str(temp_pred_path))
 
             if i < len(model_cfg_list) - 1:
                 np.save(str(temp_pred_path), prediction)
             else:
-                prediction = np.rint(prediction / len(model_cfg_list)).astype(np.uint8)
+                if len(model_cfg_list) > 1:
+                    if len(model_cfg_list[-1]) != max_ensemble_size:
+                        prediction += np.load(str(temp_pred_path)) * max_ensemble_size
+                        prediction /= (len(model_cfg_list) - 1) * max_ensemble_size + len(model_cfg_list[-1])
+                    else:
+                        prediction += np.load(str(temp_pred_path))
+                        prediction /= len(model_cfg_list)
+                prediction = np.rint(prediction).astype(np.uint8)
+                                 
+
                 if opts["post_process_preds"]:
                     prediction = post_process_mask(prediction)
                 

@@ -1,98 +1,215 @@
 import argparse
-import torch
 
+import pathlib
 from tqdm import tqdm
-from custom_dataloader import create_dataloader
-from ensemble_model import EnsembleModel, load_models_from_runs
-from transforms import valid_transform, LidarAugComposer
+import torch
+import numpy as np
 import yaml
-import pickle
-from utils import get_dataset_config
+import gdown
 import os
+import shutil
 
-def test_ensemble(opts):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Load models and create ensemble
-    models, runs = load_models_from_runs(
-        opts["run_folder"], "*"
-    )
-    savetask = opts['task'] if opts["task"] != 3 else 2
+from competition_toolkit.dataloader import create_dataloader
 
-    model = EnsembleModel(models, sum_outputs=False)
-    model.to(device)
-    model.eval()
+from utils import get_model
+from transforms import LidarAugComposer
 
-    # Load data
-    lidar_transform = None
-    if opts["task"] != 1:
-        aug_getter = LidarAugComposer(opts)
-        _, lidar_transform = aug_getter.get_transforms()
+from ensemble_model import EnsembleModel
+import yaml
 
-    opts["train"]["batchsize"] = 1
-    opts["validation"]["batchsize"] = 1
-    opts["use_lidar_in_mask"] = False
+def main(args, pt_share_links):
+    #########################################################################
+    ###
+    # Load Model and its configuration
+    ###
+    #########################################################################
+    with open(args.config, "r") as f:
+        opts = yaml.load(f, Loader=yaml.Loader)
+        opts = {**opts, **vars(args)}
 
-    for split in ["train", "validation"]:
-        save_folder = f"./data/ensembles/task{savetask}/{opts['name']}/{split}"
-        os.makedirs(save_folder)
 
-        dataloader = create_dataloader(
-            opts,
-            split,
-            transforms=(valid_transform, lidar_transform),
-            aux_head_labels=False,
-        )
+    #########################################################################
+    ###
+    # Create needed directories for data
+    ###
+    #########################################################################
+    task_path = pathlib.Path(args.submission_path).joinpath(f"task_{opts['task']}")
+    temp_path = pathlib.Path(args.submission_path).joinpath(f"temp")
 
-        for idx, batch in tqdm(
-            enumerate(dataloader), leave=False, total=len(dataloader), desc="Test"
-        ):
-            filename, image, _ = batch.values()
+    if task_path.exists():
+        shutil.rmtree(task_path.absolute())
+    if temp_path.exists():
+        shutil.rmtree(temp_path.absolute())
+    
+    temp_path.mkdir(exist_ok=True, parents=True)
+    task_path.mkdir(exist_ok=True, parents=True)
+
+    # models and configs for the ensemble
+    model_name_list = [[]]
+    model_cfg_list = [[]]
+
+    max_ensemble_size = 1 # opts["models_per_ensemble"]
+    for i, (pt_share_link, opt_share_link) in enumerate(pt_share_links):
+        pt_id = pt_share_link.split("/")[-2]
+        opt_id = opt_share_link.split("/")[-2]
+
+        # Download trained model
+        url_to_pt = f"https://drive.google.com/uc?id={pt_id}"
+        url_to_opt = f"https://drive.google.com/uc?id={opt_id}"
+        model_checkpoint = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.pt").absolute()
+        model_cfg = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.yaml").absolute()
+
+        gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
+        gdown.download(url_to_opt, str(model_cfg), quiet=False)
+
+        if len(model_cfg_list[-1]) < max_ensemble_size:
+            model_name_list[-1].append(model_checkpoint)
+            model_cfg_list[-1].append(model_cfg)
+            continue
+
+        model_name_list.append([model_checkpoint])
+        model_cfg_list.append([model_cfg])
+
+
+
+    target_size = (500, 500) # for resizing the predictions
+    dataloader = create_dataloader(opts, opts["data_type"])
+
+    lidar_augs = LidarAugComposer(opts)
+    _, lidar_valid = lidar_augs.get_transforms()
+
+    device = opts["device"]
+    for i, (configs, model_names) in enumerate(zip(model_cfg_list, model_name_list)):
+        #########################################################################
+        ###
+        # Setup Model
+        ###
+        #########################################################################
+        models = []
+        for config, checkpoint in zip(configs, model_names):
+            config =  yaml.load(open(config, "r"), yaml.Loader)
+            model = get_model(config)
+            model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
+            models.append(model)
+
+            if config["imagesize"] != opts["imagesize"]:
+                opts["imagesize"] = config["imagesize"]
+                print(f"Using image resolution: {opts['imagesize']} * {opts['imagesize']}")
+
+        model = EnsembleModel(models, target_size=target_size)
+        model = model.to(device)
+        model.eval()
+        pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc=f"Inference - Iter {i + 1}/{len(model_cfg_list)}")
+
+        del models
+        for image, label, filename in pbar:
+            # Split filename and extension
+            filename_base, file_extension = os.path.splitext(filename[0])
+
+
+            if opts["task"] == 2:
+                image, lidar = torch.split(image, [3, 1], dim=1)
+                lidar = lidar_valid(lidar.numpy())
+
+                image = torch.cat([image, torch.tensor(lidar, dtype=image.dtype)], dim=1)
+
+            # Send image and label to device (eg., cuda)
             image = image.to(device)
 
-            output = model(image)
-            model_preds = output["model_preds"]
-            model_preds = [pred.squeeze(0).detach().numpy() for pred in model_preds]
-            with open(save_folder + '/' + filename[0][:-3] + "pickle", 'wb') as handle:
-                pickle.dump(model_preds, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            # Perform model prediction
+            prediction = model(image)["result"]
+
+            if opts["task"] == 2:
+                routput = model(torch.rot90(image, dims=[2, 3]))["result"]
+                routput = torch.rot90(routput, k=-1, dims=[2, 3])
+                prediction = (prediction + routput) / 2
+
+            if opts["device"] == "cpu":
+                prediction = prediction.squeeze(1).detach().numpy()
+            else:
+                prediction = prediction.squeeze(1).detach().cpu().numpy()
+            
+            
+            #Load and save temp prediction
+            pred_path = task_path.joinpath(f"{filename_base}.npy")
+            if i > 0:
+                prediction = np.concatenate([np.load(str(pred_path)), prediction], axis=0)
+            np.save(str(pred_path), prediction)
+
+        del model
+    shutil.rmtree(temp_path.absolute())
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Save ensemble model predictions")
+    parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="config/save_ensemble_preds.yaml",
-        help="Configuration file to be used",
-    )
-    parser.add_argument(
-        "--name",
-        type=str,
-        required=True,
-        help="Name of the ensemble",
-    )
-    parser.add_argument(
-        "--run_folder",
-        type=str,
-        help="Folder to load the ensemble from",
-    )
-    parser.add_argument("--task", type=int, required=True)
+    parser.add_argument("--submission-path", default="data/ensemble_preds")
+    parser.add_argument("--data-type", default="validation", help="validation or test")
+    parser.add_argument("--task", type=int, default=1, help="Which task you are submitting for")
+
+    parser.add_argument("--config", type=str, default="config/main.yaml", help="Config")
+    parser.add_argument("--device", type=str, default="cuda", help="Which device the inference should run on")
+
+    parser.add_argument("--data-ratio", type=float, default=1.0, help="Percentage of the whole dataset that is used")
+    parser.add_argument("--models_per_ensemble", type=int, default=1, help="The maximum number of models to run simultaneously in an ensemble. Lower values use less memory, but more temp storage.")
 
     args = parser.parse_args()
 
-    # Import config
-    opts = yaml.load(open(args.config, "r"), yaml.Loader)
+
+    pt_share_links1 = [
+        (
+            "https://drive.google.com/file/d/1cdFRQ12R5MziMVrE1vNKTqRL3_1Toh3x/view?usp=share_link",
+            "https://drive.google.com/file/d/1jKOqHwRWNFYF67P9VFgJV9zDQ1-VJsTd/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/1173maCZwYTYcbbML0aGY0MCh4WXHe6p2/view?usp=sharing",
+            "https://drive.google.com/file/d/1CteVOt7fatjHdobtuk3toaRMS6nYEU7s/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/1Aqr9LnAZHMKsOZkoUp583Q3VzuTYaaUV/view?usp=share_link",
+            "https://drive.google.com/file/d/1-id3l8kd1QwBOE6KDLb4FBadrUKypFpT/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/16xFkFkTgaYK5a96P1larK25749nF3G_g/view?usp=share_link",
+            "https://drive.google.com/file/d/133TgE-Ao731rpw0pjgWn_LVoxHXBhXmt/view?usp=share_link"
+        )
+    ]
     
-    data_opts = get_dataset_config(opts)
+    pt_share_links2 = [
+            (
+            "https://drive.google.com/file/d/1iBmM3CuvKx-4CY1-7gU9jTWeuUXqvfRn/view?usp=share_link", # cp
+            "https://drive.google.com/file/d/1yQctpXyuBgfR1gzc72yrdKRpEGD8Ojdo/view?usp=share_link" # opts
+            ),
+            (
+            "https://drive.google.com/file/d/1EbSTbVADnwwuR6AYXXjK0nTtXjPeLAyU/view?usp=share_link",
+            "https://drive.google.com/file/d/1FQdxYBGYkr1_NTxtFwS0XrEs2dLybiza/view?usp=share_link"
+            ),
+            (
+            "https://drive.google.com/file/d/1NtUP5QwhBglf0zSlQ0rRvIr2o4qMH8Bk/view?usp=share_link",
+            "https://drive.google.com/file/d/1ZX0H4WTdz0caX0lLNJ66D6mcoC5HsFO-/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1W8PF0sKh2PVU-SzXeLJvXvheWaVF6w_a/view?usp=share_link",
+                "https://drive.google.com/file/d/1whc8TQzFCaFHqBHer1vXWf1tjhPzCtZK/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1fuohbjFKEm3qDpaf4MdfFWYPCkxAefdF/view?usp=share_link",
+                "https://drive.google.com/file/d/1lN78J8qKr_8dvILZwt0v204CUMXv3OBl/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1RItf98I8fFOjuepgp1mPNbnXdwidbAo-/view?usp=share_link",
+                "https://drive.google.com/file/d/1jn_0qNke165sQCoue6PUwxkHm_bJ_32Z/view?usp=share_link"
+            )
+        ]
+    
+    if args.task == 1:
+        main(args, pt_share_links1)
+    elif args.task == 2:
+        main(args, pt_share_links2)
+    else:
+        args.task = 1
+        main(args, pt_share_links1)
 
-    opts.update(data_opts)
-    # Combine args and opts in single dict
-    try:
-        opts = opts | vars(args)
-    except Exception as e:
-        opts = {**opts, **vars(args)}
-
-    print("Opts:", opts)
-
-    test_ensemble(opts)
+        args.task = 2
+        main(args, pt_share_links2)

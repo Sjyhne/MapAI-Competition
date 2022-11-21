@@ -47,7 +47,7 @@ class EnsembleModel(torch.nn.Module):
                     y = y[:, 1] + y[:, 2]
                 else: # landcover train, mapai_lidar_masks
                     y = y[:, 1]
-                y = y.unsqueeze(0)
+                y = y.unsqueeze(1)
             else:
                 # return sigmoid probabilities for single class models
                 y = torch.sigmoid(y)
