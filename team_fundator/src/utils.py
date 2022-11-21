@@ -185,6 +185,7 @@ data_configs = {
     "landcover": "landcover.yaml",
     "mapai_lidar_masks": "mapai_lidar_masks.yaml",
     "mapai_reclassified": "mapai_reclassified.yaml",
+    "mapai_edge": "mapai_edge.yaml",
 }
 
 def merge_dict(base, extension):
@@ -210,7 +211,7 @@ def get_dataset_config(opts):
     return dataset_opts
 
 def post_process_mask(pred: np.ndarray) -> np.ndarray:
-    min_total_area = 1500
+    min_total_area = 0
     fill_threshold = 10
 
     remove_treshhold = 180

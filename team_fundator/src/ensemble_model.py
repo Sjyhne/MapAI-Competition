@@ -23,7 +23,7 @@ class EnsembleModel(torch.nn.Module):
             if in_channels == x.shape[1]:
                 y = model(x)
             elif in_channels == 1: # lidar only model
-                y = model(x[:, -1])
+                y = model(x[:, -1].unsqueeze(1))
             elif in_channels == 3: # rgb only model
                 y = model(x[:, 0:3])
             

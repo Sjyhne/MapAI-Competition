@@ -69,12 +69,14 @@ class ImageAndLabelDataset(Dataset):
                  datatype: str = "validation",
                  transforms: Optional[Callable]=None,
                  aux_head_labels: bool=False,
-                 use_lidar_in_mask: bool=False):
+                 use_lidar_in_mask: bool=False,
+                 edge_only: bool=False):
 
         self.opts = opts
         self.aux_head_labels = aux_head_labels # wheter to add a label for an auxilliary classification head
         self.use_lidar_in_mask = use_lidar_in_mask # whether to use lidar to create a third class 
         self.ratio = self.opts[datatype]["data_ratio"]
+        self.edge_only = edge_only
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
@@ -119,6 +121,9 @@ class ImageAndLabelDataset(Dataset):
         image = load_image(imagefilepath, self.image_size)
         label = load_label(labelfilepath, self.label_size)
         
+        if self.edge_only:
+            label[label == 3.0] = 0
+
         # lidar == 0 indicates regions where a DTM and DSM are equal, therefore we give the option to add scuh regions as a new class
         if self.use_lidar_in_mask:
             condition = np.logical_and(lidar == 0.0, label != 1)
@@ -154,7 +159,8 @@ class ImageLabelAndLidarDataset(Dataset):
                  lidar_transform: Optional[Callable]=None,
                  aux_head_labels: bool=False,
                  use_lidar_in_mask: bool=False,
-                 lidar_only: bool=False):
+                 lidar_only: bool=False,
+                 edge_only: bool=False):
 
         self.opts = opts
         self.transform = transform
@@ -163,6 +169,7 @@ class ImageLabelAndLidarDataset(Dataset):
         self.aux_head_labels = aux_head_labels
         self.lidar_only = lidar_only
         self.use_lidar_in_mask = use_lidar_in_mask
+        self.edge_only = edge_only
 
         root = opts["data_dirs"]["root"]
         folder = opts["data_dirs"][datatype]
@@ -201,6 +208,8 @@ class ImageLabelAndLidarDataset(Dataset):
         label = load_label(labelfilepath, self.label_size)
         lidar = load_lidar(lidarfilepath, self.image_size)
 
+        if self.edge_only:
+            label[label == 3.0] = 0
 
         if self.use_lidar_in_mask:
             condition = np.logical_and(lidar == 0.0, label != 1)
@@ -358,12 +367,13 @@ class TestDataset(Dataset):
 def create_dataloader(opts: dict, datatype: str = "test", transforms=None, aux_head_labels=False) -> DataLoader:
     image_transforms, lidar_transform = transforms
     use_lidar_in_mask = datatype == "train" and opts.get("use_lidar_in_mask", False)
+    edge_only = opts["dataset"] == "mapai_edge"
     if opts["task"] == 1:
-        dataset = ImageAndLabelDataset(opts, datatype, image_transforms, aux_head_labels, use_lidar_in_mask)
+        dataset = ImageAndLabelDataset(opts, datatype, image_transforms, aux_head_labels, use_lidar_in_mask, edge_only=edge_only)
     elif opts["task"] == 4:
         dataset = EnsembleDataset(opts, datatype, image_transforms, aux_head_labels, use_lidar_in_mask)
     else:
-        dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels, use_lidar_in_mask, lidar_only=opts["task"] == 3)
+        dataset = ImageLabelAndLidarDataset(opts, datatype, image_transforms, lidar_transform,  aux_head_labels, use_lidar_in_mask, lidar_only=opts["task"] == 3, edge_only=edge_only)
 
     dataloader = DataLoader(dataset, batch_size=opts[datatype]["batchsize"], shuffle=opts[datatype]["shuffle"], num_workers=opts[datatype]["num_workers"], drop_last=True)
 
