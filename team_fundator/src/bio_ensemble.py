@@ -2,13 +2,14 @@ import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 import glob
-import os
+from utils import create_run_dir
 from tqdm import tqdm
 import cv2
 from utils import post_process_mask
 import random
 from competition_toolkit.eval_functions import iou, biou
 import argparse
+import os
 
 def normalize(arr):
     arr = np.clip(arr, 0.0, None)
@@ -19,6 +20,12 @@ def prob(p):
     #helper function which returns True with probability p
     return random.random() <= p
 
+def save_ensemble(pop: np.ndarray, fit: np.ndarray, rundir: str, epoch: int):
+    files = glob.glob(os.path.join(rundir, f"last_*.npy"))
+    for f in files:
+        os.remove(f)
+    np.save(pop, os.path.join(rundir, f"last_pop_{epoch}.npy"))
+    np.save(fit, os.path.join(rundir, f"last_fit_{epoch}.npy"))
 
 class PredDataset(Dataset):
     """
@@ -67,7 +74,7 @@ class PredDataset(Dataset):
 
 POP_SIZE = None
 IND_SIZE = None # Number of weights to evolve / number of models in the ensemble
-GENS = 30 
+GENS = None
 
 INIT_DROP_PROB = 0.1 # Probability of setting a weight to zero during initialisation of the population
 INIT_2X_PROB = 0.2 # probability of multiplying a weight with a small factor during initialisation of the population
@@ -90,10 +97,10 @@ def noise_mutation(ind):
     scalar = 7 / IND_SIZE # scales the domain of the added noise to be appropriate for the IND SIZE
 
     if prob(0.5):
-        ind += np.random.normal(scale=0.025 * scalar, size=IND_SIZE)
+        ind += np.random.normal(scale=0.02 * scalar, size=IND_SIZE)
         return normalize(ind)
     k = random.randint(0, IND_SIZE - 1)
-    ind[k] += scalar * (0.03 * random.random() - 0.06)
+    ind[k] += scalar * 0.03 * (random.random() - 1.0)
     return normalize(ind)
 
 
@@ -160,7 +167,6 @@ def init_pop():
     scalar = 7 / IND_SIZE
     for i in range(POP_SIZE):
         ind = np.ones(IND_SIZE)
-        
 
         ind += np.random.normal(scale=0.1 * scalar, size=IND_SIZE)
         if prob(INIT_DROP_PROB):
@@ -173,22 +179,34 @@ def init_pop():
         pop[i] = ind
     return pop
 
-def main(args):
+def main(args, rundir):
     global POP_SIZE
     global IND_SIZE
+    global GENS
 
     POP_SIZE = args.pop_size
     IND_SIZE = args.size
+    GENS = args.gens
 
     dataset = PredDataset(args)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=args.workers)
+    
+    if args.start_folder is not None:
+        pop_path = glob.glob(os.path.join(args.start_folder, f"last_pop*.npy"))
+        fit_path = glob.glob(os.path.join(args.start_folder, f"last_fit*.npy"))
+        fit = np.load(fit_path)
+        pop = np.load(pop_path)
 
-    pop = init_pop()
-    fit = fitness(pop, dataloader)
+        POP_SIZE, IND_SIZE = pop.shape
+    else:
+        pop = init_pop()
+        fit = fitness(pop, dataloader)
     ids = np.arange(POP_SIZE)
-    for gen in range(GENS):
 
+    print("Current best fit: ", np.max(fit), pop[np.argmax(fit)], "Median fit: ", np.median(fit))
+    for gen in range(GENS):
         print(f"Gen {gen + 1} of {GENS}")
+
         np.random.shuffle(ids)
         
         parent1_ids, parent2_ids = np.split(ids, 2)
@@ -214,7 +232,9 @@ def main(args):
         pop = next_pop
 
         print("Current best fit: ", np.max(fit), pop[np.argmax(fit)], "Median fit: ", np.median(fit))
-    
+
+        save_ensemble(pop, fit, rundir, gen)
+
     print(pop[np.argmax(fit)])
     print(fit[np.argmax(fit)])
 
@@ -224,6 +244,8 @@ if __name__ == "__main__":
     parser.add_argument("--size", type=int, default=4, help="How many ensembles are you testing?")
     parser.add_argument("--workers", type=int, default=4, help="How many workers do you want?")
     parser.add_argument("--pop-size", type=int, default=100, help="How large population do you want?")
+    parser.add_argument("--gens", type=int, default=30, help="How many generations?")
+    parser.add_argument("--start-folder", type=str, default=None, help="Folder to load saved population")
 
 
     args = parser.parse_args()
@@ -231,4 +253,6 @@ if __name__ == "__main__":
     # task 1: [0.25023021 0.25033406 0.24972593 0.2497098 ]
     # task 2:
 
-    main(args)
+    rundir = create_run_dir({"task": "bio"})
+
+    main(args, rundir)

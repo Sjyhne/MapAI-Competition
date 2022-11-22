@@ -18,7 +18,7 @@ from transforms import LidarAugComposer
 from ensemble_model import EnsembleModel
 import yaml
 
-def main(args, pt_share_links):
+def main(args, pt_share_links, weights=None):
     #########################################################################
     ###
     # Load Model and its configuration
@@ -56,6 +56,7 @@ def main(args, pt_share_links):
     # models and configs for the ensemble
     model_name_list = [[]]
     model_cfg_list = [[]]
+    model_weights = [[]]
 
     max_ensemble_size = opts["models_per_ensemble"]
     for i, (pt_share_link, opt_share_link) in enumerate(pt_share_links):
@@ -74,11 +75,12 @@ def main(args, pt_share_links):
         if len(model_cfg_list[-1]) < max_ensemble_size:
             model_name_list[-1].append(model_checkpoint)
             model_cfg_list[-1].append(model_cfg)
+            model_weights[-1].append(weights[i] if weights is not None else 1 / len(pt_share_links))
             continue
 
         model_name_list.append([model_checkpoint])
         model_cfg_list.append([model_cfg])
-
+        model_weights.append([weights[i]] if weights is not None else [1 / len(pt_share_links)])
 
     #########################################################################
     ###
@@ -111,7 +113,9 @@ def main(args, pt_share_links):
                 opts["imagesize"] = config["imagesize"]
                 print(f"Using image resolution: {opts['imagesize']} * {opts['imagesize']}")
 
-        model = EnsembleModel(models, target_size=target_size)
+        weights = model_weights[i]
+
+        model = EnsembleModel(models, target_size=target_size, weights=weights)
         model = model.to(device)
         model.eval()
         pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc=f"Inference - Iter {i + 1}/{len(model_cfg_list)}")
@@ -120,7 +124,6 @@ def main(args, pt_share_links):
         for image, label, filename in pbar:
             # Split filename and extension
             filename_base, file_extension = os.path.splitext(filename[0])
-
 
             if opts["task"] == 2:
                 image, lidar = torch.split(image, [3, 1], dim=1)
@@ -149,52 +152,44 @@ def main(args, pt_share_links):
             
             #Load and save temp prediction
             temp_pred_path = temp_path.joinpath(f"{filename_base}.npy")
-            if i > 0 and i < len(model_cfg_list) - 1:
+            if i > 0:
                 prediction += np.load(str(temp_pred_path))
 
             if i < len(model_cfg_list) - 1:
                 np.save(str(temp_pred_path), prediction)
-            else:
-                if len(model_cfg_list) > 1:
-                    if len(model_cfg_list[-1]) != max_ensemble_size:
-                        prediction += np.load(str(temp_pred_path)) * max_ensemble_size
-                        prediction /= (len(model_cfg_list) - 1) * max_ensemble_size + len(model_cfg_list[-1])
-                    else:
-                        prediction += np.load(str(temp_pred_path))
-                        prediction /= len(model_cfg_list)
-                prediction = np.rint(prediction).astype(np.uint8)
-                                 
+                continue
 
-                if opts["post_process_preds"]:
-                    prediction = post_process_mask(prediction)
-                
-                # prediction_visual = np.copy(prediction)
+            prediction = np.rint(prediction).astype(np.uint8)               
+            if opts["post_process_preds"]:
+                prediction = post_process_mask(prediction)
 
-                # for idx, value in enumerate(opts["classes"]):
-                #     prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
+            predicted_sample_path_tif = predictions_path.joinpath(filename[0])
+            cv.imwrite(str(predicted_sample_path_tif), prediction)
+            
+            # prediction_visual = np.copy(prediction)
 
-                # Save final prediction
-                # if opts["device"] == "cpu":
-                #     image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)
-                # else:
-                #     image = image.squeeze().cpu().detach().numpy()[:3, :, :].transpose(1, 2, 0)
-                # label = label.squeeze().detach().numpy().astype(np.uint8)
+            # for idx, value in enumerate(opts["classes"]):
+            #     prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
 
-                # fig, ax = plt.subplots(1, 3)
-                # ax[0].set_title("Input (RGB)")
-                # ax[0].imshow(image)
-                # ax[1].set_title("Prediction")
-                # ax[1].imshow(prediction_visual)
-                # ax[2].set_title("Label")
-                # ax[2].imshow(label)
+            # Save final prediction
+            # if opts["device"] == "cpu":
+            #     image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)
+            # else:
+            #     image = image.squeeze().cpu().detach().numpy()[:3, :, :].transpose(1, 2, 0)
+            # label = label.squeeze().detach().numpy().astype(np.uint8)
 
-                # Save to file.
-                # predicted_sample_path_png = predictions_path.joinpath(f"{filename_base}.png")
-                # plt.savefig(str(predicted_sample_path_png))
-                # plt.close()
+            # fig, ax = plt.subplots(1, 3)
+            # ax[0].set_title("Input (RGB)")
+            # ax[0].imshow(image)
+            # ax[1].set_title("Prediction")
+            # ax[1].imshow(prediction_visual)
+            # ax[2].set_title("Label")
+            # ax[2].imshow(label)
 
-                predicted_sample_path_tif = predictions_path.joinpath(filename[0])
-                cv.imwrite(str(predicted_sample_path_tif), prediction)
+            # Save to file.
+            # predicted_sample_path_png = predictions_path.joinpath(f"{filename_base}.png")
+            # plt.savefig(str(predicted_sample_path_png))
+            # plt.close()
 
         del model
     # Dump file configuration

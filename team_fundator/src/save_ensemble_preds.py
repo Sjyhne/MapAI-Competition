@@ -37,10 +37,10 @@ def main(args, pt_share_links):
     task_path = pathlib.Path(args.submission_path).joinpath(f"task_{opts['task']}")
     temp_path = pathlib.Path(args.submission_path).joinpath(f"temp")
 
-    if task_path.exists():
-        shutil.rmtree(task_path.absolute())
-    if temp_path.exists():
-        shutil.rmtree(temp_path.absolute())
+    # if task_path.exists():
+    #     shutil.rmtree(task_path.absolute())
+    # if temp_path.exists():
+    #     shutil.rmtree(temp_path.absolute())
     
     temp_path.mkdir(exist_ok=True, parents=True)
     task_path.mkdir(exist_ok=True, parents=True)
@@ -49,7 +49,7 @@ def main(args, pt_share_links):
     model_name_list = [[]]
     model_cfg_list = [[]]
 
-    max_ensemble_size = 1 # opts["models_per_ensemble"]
+    max_ensemble_size = 1
     for i, (pt_share_link, opt_share_link) in enumerate(pt_share_links):
         pt_id = pt_share_link.split("/")[-2]
         opt_id = opt_share_link.split("/")[-2]
@@ -60,8 +60,8 @@ def main(args, pt_share_links):
         model_checkpoint = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.pt").absolute()
         model_cfg = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.yaml").absolute()
 
-        gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
-        gdown.download(url_to_opt, str(model_cfg), quiet=False)
+        # gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
+        # gdown.download(url_to_opt, str(model_cfg), quiet=False)
 
         if len(model_cfg_list[-1]) < max_ensemble_size:
             model_name_list[-1].append(model_checkpoint)
@@ -70,7 +70,6 @@ def main(args, pt_share_links):
 
         model_name_list.append([model_checkpoint])
         model_cfg_list.append([model_cfg])
-
 
 
     target_size = (500, 500) # for resizing the predictions
@@ -138,7 +137,7 @@ def main(args, pt_share_links):
             np.save(str(pred_path), prediction)
 
         del model
-    shutil.rmtree(temp_path.absolute())
+    # shutil.rmtree(temp_path.absolute())
 
 
 if __name__ == "__main__":
@@ -152,7 +151,6 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda", help="Which device the inference should run on")
 
     parser.add_argument("--data-ratio", type=float, default=1.0, help="Percentage of the whole dataset that is used")
-    parser.add_argument("--models_per_ensemble", type=int, default=1, help="The maximum number of models to run simultaneously in an ensemble. Lower values use less memory, but more temp storage.")
 
     args = parser.parse_args()
 
@@ -170,37 +168,38 @@ if __name__ == "__main__":
             "https://drive.google.com/file/d/1Aqr9LnAZHMKsOZkoUp583Q3VzuTYaaUV/view?usp=share_link",
             "https://drive.google.com/file/d/1-id3l8kd1QwBOE6KDLb4FBadrUKypFpT/view?usp=share_link"
         ),
-        (
-            "https://drive.google.com/file/d/16xFkFkTgaYK5a96P1larK25749nF3G_g/view?usp=share_link",
-            "https://drive.google.com/file/d/133TgE-Ao731rpw0pjgWn_LVoxHXBhXmt/view?usp=share_link"
-        )
+        # (
+        #     "https://drive.google.com/file/d/16xFkFkTgaYK5a96P1larK25749nF3G_g/view?usp=share_link",
+        #     "https://drive.google.com/file/d/133TgE-Ao731rpw0pjgWn_LVoxHXBhXmt/view?usp=share_link"
+        # )
     ]
     
     pt_share_links2 = [
             (
-            "https://drive.google.com/file/d/1iBmM3CuvKx-4CY1-7gU9jTWeuUXqvfRn/view?usp=share_link", # cp
+            "https://drive.google.com/file/d/1iBmM3CuvKx-4CY1-7gU9jTWeuUXqvfRn/view?usp=share_link", # cp mapai resnest
             "https://drive.google.com/file/d/1yQctpXyuBgfR1gzc72yrdKRpEGD8Ojdo/view?usp=share_link" # opts
             ),
             (
-            "https://drive.google.com/file/d/1EbSTbVADnwwuR6AYXXjK0nTtXjPeLAyU/view?usp=share_link",
+            "https://drive.google.com/file/d/1EbSTbVADnwwuR6AYXXjK0nTtXjPeLAyU/view?usp=share_link", # mapai eb1
             "https://drive.google.com/file/d/1FQdxYBGYkr1_NTxtFwS0XrEs2dLybiza/view?usp=share_link"
             ),
             (
-            "https://drive.google.com/file/d/1NtUP5QwhBglf0zSlQ0rRvIr2o4qMH8Bk/view?usp=share_link",
+            "https://drive.google.com/file/d/1NtUP5QwhBglf0zSlQ0rRvIr2o4qMH8Bk/view?usp=share_link", # resnest reclassified
             "https://drive.google.com/file/d/1ZX0H4WTdz0caX0lLNJ66D6mcoC5HsFO-/view?usp=share_link"
             ),
             (
-                "https://drive.google.com/file/d/1W8PF0sKh2PVU-SzXeLJvXvheWaVF6w_a/view?usp=share_link",
+                "https://drive.google.com/file/d/1W8PF0sKh2PVU-SzXeLJvXvheWaVF6w_a/view?usp=share_link", # eb1 lidar masks
                 "https://drive.google.com/file/d/1whc8TQzFCaFHqBHer1vXWf1tjhPzCtZK/view?usp=share_link"
             ),
             (
-                "https://drive.google.com/file/d/1fuohbjFKEm3qDpaf4MdfFWYPCkxAefdF/view?usp=share_link",
-                "https://drive.google.com/file/d/1lN78J8qKr_8dvILZwt0v204CUMXv3OBl/view?usp=share_link"
+                "https://drive.google.com/file/d/1RItf98I8fFOjuepgp1mPNbnXdwidbAo-/view?usp=share_link", # resnest lidar masks
+                "https://drive.google.com/file/d/1jn_0qNke165sQCoue6PUwxkHm_bJ_32Z/view?usp=share_link"
             ),
             (
-                "https://drive.google.com/file/d/1RItf98I8fFOjuepgp1mPNbnXdwidbAo-/view?usp=share_link",
-                "https://drive.google.com/file/d/1jn_0qNke165sQCoue6PUwxkHm_bJ_32Z/view?usp=share_link"
-            )
+                "https://drive.google.com/file/d/1Wk83hV1rH9sLIJG8ggiMvhDfCPjRDyJb/view?usp=share_link", # eb2 reclassified
+                "https://drive.google.com/file/d/1b0OumKfiXSMhUyqefAvbIyqLPKdnpOr-/view?usp=share_link"
+            ),
+
         ]
     
     if args.task == 1:

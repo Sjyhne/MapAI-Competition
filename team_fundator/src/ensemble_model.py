@@ -1,6 +1,6 @@
 import glob
 from pathlib import Path
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional
 import torch
 import yaml
 
@@ -10,15 +10,16 @@ import torchvision
 class EnsembleModel(torch.nn.Module):
     """Ensemble of torch models, pass tensor through all models and average results"""
 
-    def __init__(self, models: list, target_size: Tuple[int, int]=(500, 500)):
+    def __init__(self, models: list, target_size: Tuple[int, int]=(500, 500), weights: Optional[List[float]]=None):
         super().__init__()
         self.models = torch.nn.ModuleList(models)
         self.target_size = target_size
+        self.weights = weights
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         result = None
         model_preds = []
-        for model in self.models:
+        for i, model in enumerate(self.models):
             in_channels = next(model.parameters()).shape[1]
             if in_channels == x.shape[1]:
                 y = model(x)
@@ -43,7 +44,7 @@ class EnsembleModel(torch.nn.Module):
             num_classes = y.shape[1]      
             if y.shape[1] > 1: # map softmax probabilities for multiclass models
                 y = torch.softmax(y, dim=1)
-                if num_classes == 4: # mapai_reclassified
+                if num_classes == 4: # mapai_reclassified, mapai_edge
                     y = y[:, 1] + y[:, 2]
                 else: # landcover train, mapai_lidar_masks
                     y = y[:, 1]
@@ -52,15 +53,16 @@ class EnsembleModel(torch.nn.Module):
                 # return sigmoid probabilities for single class models
                 y = torch.sigmoid(y)
 
-
-            model_preds.append(y)
+            weight = self.weights[i] if self.weights is not None else 1.0
+            model_preds.append(y * weight)
             if result is None:
-                result = y
+                result = y * weight
                 continue
-            # use majority voting for ensemble predictions
-            result += y
 
-        result /= torch.tensor(len(self.models)).to(result.device)
+            result += y * weight
+        
+        if self.weights is None:
+            result /= torch.tensor(len(self.models)).to(result.device)
         return {"result": result, "model_preds": model_preds}
 
 

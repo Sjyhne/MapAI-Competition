@@ -212,9 +212,9 @@ def get_dataset_config(opts):
 
 def post_process_mask(pred: np.ndarray) -> np.ndarray:
     min_total_area = 0
-    fill_threshold = 10
+    fill_threshold = 0
 
-    remove_treshhold = 180
+    remove_treshhold = 190
     max_edge_ratio = 0.05
 
 

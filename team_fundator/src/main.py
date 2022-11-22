@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default="config/main.yaml", help="Config")
     parser.add_argument("--device", type=str, default="cpu", help="Which device the inference should run on")
     parser.add_argument("--data-ratio", type=float, default=1.0, help="Percentage of the whole dataset that is used")
-    parser.add_argument("--models_per_ensemble", type=int, default=1, help="The maximum number of models to run simultaneously in an ensemble. Lower values use less memory, but more temp storage.")
+    parser.add_argument("--models-per-ensemble", type=int, default=1, help="The maximum number of models to run simultaneously in an ensemble. Lower values use less memory, but more temp storage.")
 
     args = parser.parse_args()
 
@@ -59,16 +59,19 @@ if __name__ == "__main__":
             )
         ]
     
+    t1_weights = [0.25023021, 0.25033406, 0.24972593, 0.2497098]
+    t2_weights = None
+
     from model_task import main as evaluate_model
     if args.task == 1:
-        evaluate_model(args, pt_share_links1)
+        evaluate_model(args, pt_share_links1, t1_weights)
     elif args.task == 2:
-        evaluate_model(args, pt_share_links2)
+        evaluate_model(args, pt_share_links2, t2_weights)
     else:
         args.task = 1
-        evaluate_model(args, pt_share_links1)
+        evaluate_model(args, pt_share_links1, t1_weights)
 
         args.task = 2
-        evaluate_model(args, pt_share_links2)
+        evaluate_model(args, pt_share_links2, t2_weights)
 
     exit(0)
