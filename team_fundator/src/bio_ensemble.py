@@ -94,7 +94,7 @@ def noise_mutation(ind):
     # With equal probability:
     # Add (or subtract) some noise on the entire chromosome or a little more noise on one index
     
-    scalar = 7 / POP_SIZE # scales the domain of the added noise to be appropriate for the POP SIZE
+    scalar = 7 / IND_SIZE # scales the domain of the added noise to be appropriate for the IND SIZE
 
     if prob(0.5):
         ind += np.random.normal(scale=0.04 * scalar, size=IND_SIZE)
@@ -122,6 +122,12 @@ def crossover(p1, p2):
     c1 = mutate(c1)
     c2 = mutate(c2)
 
+
+
+    #return parent, child pairs
+    return crowd(p1, c1, p2, c2)
+
+def crowd(p1, c1, p2, c2):
     # crowding
     crowd_1_dist = dist(c1, p1) + dist(c2, p2)
     crowd_2_dist = dist(c1, p2) + dist(c2, p1)
@@ -133,7 +139,6 @@ def crossover(p1, p2):
         crowd_1 = np.array([p1, c2])    
         crowd_2 = np.array([p2, c1])
 
-    #return parent, child pairs
     return crowd_1, crowd_2
 
 def uncrowd(crowd, p_fitnesses, dataloader):
@@ -159,7 +164,7 @@ def init_pop():
     # Initialise the population
     pop = np.zeros((POP_SIZE, IND_SIZE))
 
-    scalar = 7 / POP_SIZE
+    scalar = 7 / IND_SIZE
     for i in range(POP_SIZE):
         ind = np.ones(IND_SIZE)
         
@@ -175,18 +180,9 @@ def init_pop():
         pop[i] = ind
     return pop
 
-def main():
+def main(args):
     global POP_SIZE
     global IND_SIZE
-    
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=int, default=1, help="Which task you are testing")
-    parser.add_argument("--size", type=int, default=4, help="How many ensembles are you testing?")
-    parser.add_argument("--workers", type=int, default=4, help="How many workers do you want?")
-    parser.add_argument("--pop-size", type=int, default=100, help="How large population do you want?")
-
-
-    args = parser.parse_args()
 
     POP_SIZE = args.pop_size
     IND_SIZE = args.size
@@ -214,7 +210,7 @@ def main():
             if prob(CROSSOVER_FRAC):
                 cr1, cr2 = crossover(p1, p2)
             else:
-                cr1, cr2 = np.array([p1, mutate(p1)]), np.array([p2, mutate(p2)])
+                cr1, cr2 = crowd(p1, mutate(p1.copy()), p2, mutate(p2.copy()))
 
             crowds[:, i] = cr1
             crowds[:, i + POP_SIZE // 2] = cr2
@@ -244,4 +240,16 @@ def main():
     print(fit[n_worst_new])
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--task", type=int, default=1, help="Which task you are testing")
+    parser.add_argument("--size", type=int, default=4, help="How many ensembles are you testing?")
+    parser.add_argument("--workers", type=int, default=4, help="How many workers do you want?")
+    parser.add_argument("--pop-size", type=int, default=100, help="How large population do you want?")
+
+
+    args = parser.parse_args()
+
+    # task 1: [0.25023021 0.25033406 0.24972593 0.2497098 ]
+    # task 2:
+
+    main(args)
