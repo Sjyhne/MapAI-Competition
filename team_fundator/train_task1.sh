@@ -14,6 +14,12 @@ python train.py --epochs $epochs --data-ratio $data_ratio --dataset "mapai" --ta
 echo "Training fourth model"
 python train.py --epochs $epochs --data-ratio $data_ratio --dataset "mapai" --task 1 --backbone "efficientnet-b1"
 
+echo "Training fifth model"
+python train.py --epochs $epochs --data-ratio $data_ratio --dataset "mapai_edge" --task 1 --backbone "timm-resnest26d"
+
+echo "Training sixth model"
+python train.py --epochs $epochs --data-ratio $data_ratio --dataset "mapai_edge" --task 1 --backbone "efficientnet-b1"
+
 
 
 
