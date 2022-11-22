@@ -8,7 +8,7 @@ __pycache__/
 *.pickle
 *.npy
 
-*/base_dataset.yaml
+**/temp/*.yaml
 
 # C extensions
 *.so
@@ -16,7 +16,6 @@ __pycache__/
 # VS Code
 .vscode
 
-*/temp/*.yaml
 
 # Distribution / packaging
 .Python
