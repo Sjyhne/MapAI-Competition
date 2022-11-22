@@ -65,13 +65,13 @@ To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard par
 ## Description
 The ensembles for task 1 and to are desdcribed here.
 ### Task 1
-The ensemble contains four modelss, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
+The ensemble contains six modelss, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_edge)
 
 ### Task 1
-The ensemble contains six models, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
+The ensemble contains eight models, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_lidar_masks, mapai_edge)
