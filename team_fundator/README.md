@@ -1,4 +1,4 @@
-# Team_fundator MapAI Submission
+# Team_Fundator MapAI Submission
 
 This repository contains all files related to our submission for the MapAI Building segmentation competition.
 
@@ -68,13 +68,13 @@ The ensembles for task 1 and to are desdcribed here.
 The ensemble contains four modelss, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
-    Datasets: (mapai, mapai_reclassified)
+    Datasets: (mapai, mapai_reclassified, mapai_edge)
 
 ### Task 1
 The ensemble contains six models, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
-    Datasets: (mapai, mapai_reclassified, mapai_lidar_masks)
+    Datasets: (mapai, mapai_reclassified, mapai_lidar_masks, mapai_edge)
 
 
-The dataset `mapai_lidar_masks` has a third class for the case where the LIDAR height is 0.
+The dataset `mapai_lidar_masks` has a third class for the case where the LIDAR height is 0. `Mapai_edge` is similar to `mapai_reclassified`, but only has the additional edge class.
