@@ -16,6 +16,8 @@ __pycache__/
 # VS Code
 .vscode
 
+*/temp/*.yaml
+
 # Distribution / packaging
 .Python
 build/

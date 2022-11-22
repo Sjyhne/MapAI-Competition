@@ -72,8 +72,7 @@ GENS = 30
 INIT_DROP_PROB = 0.1 # Probability of setting a weight to zero during initialisation of the population
 INIT_2X_PROB = 0.2 # probability of multiplying a weight with a small factor during initialisation of the population
 MUTATION_PROB = 0.85 # Probability of performaing a mutation (In crossover or otherwise)
-CROSSOVER_FRAC = 0.8 # Probability of performing crossover. Other wise mutation is (probably) done 
-N_BEST = 1 # Number of top fitness individuals in Gen N - 1 to replace the worst fit individuals in GEN N.
+CROSSOVER_FRAC = 0.8 # Probability of performing crossover. Other wise mutation is (probably) done
 
 
 def fitness(pop, dataloader):
@@ -84,12 +83,6 @@ def fitness(pop, dataloader):
         fitnesses[i] = batch["score"]
     return fitnesses
 
-def bump_mutation(ind):
-    # Mutate by multiplying with a small scalar at a random index
-    k = random.randint(0, IND_SIZE - 1)
-    ind[k] *= 0.9 if prob(0.5) else 1.1
-    return ind
-
 def noise_mutation(ind):
     # With equal probability:
     # Add (or subtract) some noise on the entire chromosome or a little more noise on one index
@@ -97,11 +90,11 @@ def noise_mutation(ind):
     scalar = 7 / IND_SIZE # scales the domain of the added noise to be appropriate for the IND SIZE
 
     if prob(0.5):
-        ind += np.random.normal(scale=0.04 * scalar, size=IND_SIZE)
-        return ind
-    k = random.randint(0, IND_SIZE- 1)
-    ind[k] += scalar * (0.05 * random.random() - 0.1)
-    return ind
+        ind += np.random.normal(scale=0.025 * scalar, size=IND_SIZE)
+        return normalize(ind)
+    k = random.randint(0, IND_SIZE - 1)
+    ind[k] += scalar * (0.03 * random.random() - 0.06)
+    return normalize(ind)
 
 
 def dist(ind1, ind2):
@@ -121,8 +114,6 @@ def crossover(p1, p2):
     #mutation
     c1 = mutate(c1)
     c2 = mutate(c2)
-
-
 
     #return parent, child pairs
     return crowd(p1, c1, p2, c2)
@@ -150,15 +141,17 @@ def uncrowd(crowd, p_fitnesses, dataloader):
     return crowd[indeces, np.arange(len(indeces))], crowd_fit[indeces, np.arange(len(indeces))]
 
 
-MUTATIONS = [bump_mutation, noise_mutation]
+MUTATIONS = [noise_mutation]
 def mutate(ind):
     # With equal probability perform a mutation from MUTATIONS
     if not prob(MUTATION_PROB):
         return normalize(ind)
+
+    p = random.random()
     for i, mutation in enumerate(MUTATIONS):
-        if not prob((i + 1)/len(MUTATIONS)):
+        if p > (i + 1)/len(MUTATIONS):
             continue
-        return normalize(mutation(ind))
+        return mutation(ind)
 
 def init_pop():
     # Initialise the population
@@ -197,8 +190,7 @@ def main(args):
 
         print(f"Gen {gen + 1} of {GENS}")
         np.random.shuffle(ids)
-        new_pop = np.zeros_like(pop)
-        new_fit = np.zeros_like(fit)
+        
         parent1_ids, parent2_ids = np.split(ids, 2)
 
         crowds = np.zeros((2, POP_SIZE, IND_SIZE))
@@ -210,34 +202,21 @@ def main(args):
             if prob(CROSSOVER_FRAC):
                 cr1, cr2 = crossover(p1, p2)
             else:
-                cr1, cr2 = crowd(p1, mutate(p1.copy()), p2, mutate(p2.copy()))
+                cr1, cr2 = crowd(p1, noise_mutation(p1.copy()), p2, noise_mutation(p2.copy()))
 
             crowds[:, i] = cr1
             crowds[:, i + POP_SIZE // 2] = cr2
 
         # finish crowding parent, child pairs
-        crowds, cr_fit = uncrowd(crowds, fit[ids], dataloader)
+        next_pop, next_fit = uncrowd(crowds, fit[ids], dataloader)
 
-        new_pop[parent1_ids] = crowds[:POP_SIZE // 2]
-        new_fit[parent1_ids] = cr_fit[:POP_SIZE // 2]
-
-        new_pop[parent2_ids] = crowds[POP_SIZE // 2:]
-        new_fit[parent2_ids] = cr_fit[POP_SIZE // 2:]
-
-        # replace the worst N individuals in this generation with the best N from the previous generation
-        n_worst_new = np.argpartition(new_fit, N_BEST)[:N_BEST]
-        n_best_old = np.argpartition(fit, -N_BEST)[-N_BEST:]
-
-        new_fit[n_worst_new] = fit[n_best_old]
-        new_pop[n_worst_new] = pop[n_best_old]
-
-        fit = new_fit
-        pop = new_pop
+        fit = next_fit
+        pop = next_pop
 
         print("Current best fit: ", np.max(fit), pop[np.argmax(fit)], "Median fit: ", np.median(fit))
     
-    print(pop[n_worst_new])
-    print(fit[n_worst_new])
+    print(pop[np.argmax(fit)])
+    print(fit[np.argmax(fit)])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
