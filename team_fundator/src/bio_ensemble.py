@@ -24,8 +24,8 @@ def save_ensemble(pop: np.ndarray, fit: np.ndarray, rundir: str, epoch: int):
     files = glob.glob(os.path.join(rundir, f"last_*.npy"))
     for f in files:
         os.remove(f)
-    np.save(pop, os.path.join(rundir, f"last_pop_{epoch}.npy"))
-    np.save(fit, os.path.join(rundir, f"last_fit_{epoch}.npy"))
+    np.save(os.path.join(rundir, f"last_pop_{epoch}.npy"), pop)
+    np.save(os.path.join(rundir, f"last_fit_{epoch}.npy"), fit)
 
 class PredDataset(Dataset):
     """
@@ -96,11 +96,23 @@ def noise_mutation(ind):
     
     scalar = 7 / IND_SIZE # scales the domain of the added noise to be appropriate for the IND SIZE
 
-    if prob(0.5):
-        ind += np.random.normal(scale=0.02 * scalar, size=IND_SIZE)
+    if prob(1 / 3):
+        ind += np.random.normal(scale=0.03 * scalar, size=IND_SIZE)
         return normalize(ind)
+
     k = random.randint(0, IND_SIZE - 1)
-    ind[k] += scalar * 0.03 * (random.random() - 1.0)
+    if prob(0.5):
+        ind[k] += scalar * 0.04 * (random.random() - 1.0)
+    else:
+        p = random.randint(0, IND_SIZE - 1)
+        while p == k or ind[k] <= 0:
+            k = random.randint(0, IND_SIZE - 1)
+            p = random.randint(0, IND_SIZE - 1)
+
+        diff = random.random() * 0.05
+
+        ind[p] += ind[k] * diff
+        ind[k] -= ind[k] * diff
     return normalize(ind)
 
 
