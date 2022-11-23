@@ -1,3 +1,4 @@
+import random
 import os
 
 import numpy as np
@@ -12,6 +13,7 @@ import time
 
 from competition_toolkit.dataloader import create_dataloader
 from model import AutoEncoder
+from mIoULoss import mIoULoss
 from utils import create_run_dir, store_model_weights, record_scores
 
 from competition_toolkit.eval_functions import calculate_score
@@ -69,8 +71,9 @@ def train(opts):
     model.to(device)
     model = model.float()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)#opts["lr"])
     lossfn = torch.nn.CrossEntropyLoss()
+    lossfn2 = mIoULoss()
 
     epochs = opts["epochs"]
 
@@ -95,12 +98,48 @@ def train(opts):
             image = image.to(device)
             label = label.to(device)
 
+            if e == 0 and idx == 0:
+                print("pretraining the network")
+                for i in range(30):
+                    output = model(image)["out"]
+                    
+                    loss = lossfn(output, label)
+                    loss2 = lossfn2(output, label)
+
+                    optimizer.zero_grad()
+                    if i < 5:
+                        loss.backward()
+                    else:
+                        loss2.backward()
+                    optimizer.step()
+                    print("loss1,loss2:", float(loss), float(loss2))
+
+            flip_lr = bool(random.randint(0, 1))
+            flip_ud = bool(random.randint(0, 1))
+            rot90_amount = random.randint(0, 3)
+
+            image = torch.rot90(image, rot90_amount, (2, 3))
+            label = torch.rot90(label, rot90_amount, (1, 2))
+
+            if flip_lr:
+                if flip_ud:
+                    image = torch.flip(image, (2, 3))
+                    label = torch.flip(label, (1, 2))
+                else:
+                    image = torch.flip(image, (3,))
+                    label = torch.flip(label, (2,))
+            else:
+                if flip_ud:
+                    image = torch.flip(image, (2,))
+                    label = torch.flip(label, (1,))
+
             output = model(image)["out"]
 
             loss = lossfn(output, label)
+            loss2 = lossfn2(output, label)
 
             optimizer.zero_grad()
-            loss.backward()
+            loss2.backward()
             optimizer.step()
 
             lossitem = loss.item()
