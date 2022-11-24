@@ -36,10 +36,10 @@ class PredDataset(Dataset):
         
         self.weights = None
         print("Loading ensemble predictions")
-        self.pred = [np.load(name) for name in glob.glob(f"data/ensemble_preds/task_{args.task}/*.npy")]
+        self.pred = [np.load(name) for name in sorted(glob.glob(f"data/ensemble_preds/task_{args.task}/*.npy"))]
 
         print("Loading ground truths")
-        self.masks = [cv2.imread(name, cv2.IMREAD_GRAYSCALE) for name in glob.glob("../../data/validation/masks/*" + ext)]
+        self.masks = [cv2.imread(name, cv2.IMREAD_GRAYSCALE) for name in sorted(glob.glob("../../data/validation/masks/*" + ext))]
 
     def __len__(self):
         # The number of different weights to test. Matches POP_SIZE in the EA
@@ -204,8 +204,8 @@ def main(args, rundir):
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=args.workers)
     
     if args.start_folder is not None:
-        pop_path = glob.glob(os.path.join(args.start_folder, f"last_pop*.npy"))
-        fit_path = glob.glob(os.path.join(args.start_folder, f"last_fit*.npy"))
+        pop_path = glob.glob(os.path.join(args.start_folder, f"last_pop*.npy"))[0]
+        fit_path = glob.glob(os.path.join(args.start_folder, f"last_fit*.npy"))[0]
         fit = np.load(fit_path)
         pop = np.load(pop_path)
 
