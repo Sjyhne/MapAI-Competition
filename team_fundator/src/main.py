@@ -24,7 +24,6 @@ if __name__ == "__main__":
     # CODE GOES HERE
     # Save results into: args.submission_path
     #############################################################
-
     pt_share_links1 = [
         (
             "https://drive.google.com/file/d/1cdFRQ12R5MziMVrE1vNKTqRL3_1Toh3x/view?usp=share_link",
@@ -41,25 +40,53 @@ if __name__ == "__main__":
         (
             "https://drive.google.com/file/d/16xFkFkTgaYK5a96P1larK25749nF3G_g/view?usp=share_link",
             "https://drive.google.com/file/d/133TgE-Ao731rpw0pjgWn_LVoxHXBhXmt/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/1DGL9xdN-E8ibjkpQAq2sfHo-mOwFJnFs/view?usp=share_link",
+            "https://drive.google.com/file/d/1skM8EukONBtx2b7x1qm1XJI2AXORaEN5/view?usp=share_link"
+        ),
+        ( 
+            "https://drive.google.com/file/d/1Hp6HAT7bTYMAt4MtQwsavNGIsUJ0z0m-/view?usp=share_link",
+            "https://drive.google.com/file/d/1y1Fr1pOORX1A39ZzrDEf7VxgxlUCUPaV/view?usp=share_link"
         )
     ]
     
     pt_share_links2 = [
             (
-            "https://drive.google.com/file/d/1iBmM3CuvKx-4CY1-7gU9jTWeuUXqvfRn/view?usp=share_link", # cp
+            "https://drive.google.com/file/d/1iBmM3CuvKx-4CY1-7gU9jTWeuUXqvfRn/view?usp=share_link", # cp mapai resnest
             "https://drive.google.com/file/d/1yQctpXyuBgfR1gzc72yrdKRpEGD8Ojdo/view?usp=share_link" # opts
             ),
             (
-            "https://drive.google.com/file/d/1EbSTbVADnwwuR6AYXXjK0nTtXjPeLAyU/view?usp=share_link",
+            "https://drive.google.com/file/d/1EbSTbVADnwwuR6AYXXjK0nTtXjPeLAyU/view?usp=share_link", # mapai eb1
             "https://drive.google.com/file/d/1FQdxYBGYkr1_NTxtFwS0XrEs2dLybiza/view?usp=share_link"
             ),
             (
-            "https://drive.google.com/file/d/1NtUP5QwhBglf0zSlQ0rRvIr2o4qMH8Bk/view?usp=share_link",
+            "https://drive.google.com/file/d/1NtUP5QwhBglf0zSlQ0rRvIr2o4qMH8Bk/view?usp=share_link", # resnest reclassified
             "https://drive.google.com/file/d/1ZX0H4WTdz0caX0lLNJ66D6mcoC5HsFO-/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1W8PF0sKh2PVU-SzXeLJvXvheWaVF6w_a/view?usp=share_link", # eb1 lidar masks
+                "https://drive.google.com/file/d/1whc8TQzFCaFHqBHer1vXWf1tjhPzCtZK/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1RItf98I8fFOjuepgp1mPNbnXdwidbAo-/view?usp=share_link", # resnest lidar masks
+                "https://drive.google.com/file/d/1jn_0qNke165sQCoue6PUwxkHm_bJ_32Z/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1Wk83hV1rH9sLIJG8ggiMvhDfCPjRDyJb/view?usp=share_link", # eb2 reclassified
+                "https://drive.google.com/file/d/1b0OumKfiXSMhUyqefAvbIyqLPKdnpOr-/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1enih5gy9X46g_JMkfT8jYR5ssg_XNgel/view?usp=share_link",
+                "https://drive.google.com/file/d/1p-XDUIbu-MbuISBqM43nV8JNqV_97UC1/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1WYcXT6j7o7fL4roSZeTJ3K7NY9K5xwZd/view?usp=share_link",
+                "https://drive.google.com/file/d/1-kON-6jE9Yi2uADvs7ep6GFaQZpGIOv5/view?usp=share_link"
             )
         ]
-    
-    t1_weights = [0.25023021, 0.25033406, 0.24972593, 0.2497098]
+    # [0.21759022 0.28431074 0.21561935 0.0784652  0.2040145 ]
+    t1_weights = [0.25237061, 0.0789559,  0.15071682, 0.07431887, 0.17051169, 0.2731261]
     t2_weights = None
 
     from model_task import main as evaluate_model
