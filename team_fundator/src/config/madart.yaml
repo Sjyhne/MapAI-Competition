@@ -14,9 +14,9 @@ model:
 dataset: 'mapai_lidar_masks' # mapai, mapai_reclassified, mapai_lidar_masks, landcover
 
 augmentation:
-  initial: 'normal'  # None, 'normal', 'hard', 'very_hard'
+  initial: 'hard'  # None, 'normal', 'hard', 'very_hard'
   warmup_epochs: 3 # number of epochs before switching to augmentation cycle
-  cycle: ["hard", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
+  cycle: ["hard"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
   clip_min: -1.0 # normalizing (always applied as the last augmentation)

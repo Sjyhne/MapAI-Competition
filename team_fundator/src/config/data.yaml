@@ -11,20 +11,20 @@ model:
     dropout: 0.2 # default 0.0
 
 
-dataset: 'mapai_lidar_masks' # mapai, mapai_reclassified, mapai_lidar_masks, landcover
+dataset: 'mapai' # mapai, mapai_reclassified, mapai_lidar_masks, landcover
 
 augmentation:
-  initial: 'normal'  # None, 'normal', 'hard', 'very_hard'
+  initial: 'hard'  # None, 'normal', 'hard', 'very_hard'
   warmup_epochs: 3 # number of epochs before switching to augmentation cycle
-  cycle: ["hard", "normal", "normal"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
+  cycle: ["hard"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
 
 lidar_augs:
-  clip_min: -5.0 # normalizing (always applied as the last augmentation)
+  clip_min: -1.0 # normalizing (always applied as the last augmentation)
   clip_max: 40.0
   norm: "max" # "max", "min_max"
   norm_basis: "clip" # "clip", "image"
 
-  other_augs: [] # always applied first, in order
+  other_augs: ["random_scaling", "random_noise"] # always applied first, in order
   one_of: []
 
   dropout:
@@ -35,7 +35,7 @@ lidar_augs:
 
   random_noise:
     p: 0.5 # with probability p, add gaussian noise
-    std: 0.2 # std in meters
+    std: 0.1 # std in meters
     keep_zero: True # do not add noise to orthorectified ground where lidar = 0
 
   random_offset:
@@ -49,7 +49,7 @@ lidar_augs:
     min_scale: 0.85
     max_scale: 1.15
 
-imagesize: 512
+imagesize: 768
 training:
   losses:
     # "DiceLoss": smp.losses.DiceLoss,
@@ -67,12 +67,12 @@ training:
   optimizer:
     name: RAdam # Adam, SGD, RAdam, AdamWarmup
     init_params:
-      lr: 0.0001
+      lr: 0.0002
 
   scheduler:
-    name: MultiStep # PolyLR, MultiStep
-    init_params:
-      milestones: [3]
+    name: PolyLR # PolyLR, MultiStep
+  #  init_params:
+  #    milestones: [3]
   # fit:
   #   epochs: 50
   #   accumulation_steps: 4
@@ -84,14 +84,14 @@ testing:
   erode_val_preds: True
 
 train:
-  epochs: 6
-  batchsize: 4
+  epochs: 50
+  batchsize: 6
   shuffle: True
-  num_workers: 3
-  data_ratio: 0.2
+  num_workers: 12
+  data_ratio: 0.4
 
 validation:
-  batchsize: 4
+  batchsize: 3
   shuffle: False
-  num_workers: 2
-  data_ratio: 1.0
+  num_workers: 6
+  data_ratio: 0.1
