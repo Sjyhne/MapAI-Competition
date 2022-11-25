@@ -50,10 +50,10 @@ def test(opts, dataloader, model, lossfn):
         bioutotal[idx] = metrics["biou"]
         scoretotal[idx] = metrics["score"]
 
-    loss = round(losstotal.mean(), 4)
-    iou = round(ioutotal.mean(), 4)
-    biou = round(bioutotal.mean(), 4)
-    score = round(scoretotal.mean(), 4)
+    loss = round(losstotal.mean(), 6)
+    iou = round(ioutotal.mean(), 6)
+    biou = round(bioutotal.mean(), 6)
+    score = round(scoretotal.mean(), 6)
 
     return loss, iou, biou, score
 
@@ -66,7 +66,8 @@ def train(opts):
 
     if opts["task"] == 2:
         new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        model.backbone.conv1 = new_conv1
+        #model.backbone.conv1 = new_conv1
+        model.encoder.body.conv1 = new_conv1
 
     model.to(device)
     model = model.float()
@@ -157,10 +158,10 @@ def train(opts):
             scoretotal[idx] = trainmetrics["score"]
 
         testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn)
-        trainloss = round(losstotal.mean(), 4)
-        trainiou = round(ioutotal.mean(), 4)
-        trainbiou = round(bioutotal.mean(), 4)
-        trainscore = round(scoretotal.mean(), 4)
+        trainloss = round(losstotal.mean(), 6)
+        trainiou = round(ioutotal.mean(), 6)
+        trainbiou = round(bioutotal.mean(), 6)
+        trainscore = round(scoretotal.mean(), 6)
 
         if testscore > bestscore:
             bestscore = testscore
