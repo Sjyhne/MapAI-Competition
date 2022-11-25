@@ -60,21 +60,27 @@ To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard par
 
     sh train_task1.sh
     sh train_task2.sh
+    sh train_1024res.sh
+    
     
     
 ## Description
-The ensembles for task 1 and to are desdcribed here.
+The ensembles for task 1 and 2 are desdcribed here.
 ### Task 1
-The ensemble contains six modelss, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
+The ensemble contains eight modelss, which are trained with different combinations of encoders, datasets and imagesizes. The first 6 combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_edge)
 
-### Task 1
-The ensemble contains eight models, which are trained with different combinations of encoders and datasets. The combinations are given by the Cartesian product of the following sets:
+The last two models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets.
+
+### Task 2
+The ensemble contains ten models, which are trained with different combinations of encoders, datasets and image sizes. The first 8 combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_lidar_masks, mapai_edge)
 
 
 The dataset `mapai_lidar_masks` has a third class for the case where the LIDAR height is 0. `Mapai_edge` is similar to `mapai_reclassified`, but only has the additional edge class.
+
+The last two models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets.
