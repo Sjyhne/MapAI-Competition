@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models.detection.mask_rcnn import maskrcnn_resnet50_fpn
-
+#from torchvision.models.detection.mask_rcnn import maskrcnn_resnet50_fpn
+import torchvision
 
 class SkipConnectionModule(nn.Module):
     def __init__(self):
@@ -51,7 +51,8 @@ class AutoEncoder(nn.Module):
         #     nn.Conv2d(32, 64, 7), 
         #     nn.BatchNorm2d(64),
         # )
-        self.encoder = maskrcnn_resnet50_fpn(pretrained_backbone=True, trainable_backbone_layers=5).backbone
+        #self.encoder = maskrcnn_resnet50_fpn(pretrained_backbone=True, trainable_backbone_layers=5).backbone
+        self.encoder = torchvision.models.detection.backbone_utils.resnet_fpn_backbone('resnext101_32x8d', weights=torchvision.models.resnet.ResNeXt101_32X8D_Weights.IMAGENET1K_V2, trainable_layers=5)
 
         self.feature_merger = nn.Conv2d(256*4, 256, 1)
 
