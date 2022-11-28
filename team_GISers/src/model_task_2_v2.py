@@ -83,12 +83,16 @@ def main(args):
     # model = model.to(device)
     #
     # new
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and opts["device"] == "cuda":
         model.load_state_dict(torch.load(model_checkpoint))
         device = 'cuda'  # opts["device"]
+        print("is using cuda ......")
     else:
         model.load_state_dict(torch.load(model_checkpoint, map_location='cpu'))
         device = 'cpu'
+        print("is using cpu ......")
+
+
     #################
     model = model.to(device)
     model.eval()

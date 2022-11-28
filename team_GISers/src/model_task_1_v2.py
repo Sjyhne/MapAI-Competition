@@ -73,12 +73,14 @@ def main(args):
     # model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
     model = E_PANet_v3(inp_channel=3, n_cls=opts["num_classes"])
     # Updated time: 19th, Nov. 2022
-    if torch.cuda.is_available():
+    if torch.cuda.is_available() and opts["device"] == "cuda":
         model.load_state_dict(torch.load(model_checkpoint))
-        device = 'cuda' # opts["device"]
+        device = 'cuda'  # opts["device"]
+        print("is using cuda ......")
     else:
         model.load_state_dict(torch.load(model_checkpoint, map_location='cpu'))
         device = 'cpu'
+        print("is using cpu ......")
 
     model = model.to(device)
     model.eval()
