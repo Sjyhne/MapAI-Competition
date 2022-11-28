@@ -48,6 +48,14 @@ if __name__ == "__main__":
         ( 
             "https://drive.google.com/file/d/1Hp6HAT7bTYMAt4MtQwsavNGIsUJ0z0m-/view?usp=share_link",
             "https://drive.google.com/file/d/1y1Fr1pOORX1A39ZzrDEf7VxgxlUCUPaV/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/1C-b0TUORvbrCuDfCL6bkeTOgrw2P0eru/view?usp=share_link",
+            "https://drive.google.com/file/d/1SwA28lxSz1MZTCLWpVFenUrFSH98kGx4/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/155y9VfHUaJY5ed8Rzo4chDJ6Yx8fJ4GQ/view?usp=share_link",
+            "https://drive.google.com/file/d/1NCmt2N6SToatfwSwNyZD0_H9jPhXHksM/view?usp=share_link"
         )
     ]
     
@@ -86,7 +94,7 @@ if __name__ == "__main__":
             )
         ]
     # [0.21759022 0.28431074 0.21561935 0.0784652  0.2040145 ]
-    t1_weights = [0.25237061, 0.0789559,  0.15071682, 0.07431887, 0.17051169, 0.2731261]
+    t1_weights = [0.1280474, 0.13340688, 0.11750869, 0.12149579, 0.12260915, 0.13877549, 0.10547787, 0.13267873]
     t2_weights = None
 
     from model_task import main as evaluate_model

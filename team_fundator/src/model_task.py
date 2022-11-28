@@ -123,6 +123,7 @@ def main(args, pt_share_links, weights=None):
         del models
         for image, label, filename in pbar:
             # Split filename and extension
+            del label
             filename_base, file_extension = os.path.splitext(filename[0])
 
             if opts["task"] == 2:
@@ -130,7 +131,7 @@ def main(args, pt_share_links, weights=None):
                 lidar = lidar_valid(lidar.numpy())
 
                 image = torch.cat([image, torch.tensor(lidar, dtype=image.dtype)], dim=1)
-
+                del lidar
             # Send image and label to device (eg., cuda)
             image = image.to(device)
 
@@ -141,6 +142,8 @@ def main(args, pt_share_links, weights=None):
                 routput = model(torch.rot90(image, dims=[2, 3]))["result"]
                 routput = torch.rot90(routput, k=-1, dims=[2, 3])
                 prediction = (prediction + routput) / 2
+                del routput
+            del image
 
             if opts["device"] == "cpu":
                 prediction = prediction.squeeze().detach().numpy()
