@@ -26,7 +26,7 @@ class_to_color:
   "background": 0
   "building": 255
 
-post_process_preds: False
+post_process_preds: True
 
 imagesize: 512
 
