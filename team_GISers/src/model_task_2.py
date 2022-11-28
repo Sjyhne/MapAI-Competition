@@ -35,17 +35,18 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     ###
-    # Updated time: 16th, Nov. 2022
-    # Task_2 best:from EPANet_v3, in task_2/run_2
+    # Updated time: 28th, Nov. 2022
+    # Task_2 best:from EPANet_v3, in task_2/run_12
     ###
     #########################################################################
     # pt_share_link = "https://drive.google.com/file/d/10xBcdT3ryUFrhDs-g7ZourRuVjf-FHOj/view?usp=sharing"
-    pt_share_link = "https://drive.google.com/file/d/1od8ksryB7vVhCgYjVGiZpqd_IRRYOemd/view?usp=share_link"
+    # pt_share_link = "https://drive.google.com/file/d/1od8ksryB7vVhCgYjVGiZpqd_IRRYOemd/view?usp=share_link"
+    pt_share_link = "https://drive.google.com/file/d/1-L8NUIDUUi9lbkKIbspmp3kLUgCXnah2/view?usp=share_link"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
     url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
-    model_checkpoint = "task_2_best_run2.pt"  # pretrained_task2.pt
+    model_checkpoint = "task_2_best_run12.pt"  # pretrained_task2.pt
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
 
