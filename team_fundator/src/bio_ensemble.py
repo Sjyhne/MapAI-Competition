@@ -35,8 +35,15 @@ class PredDataset(Dataset):
     def __init__(self, args, ext=".tif"):
         
         self.weights = None
+
+        subset = None
+        if args.subset is not None:
+            subset = np.array(list(i for i in range(len(args.subset)) if args.subset[i] == "1"))
+            print(subset)
+        
         print("Loading ensemble predictions")
-        self.pred = [np.load(name) for name in sorted(glob.glob(f"data/ensemble_preds/task_{args.task}/*.npy"))]
+        self.pred = [np.load(name)[subset] for name in sorted(glob.glob(f"data/ensemble_preds/task_{args.task}/*.npy"))]
+
 
         print("Loading ground truths")
         self.masks = [cv2.imread(name, cv2.IMREAD_GRAYSCALE) for name in sorted(glob.glob("../../data/validation/masks/*" + ext))]
@@ -200,6 +207,12 @@ def main(args, rundir):
     IND_SIZE = args.size
     GENS = args.gens
 
+    if args.subset is not None:
+        assert len(args.subset) == IND_SIZE
+        new_size = sum(map(int, args.subset))
+        assert new_size < IND_SIZE
+        IND_SIZE = new_size
+
     dataset = PredDataset(args)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=args.workers)
     
@@ -214,6 +227,8 @@ def main(args, rundir):
         pop = init_pop()
         fit = fitness(pop, dataloader)
     ids = np.arange(POP_SIZE)
+
+
 
     print("Current best fit: ", np.max(fit), pop[np.argmax(fit)], "Median fit: ", np.median(fit))
     for gen in range(GENS):
@@ -258,6 +273,7 @@ if __name__ == "__main__":
     parser.add_argument("--pop-size", type=int, default=100, help="How large population do you want?")
     parser.add_argument("--gens", type=int, default=30, help="How many generations?")
     parser.add_argument("--start-folder", type=str, default=None, help="Folder to load saved population")
+    parser.add_argument("--subset", type=str, default=None, help="String of ones and zeros to determine which models to use in the evaluated ensembles")
 
 
     args = parser.parse_args()
