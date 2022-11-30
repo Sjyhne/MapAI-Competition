@@ -43,3 +43,16 @@ def load_resnet101(opts):
     return (
         torchvision.models.segmentation.fcn_resnet101(
             pretrained=False, num_classes=opts["num_classes"]), get_output)
+
+
+def load_deepvision_resnet101(opts, pretrained=False):
+    get_output = "out"
+    model_weights =torchvision.models.segmentation.DeepLabV3_ResNet101_Weights
+    if not pretrained:
+        return (torchvision.models.segmentation.deeplabv3_resnet101(num_classes=opts["num_classes"]), get_output)
+
+    #Load model and reform output layer
+    model = torchvision.models.segmentation.deeplabv3_resnet101(
+        weights=model_weights)
+
+    return (model, get_output)

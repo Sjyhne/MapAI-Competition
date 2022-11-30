@@ -1,17 +1,17 @@
 # this wil owerwrite the dataloader so it uses augmetation before creating tensors
 
 import albumentations as A
+import cv2 as cv
 import pathlib
 from torch.utils.data import Dataset, DataLoader
 from yaml import load, Loader
 from datasets import load_dataset
 import os
 import torch
-import cv2 as cv
 import numpy as np
 from augmentation.data_augmentation import get_transforms
 from torch.utils.data import RandomSampler 
-from random import choice
+from random import choice, choices
 
 
 transform = get_transforms()
@@ -85,32 +85,57 @@ class Task_One_Augmented_dataset(Dataset):
         #     paths.extend(self.construct_psuedo_paths(path, size_reducer=size_reduce, keep_original=keep_original))
 
         #self.paths = paths#self.construct_psuedo_paths(size_reducer=SIZE_REDUCER)
-        self.paths = self.draw_dataset_files(opts["datasets"]["generated_data_folders"],
+        if opts["datasets"]["augment_data_mode"] == "original":
+            print("Using original dataset...")
+            self.paths = download_dataset(data_type=datatype, task=opts["task"], get_dataset=True)
+        elif opts["datasets"]["augment_data_mode"] == "replace":
+            print("Using augmented dataset...")
+            self.paths = self.draw_dataset_files(opts["datasets"]["generated_data_folders"],
                                              opts["datasets"]["generated_data_root"],
                                              opts["datasets"]["original_images"],
                                              opts["datasets"]["original_masks"])
+        elif opts["datasets"]["augment_data_mode"] == "append":
+            self.dataset = download_dataset(data_type=datatype, task=opts["task"], get_dataset=True)
+            self.paths = [{"image":image, "mask":mask} for image, mask in zip(self.dataset["image"], self.dataset["mask"])]
+            if opts["datasets"]["include_test_dataset"]:
+                test_dataset = download_dataset(data_type="validation", task=opts["task"], get_dataset=True)
+                self.paths.extend(test_dataset)
+            augmented_data = self.draw_dataset_files(opts["datasets"]["generated_data_folders"],
+                                                     opts["datasets"]["generated_data_root"],
+                                                     opts["datasets"]["original_images"],
+                                                     opts["datasets"]["original_masks"],
+                                                     include_original=False)
+            self.paths.extend(choices(augmented_data, k=int(len(augmented_data) * self.opts["datasets"]["augmented_data_use_ratio"])))
+        else:
+            raise Exception("Invalid augment_data_mode")
 
         print(
             f"Using number of images in {datatype}dataset: {int(len(self.paths) * self.opts['data_ratio'])}/{len(self.paths)}")
     
-    def preprocess_dataset_folders(self, dataset_folders, dataset_root):
+    def preprocess_dataset_folders(self, dataset_folders, dataset_root, include_original=True):
         file_iterations_dict = {}
         for dataset_folder in dataset_folders:
             for file_name in os.listdir(os.path.join(dataset_root, dataset_folder)):
+                if not include_original:
+                    file_iteration_number = self.get_file_iteration_number(file_name)
+                    if file_iteration_number == 0:
+                        continue
                 file_name_base = "_".join(file_name.split("_")[:-1])
                 if file_name_base not in file_iterations_dict:
                     file_iterations_dict[file_name_base] = []
                 file_iterations_dict[file_name_base].append(os.path.join(dataset_folder, file_name))
         return file_iterations_dict
 
-    def draw_dataset_files(self, dataset_folders, dataset_root, original_dataset_folder, original_mask_folder):
+    def draw_dataset_files(self, dataset_folders, dataset_root, original_dataset_folder, original_mask_folder, include_original=True):
         preprocessed_files = self.preprocess_dataset_folders(dataset_folders, dataset_root)
         selected_paths = []
         for original_file in os.listdir(original_dataset_folder):
             original_file_base = original_file.split(".")[0]
             file_iterations = preprocessed_files[original_file_base]
-            drawn_file = choice(file_iterations)
-            selected_paths.append({"image": os.path.join(dataset_root,drawn_file), "mask": os.path.join(original_mask_folder,original_file)})
+            drawn_files = choices(file_iterations, k=self.opts["datasets"]["augmented_image_duplications"])
+            for drawn_file in drawn_files:
+                selected_paths.append({"image": os.path.join(dataset_root,drawn_file), "mask": os.path.join(original_mask_folder,original_file)})
+
         return selected_paths
 
     def get_original_file_name(self, augmented_file_name: str):
@@ -180,7 +205,7 @@ class ImageAndLabelDataset(Dataset):
         self.opts = opts
 
         self.paths = download_dataset(data_type=datatype, task=opts["task"], get_dataset=True)
-
+        
         print()
 
         print(
@@ -222,14 +247,18 @@ class ImageLabelAndLidarDataset(Dataset):
 
         self.opts = opts
 
-        self.paths = download_dataset(data_type=datatype, task=opts["task"], get_dataset=True)
+        self.dataset = download_dataset(data_type=datatype, task=opts["task"], get_dataset=True)
+        self.paths = [{"image":image, "mask":mask, "lidar":lidar} for image, mask, lidar in zip(self.dataset["image"], self.dataset["mask"], self.dataset["lidar"])]
+        if opts["datasets"]["include_test_dataset"]:
+            test_dataset = download_dataset(data_type="validation", task=opts["task"], get_dataset=True)
+            self.paths.extend([{"image":image, "mask":mask, "lidar":lidar} for image, mask, lidar in zip(test_dataset["image"], test_dataset["mask"], test_dataset["lidar"])])
 
         print(
-            f"Using number of images in {datatype}dataset: {int(self.paths.num_rows * self.opts['data_ratio'])}/{self.paths.num_rows}")
+            f"Using number of images in {datatype}dataset: {len(self.paths)}/{len(self.paths)}")
 
     def __len__(self):
-        return int(self.paths.num_rows * self.opts["data_ratio"])
-
+        return int(len(self.paths) * self.opts["data_ratio"])
+    
     def __getitem__(self, idx):
 
         pathdict = self.paths[idx]

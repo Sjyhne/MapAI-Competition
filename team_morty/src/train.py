@@ -9,7 +9,7 @@ from tabulate import tabulate
 import argparse
 import time
 from augmentation.dataloader import create_dataloader
-from ai_models.create_models import load_unet, load_resnet101, load_resnet50
+from ai_models.create_models import load_unet, load_resnet101, load_resnet50, load_deepvision_resnet101
 from utils import create_run_dir, store_model_weights, record_scores
 from competition_toolkit.eval_functions import calculate_score
 import segmentation_models_pytorch as smp
@@ -59,10 +59,11 @@ def test(opts, dataloader, model, lossfn, get_output):
 def train(opts):
     device = opts["device"]
 
-    model, get_output = load_unet(opts)
+    # model, get_output = load_unet(opts)
     # model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
     # model, get_output = load_resnet101(opts)
+    model, get_output = load_deepvision_resnet101(opts, pretrained=True)
 
     #Load state dict from options resume
     if opts["resume"] is not None:
@@ -88,10 +89,10 @@ def train(opts):
     valloader = create_dataloader(opts, "validation")
 
     bestscore = 0
-
+    if LOG_WANDB:
+        wandb.watch(model)
+    
     for e in range(epochs):
-        if LOG_WANDB:
-            wandb.watch(model)
         trainloader = create_dataloader(opts, "train")
         model.train()
 
@@ -169,12 +170,7 @@ def train(opts):
 
         record_scores(opts, scoredict)
 
-DATA_FOLDER_DICT = {
-    "original_images": "../../data/train/images/",
-    "original_masks": "../../data/train/masks/",
-    "generated_data_folders": ["1-5_inpainting_rooftops/images"],
-    "generated_data_root": "/home/kaborg15/Stable_Diffusion/MapAI_Generated_images/"
-}
+
 
 import os
 import wandb
@@ -182,15 +178,32 @@ LOG_WANDB = True
 if LOG_WANDB:
     wandb.init(project="MapAi-train")
 wandb.config = {
-    "epochs": 40,
+    "epochs": 60,
     "learning_rate": 5e-5,
     "batch_size": 8,
-    "task": 1
+    "task": 2,
+    "augmented_data_use_ratio": 0.15,
+    "augmented_image_duplications": 1,
+    "include_test_dataset":True
+}
+
+DATA_FOLDER_DICT = {
+    "original_images": "../../data/train/images/",
+    "original_masks": "../../data/train/masks/",
+    "original_images_test": "../../data/validation/images/",
+    "original_masks_test": "../../data/validation/masks/",
+    "include_test_dataset": wandb.config["include_test_dataset"],
+    "generated_data_folders": ["1-5_inpainting_rooftops/images", "generated_dataset_1-5"],
+    "generated_data_root": "/home/kaborg15/Stable_Diffusion/MapAI_Generated_images/",
+    "augment_data_mode": "append", # Original, append, replace
+    "augmented_data_use_ratio": wandb.config["augmented_data_use_ratio"],
+    "augmented_image_duplications": wandb.config["augmented_image_duplications"]
 }
 
 if __name__ == "__main__":
     os.chdir("..")
     os.chdir("..")
+
     
     parser = argparse.ArgumentParser("Training a segmentation model")
 
@@ -201,10 +214,12 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=int, default=wandb.config["task"])
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")
-    #parser.add_argument("--resume", type=str, default="runs/task_1/run_116/last_task1_199.pt", help="Path to state dict to resume training from, default is None")
-    parser.add_argument("--resume", type=str, default=None, help="Path to state dict to resume training from, default is None")
+    parser.add_argument("--resume", type=str, default="runs/task_1/run_71/best_task1_57.pt", help="Path to state dict to resume training from, default is None")
+    #parser.add_argument("--resume", type=str, default=None, help="Path to state dict to resume training from, default is None")
     parser.add_argument("--datasets", type=dict, default=DATA_FOLDER_DICT, help="Path to original dataset")
-    
+    parser.add_argument("--batch_size", type=int, default=wandb.config["batch_size"], help="Batch size used during training")
+    parser.add_argument("--prefix", type=str, default="", help="Prefix for run name")
+
     args = parser.parse_args()
     # Import config
     opts = load(open(args.config, "r"), Loader)
@@ -217,11 +232,14 @@ if __name__ == "__main__":
     
     print("Overriding config batch size with wandb config batch size")
     opts[f"task{opts['task']}"]["batchsize"] = wandb.config["batch_size"]
+    print("Running on device:", opts["device"])
     print("Opts:", opts)
     
     os.chdir("team_morty/src")
     rundir = create_run_dir(opts)
     opts["rundir"] = rundir
+    if LOG_WANDB:
+        wandb.run.name = f"{opts['prefix']}-{rundir.split('/')[-1]}-{opts['lr']}-{wandb.config['batch_size']}"
     dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
     train(opts)

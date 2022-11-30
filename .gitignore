@@ -140,3 +140,5 @@ data/task2_test
 team_morty/Stable Diffusion Augmentation
 submission/
 runs/
+team_morty/src/runs/
+team_morty/src/wandb/
