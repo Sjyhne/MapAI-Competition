@@ -63,9 +63,9 @@ def fitness(pop, dataloader):
     return fitnesses
 
 
-def get_weights(size: int, min_models):
+def get_weights(size: int, min_models: int, max_models: int):
     weights = [list(map(int, np.binary_repr(num, width=size))) for num in range(2 ** size)]
-    weights = [np.array(w) for w in weights if sum(w) >= min_models]
+    weights = list(filter(lambda x: sum(x) >= min_models and sum(x) <= max_models))
     weights = np.array(weights)
     s = np.sum(weights, axis=1)
     return weights / s[:, None]
@@ -75,7 +75,7 @@ def main(args):
     dataset = PredDataset(args)
     dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=args.workers)
     
-    w = get_weights(args.size, args.min_ensemble_size)
+    w = get_weights(args.size, args.min_ensemble_size, args.max_ensemble_size)
     f = fitness(w, dataloader)
 
     best_idx = np.argpartition(f, -5)[-5:]
@@ -89,6 +89,7 @@ if __name__ == "__main__":
     parser.add_argument("--workers", type=int, default=4, help="How many workers do you want?")
     parser.add_argument("--size", type=int, default=8, help="How many ensembles are you testing?")
     parser.add_argument("--min-ensemble-size", type=int, default=6, help="The minimum number of models in each ensemble?")
+    parser.add_argument("--max-ensemble-size", type=int, default=10000000, help="The maximum number of models in each ensemble?")
 
 
     args = parser.parse_args()
