@@ -232,9 +232,9 @@ if __name__ == "__main__":
             ),
         ]
 
-    args.full_submition = False
-    args.tta = args.task == 2 and 
-    if args.full_submition:
+    args.full_submission = False
+    args.tta = args.task == 2 and args.full_submission
+    if args.full_submission:
         pt_share_links1 = pt_share_links1[-1]
         pt_share_links2 = pt_share_links2[-1]
 
