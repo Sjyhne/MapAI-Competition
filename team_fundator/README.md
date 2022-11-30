@@ -60,6 +60,9 @@ To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard par
 
     sh train_task1.sh
     sh train_task2.sh
+    
+Lastly, train two models each for task 1 and 2 with 1024 image resolution on the `mapai` and `mapai_edge` datasets:  
+    
     sh train_1024res.sh
     
     
