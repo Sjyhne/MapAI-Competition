@@ -33,3 +33,9 @@ else:
     evaluate_model_2(args=args)
 ``` 
 When you pull request to the main repository, the code is checked for errors and if everything is OK, it should pass tests and be available for merging into the main repository. When the pull-request is merged, you can consider your code delivered.
+
+
+# Contact
+
+Contact Author: Morten Grundetjern email: mortengrundetjern@hotmail.com
+Contributing Author: Karl Audun Kagnes Borgersen email: kab95@hotmail.no

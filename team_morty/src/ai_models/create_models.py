@@ -43,3 +43,16 @@ def load_resnet101(opts):
     return (
         torchvision.models.segmentation.fcn_resnet101(
             pretrained=False, num_classes=opts["num_classes"]), get_output)
+
+
+def load_deepvision_resnet101(opts, pretrained=True):
+    get_output = "out"
+    model_weights ='COCO_WITH_VOC_LABELS_V1'
+    if not pretrained:
+        return (torchvision.models.segmentation.deeplabv3_resnet101(num_classes=opts["num_classes"]), get_output)
+
+    #Load model and reform output layer
+    model = torchvision.models.segmentation.deeplabv3_resnet101(
+        pretrained=pretrained)
+
+    return (model, get_output)

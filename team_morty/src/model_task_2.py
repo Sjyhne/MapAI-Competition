@@ -13,7 +13,8 @@ import shutil
 
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
-
+from ai_models.load_models import load_model
+from ai_models.create_models import load_resnet50, load_resnet101, load_unet, load_deepvision_resnet101
 
 def main(args):
     #########################################################################
@@ -31,7 +32,7 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     #########################################################################
-    pt_share_link = "https://drive.google.com/file/d/1F_l7KekAyHwmouE91ulW_cocvEFUpW9r/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/1uNcdoHt2LngUDmj11dVhiISVWP16qw0A/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
@@ -58,10 +59,11 @@ def main(args):
     ###
     #########################################################################
     # Adds 4 channels to the input layer instead of 3
-    model = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=opts["num_classes"])
-    new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    model.backbone.conv1 = new_conv1
-    model.load_state_dict(torch.load(model_checkpoint, map_location=torch.device(opts["device"])))
+    # model = torchvision.models.segmentation.fcn_resnet101(pretrained=False, num_classes=opts["num_classes"])
+    # new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+    # model.backbone.conv1 = new_conv1
+    # model.load_state_dict(torch.load(model_checkpoint, map_location=torch.device(opts["device"])))
+    model, get_output = load_model(load_deepvision_resnet101, model_checkpoint, opts)
     device = opts["device"]
     model = model.to(device)
     model.eval()
@@ -78,6 +80,7 @@ def main(args):
     iou_scores = np.zeros((len(dataloader)))
     biou_scores = np.zeros((len(dataloader)))
     counter = 0
+
 
     for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference", leave=False):
         # Split filename and extension
@@ -139,9 +142,9 @@ def main(args):
         image = cv.imread(str(predicted_sample_path_tif), 1)
         reszise = cv.resize(image, (500, 500))
         cv.imwrite(str(predicted_sample_path_tif), reszise)
-        counter += 1
-        if counter >=10:
-            break
+        # counter += 1
+        # if counter >=10:
+        #     break
 
 
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))

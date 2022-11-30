@@ -8,9 +8,9 @@ if __name__ == "__main__":
     #############################################################
     parser.add_argument("--submission-path", required=True)
     parser.add_argument("--data-type", required=True, default="validation", help="validation or test")
-    parser.add_argument("--task", type=int, default=1, help="Which task you are submitting for")
+    parser.add_argument("--task", type=int, default=0, help="Which task you are submitting for")
 
-    #############################################################
+    ########################################## ###################
     # CUSTOM ARGUMENTS GOES HERE
     #############################################################
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Config")

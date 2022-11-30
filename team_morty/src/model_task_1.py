@@ -13,7 +13,7 @@ import shutil
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 from ai_models.load_models import load_model
-from ai_models.create_models import load_resnet50, load_resnet101, load_unet
+from ai_models.create_models import load_resnet50, load_resnet101, load_unet, load_deepvision_resnet101
 
 def main(args):
     #########################################################################
@@ -32,7 +32,7 @@ def main(args):
     ###
     #########################################################################
     
-    pt_share_link = "https://drive.google.com/file/d/1vqSvHqU9fZBYpy38mrpAg8CG90lSL2xh/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/1wv5H_MexHhlfcxJfOUWB3Eo51ciuGJ7y/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
@@ -59,7 +59,7 @@ def main(args):
     ###
     #########################################################################
     device = opts["device"]
-    model, get_output = load_model(load_unet, model_checkpoint, opts)
+    model, get_output = load_model(load_deepvision_resnet101, model_checkpoint, opts)
     #########################################################################
     ###
     # Load Data

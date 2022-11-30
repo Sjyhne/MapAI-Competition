@@ -1,4 +1,5 @@
 import os
+from symbol import break_stmt
 
 import numpy as np
 from yaml import load, dump, Loader, Dumper
@@ -8,7 +9,7 @@ from tabulate import tabulate
 import argparse
 import time
 from augmentation.dataloader import create_dataloader
-from ai_models.create_models import load_unet, load_resnet101, load_resnet50
+from ai_models.create_models import load_unet, load_resnet101, load_resnet50, load_deepvision_resnet101
 from utils import create_run_dir, store_model_weights, record_scores
 from competition_toolkit.eval_functions import calculate_score
 import segmentation_models_pytorch as smp
@@ -59,9 +60,14 @@ def train(opts):
     device = opts["device"]
 
     # model, get_output = load_unet(opts)
-    model, get_output = load_resnet50(opts)
+    # model, get_output = load_resnet50(opts)
     # model, get_output = load_resnet50(opts, pretrained=True)
     # model, get_output = load_resnet101(opts)
+    model, get_output = load_deepvision_resnet101(opts, pretrained=True)
+
+    #Load state dict from options resume
+    if opts["resume"] is not None:
+        model.load_state_dict(torch.load(opts["resume"]))
 
 
     if opts["task"] == 2:
@@ -79,13 +85,15 @@ def train(opts):
 
     epochs = opts["epochs"]
 
-    trainloader = create_dataloader(opts, "train")
+    #trainloader = create_dataloader(opts, "train")
     valloader = create_dataloader(opts, "validation")
 
     bestscore = 0
-
+    if LOG_WANDB:
+        wandb.watch(model)
+    
     for e in range(epochs):
-
+        trainloader = create_dataloader(opts, "train")
         model.train()
 
         losstotal = np.zeros((len(trainloader)), dtype=float)
@@ -94,6 +102,9 @@ def train(opts):
         bioutotal = np.zeros((len(trainloader)), dtype=float)
 
         stime = time.time()
+      
+
+
 
 
         for idx, batch in tqdm(enumerate(trainloader), leave=True, total=len(trainloader), desc="Train", position=0):
@@ -107,7 +118,6 @@ def train(opts):
             
 
             loss = lossfn(output, label)
-
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -155,24 +165,62 @@ def train(opts):
             "trainscore": trainscore,
             "testscore": testscore
         }
+        if LOG_WANDB:
+            wandb.log(scoredict)
 
         record_scores(opts, scoredict)
 
 
-if __name__ == "__main__":
 
+import os
+import wandb
+LOG_WANDB = True
+if LOG_WANDB:
+    wandb.init(project="MapAi-train")
+wandb.config = {
+    "epochs": 60,
+    "learning_rate": 5e-5,
+    "batch_size": 8,
+    "task": 2,
+    "augmented_data_use_ratio": 0.15,
+    "augmented_image_duplications": 1,
+    "include_test_dataset":True
+}
+
+DATA_FOLDER_DICT = {
+    "original_images": "../../data/train/images/",
+    "original_masks": "../../data/train/masks/",
+    "original_images_test": "../../data/validation/images/",
+    "original_masks_test": "../../data/validation/masks/",
+    "include_test_dataset": wandb.config["include_test_dataset"],
+    "generated_data_folders": ["1-5_inpainting_rooftops/images", "generated_dataset_1-5"],
+    "generated_data_root": "/home/kaborg15/Stable_Diffusion/MapAI_Generated_images/",
+    "augment_data_mode": "append", # Original, append, replace
+    "augmented_data_use_ratio": wandb.config["augmented_data_use_ratio"],
+    "augmented_image_duplications": wandb.config["augmented_image_duplications"]
+}
+
+if __name__ == "__main__":
+    os.chdir("..")
+    os.chdir("..")
+
+    
     parser = argparse.ArgumentParser("Training a segmentation model")
 
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate used during training")
-    parser.add_argument("--config", type=str, default="team_morty/src/config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--task", type=int, default=1)
+    parser.add_argument("--epochs", type=int, default=wandb.config["epochs"], help="Number of epochs for training")
+    parser.add_argument("--lr", type=float, default=wandb.config["learning_rate"], help="Learning rate used during training")
+    parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
+    parser.add_argument("--device", type=str, default="cuda:1")
+    parser.add_argument("--task", type=int, default=wandb.config["task"])
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")
+    parser.add_argument("--resume", type=str, default="runs/task_1/run_71/best_task1_57.pt", help="Path to state dict to resume training from, default is None")
+    #parser.add_argument("--resume", type=str, default=None, help="Path to state dict to resume training from, default is None")
+    parser.add_argument("--datasets", type=dict, default=DATA_FOLDER_DICT, help="Path to original dataset")
+    parser.add_argument("--batch_size", type=int, default=wandb.config["batch_size"], help="Batch size used during training")
+    parser.add_argument("--prefix", type=str, default="", help="Prefix for run name")
 
     args = parser.parse_args()
-
     # Import config
     opts = load(open(args.config, "r"), Loader)
 
@@ -181,11 +229,17 @@ if __name__ == "__main__":
         opts = opts | vars(args)
     except Exception as e:
         opts = {**opts, **vars(args)}
-
+    
+    print("Overriding config batch size with wandb config batch size")
+    opts[f"task{opts['task']}"]["batchsize"] = wandb.config["batch_size"]
+    print("Running on device:", opts["device"])
     print("Opts:", opts)
-
+    
+    os.chdir("team_morty/src")
     rundir = create_run_dir(opts)
     opts["rundir"] = rundir
+    if LOG_WANDB:
+        wandb.run.name = f"{opts['prefix']}-{rundir.split('/')[-1]}-{opts['lr']}-{wandb.config['batch_size']}"
     dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
 
     train(opts)
