@@ -183,10 +183,10 @@ if __name__ == "__main__":
             "https://drive.google.com/file/d/1Hp6HAT7bTYMAt4MtQwsavNGIsUJ0z0m-/view?usp=share_link",
             "https://drive.google.com/file/d/1y1Fr1pOORX1A39ZzrDEf7VxgxlUCUPaV/view?usp=share_link"
         ),
-        # (
-        #     "https://drive.google.com/file/d/1C-b0TUORvbrCuDfCL6bkeTOgrw2P0eru/view?usp=share_link",
-        #     "https://drive.google.com/file/d/1SwA28lxSz1MZTCLWpVFenUrFSH98kGx4/view?usp=share_link"
-        # ),
+        (
+            "https://drive.google.com/file/d/1C-b0TUORvbrCuDfCL6bkeTOgrw2P0eru/view?usp=share_link",
+            "https://drive.google.com/file/d/1SwA28lxSz1MZTCLWpVFenUrFSH98kGx4/view?usp=share_link"
+        ),
         (
             "https://drive.google.com/file/d/155y9VfHUaJY5ed8Rzo4chDJ6Yx8fJ4GQ/view?usp=share_link",
             "https://drive.google.com/file/d/1NCmt2N6SToatfwSwNyZD0_H9jPhXHksM/view?usp=share_link"
@@ -231,7 +231,14 @@ if __name__ == "__main__":
                 "https://drive.google.com/file/d/1-kON-6jE9Yi2uADvs7ep6GFaQZpGIOv5/view?usp=share_link"
             ),
         ]
-    
+
+    args.full_submition = False
+    args.tta = args.task == 2 and 
+    if args.full_submition:
+        pt_share_links1 = pt_share_links1[-1]
+        pt_share_links2 = pt_share_links2[-1]
+
+
     if args.task == 1:
         main(args, pt_share_links1)
     elif args.task == 2:
