@@ -39,7 +39,6 @@ class PredDataset(Dataset):
         subset = None
         if args.subset is not None:
             subset = np.array(list(i for i in range(len(args.subset)) if args.subset[i] == "1"))
-            print(subset)
         
         print("Loading ensemble predictions")
         self.pred = [np.load(name)[subset] for name in sorted(glob.glob(f"data/ensemble_preds/task_{args.task}/*.npy"))]

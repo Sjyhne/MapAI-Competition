@@ -65,7 +65,7 @@ def fitness(pop, dataloader):
 
 def get_weights(size: int, min_models: int, max_models: int):
     weights = [list(map(int, np.binary_repr(num, width=size))) for num in range(2 ** size)]
-    weights = list(filter(lambda x: sum(x) >= min_models and sum(x) <= max_models))
+    weights = list(filter(lambda x: sum(x) >= min_models and sum(x) <= max_models, weights))
     weights = np.array(weights)
     s = np.sum(weights, axis=1)
     return weights / s[:, None]
