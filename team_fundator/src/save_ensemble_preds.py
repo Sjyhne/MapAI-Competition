@@ -60,8 +60,9 @@ def main(args, pt_share_links):
         model_checkpoint = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.pt").absolute()
         model_cfg = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.yaml").absolute()
 
-        # gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
-        # gdown.download(url_to_opt, str(model_cfg), quiet=False)
+        # if i == 5:
+        #     gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
+        #     gdown.download(url_to_opt, str(model_cfg), quiet=False)
 
         if len(model_cfg_list[-1]) < max_ensemble_size:
             model_name_list[-1].append(model_checkpoint)
@@ -80,6 +81,8 @@ def main(args, pt_share_links):
 
     device = opts["device"]
     for i, (configs, model_names) in enumerate(zip(model_cfg_list, model_name_list)):
+        if i != 7:
+            continue
         #########################################################################
         ###
         # Setup Model
@@ -118,9 +121,9 @@ def main(args, pt_share_links):
 
             # Perform model prediction
             prediction = model(image)["result"]
-
             if opts["task"] == 2:
                 routput = model(torch.rot90(image, dims=[2, 3]))["result"]
+
                 routput = torch.rot90(routput, k=-1, dims=[2, 3])
                 prediction = (prediction + routput) / 2
 
@@ -132,8 +135,8 @@ def main(args, pt_share_links):
             
             #Load and save temp prediction
             pred_path = task_path.joinpath(f"{filename_base}.npy")
-            if i > 0:
-                prediction = np.concatenate([np.load(str(pred_path)), prediction], axis=0)
+            prediction = np.concatenate([np.load(pred_path), prediction], axis=0)
+
             np.save(str(pred_path), prediction)
 
         del model
@@ -168,10 +171,26 @@ if __name__ == "__main__":
             "https://drive.google.com/file/d/1Aqr9LnAZHMKsOZkoUp583Q3VzuTYaaUV/view?usp=share_link",
             "https://drive.google.com/file/d/1-id3l8kd1QwBOE6KDLb4FBadrUKypFpT/view?usp=share_link"
         ),
+        (
+            "https://drive.google.com/file/d/16xFkFkTgaYK5a96P1larK25749nF3G_g/view?usp=share_link",
+            "https://drive.google.com/file/d/133TgE-Ao731rpw0pjgWn_LVoxHXBhXmt/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/1DGL9xdN-E8ibjkpQAq2sfHo-mOwFJnFs/view?usp=share_link",
+            "https://drive.google.com/file/d/1skM8EukONBtx2b7x1qm1XJI2AXORaEN5/view?usp=share_link"
+        ),
+        ( 
+            "https://drive.google.com/file/d/1Hp6HAT7bTYMAt4MtQwsavNGIsUJ0z0m-/view?usp=share_link",
+            "https://drive.google.com/file/d/1y1Fr1pOORX1A39ZzrDEf7VxgxlUCUPaV/view?usp=share_link"
+        ),
         # (
-        #     "https://drive.google.com/file/d/16xFkFkTgaYK5a96P1larK25749nF3G_g/view?usp=share_link",
-        #     "https://drive.google.com/file/d/133TgE-Ao731rpw0pjgWn_LVoxHXBhXmt/view?usp=share_link"
-        # )
+        #     "https://drive.google.com/file/d/1C-b0TUORvbrCuDfCL6bkeTOgrw2P0eru/view?usp=share_link",
+        #     "https://drive.google.com/file/d/1SwA28lxSz1MZTCLWpVFenUrFSH98kGx4/view?usp=share_link"
+        # ),
+        (
+            "https://drive.google.com/file/d/155y9VfHUaJY5ed8Rzo4chDJ6Yx8fJ4GQ/view?usp=share_link",
+            "https://drive.google.com/file/d/1NCmt2N6SToatfwSwNyZD0_H9jPhXHksM/view?usp=share_link"
+        )
     ]
     
     pt_share_links2 = [
@@ -199,7 +218,18 @@ if __name__ == "__main__":
                 "https://drive.google.com/file/d/1Wk83hV1rH9sLIJG8ggiMvhDfCPjRDyJb/view?usp=share_link", # eb2 reclassified
                 "https://drive.google.com/file/d/1b0OumKfiXSMhUyqefAvbIyqLPKdnpOr-/view?usp=share_link"
             ),
-
+            (
+                "https://drive.google.com/file/d/1enih5gy9X46g_JMkfT8jYR5ssg_XNgel/view?usp=share_link",
+                "https://drive.google.com/file/d/1p-XDUIbu-MbuISBqM43nV8JNqV_97UC1/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1JUbNYl3Z0zFMYmTs6aILj-qRKOSdT5kh/view?usp=share_link",
+                "https://drive.google.com/file/d/1-QthazPuHqbJdTSen8I80r3Cug_xweKA/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1WYcXT6j7o7fL4roSZeTJ3K7NY9K5xwZd/view?usp=share_link",
+                "https://drive.google.com/file/d/1-kON-6jE9Yi2uADvs7ep6GFaQZpGIOv5/view?usp=share_link"
+            ),
         ]
     
     if args.task == 1:
