@@ -108,7 +108,8 @@ def main(args, pt_share_links, weights=None):
             model = get_model(config)
             model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
             models.append(model)
-
+            os.remove(checkpoint)
+            
             if config["imagesize"] != opts["imagesize"]:
                 opts["imagesize"] = config["imagesize"]
                 print(f"Using image resolution: {opts['imagesize']} * {opts['imagesize']}")
