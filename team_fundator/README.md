@@ -60,6 +60,9 @@ To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard par
 
     sh train_task1.sh
     sh train_task2.sh
+    
+Lastly, train two models each for task 1 and 2 with 1024 image resolution on the `mapai` and `mapai_edge` datasets:  
+    
     sh train_1024res.sh
     
     
@@ -67,15 +70,17 @@ To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard par
 ## Description
 The ensembles for task 1 and 2 are desdcribed here.
 ### Task 1
-The ensemble contains eight modelss, which are trained with different combinations of encoders, datasets and imagesizes. The first 6 combinations are given by the Cartesian product of the following sets:
+We selected five models for the task 1 ensemble, out of eight models which were trained with different combinations of encoders, datasets and imagesizes. The first 6 combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_edge)
 
-The last two models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets.
+The last two models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets. 
+
+See the section *Model Selection* for how we chose which models to include in the task 1 and 2 ensembles.
 
 ### Task 2
-The ensemble contains ten models, which are trained with different combinations of encoders, datasets and image sizes. The first 8 combinations are given by the Cartesian product of the following sets:
+The ensemble contains three models out of ten models which were trained with different combinations of encoders, datasets and image sizes. The first 8 combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_lidar_masks, mapai_edge)
@@ -84,3 +89,8 @@ The ensemble contains ten models, which are trained with different combinations 
 The dataset `mapai_lidar_masks` has a third class for the case where the LIDAR height is 0. `Mapai_edge` is similar to `mapai_reclassified`, but only has the additional edge class.
 
 The last two models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets.
+
+### Model Selection
+To select models for the ensemble, we first use `save_ensemble_preds.py` to save the concatenated predictions of each model for each task. Next we use `test_subensembles.py` to go through all combinations of 3 or more models from the concatenated predictions, using an even weighting of each prediction.
+
+We then select the best performing subset of models for our ensemble, as well as the next best performing selection with at least one more model. Finally, we run the evolutionary algorithm in `bio_ensemble.py` to evolve optimized weights for the models selected for the ensemble, and choose the best performing weighting.
