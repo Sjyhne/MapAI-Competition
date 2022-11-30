@@ -32,7 +32,7 @@ def main(args):
     ###
     #########################################################################
     
-    pt_share_link = "https://drive.google.com/file/d/1vqSvHqU9fZBYpy38mrpAg8CG90lSL2xh/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/1wv5H_MexHhlfcxJfOUWB3Eo51ciuGJ7y/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference

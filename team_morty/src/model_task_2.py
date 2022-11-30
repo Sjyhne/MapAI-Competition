@@ -31,7 +31,7 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     #########################################################################
-    pt_share_link = "https://drive.google.com/file/d/1F_l7KekAyHwmouE91ulW_cocvEFUpW9r/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/1uNcdoHt2LngUDmj11dVhiISVWP16qw0A/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
