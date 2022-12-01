@@ -7,7 +7,7 @@
 
 ## Important dates (Final! Deadline Extension)
 
-* Participant's submission of results: ~~25th of November~~ -> ~~2nd of December~~ -> Extended to **_5th of Decemeber_**.
+* Participant's submission of results: ~~25th of November~~ -> ~~2nd of December~~ -> Extended to **_5th of December_**.
 * Feedback on the evaluation results: ~~5th of December~~ -> ~~9th of December~~ -> Extended to **_12th of December_**.
 * Deadline for the 2-pager description paper: ~~15th of December~~ -> Extended to **_22nd of December_**.
 
