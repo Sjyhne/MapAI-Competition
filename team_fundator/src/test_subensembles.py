@@ -90,7 +90,7 @@ if __name__ == "__main__":
     parser.add_argument("--size", type=int, default=8, help="How many ensembles are you testing?")
     parser.add_argument("--min-ensemble-size", type=int, default=6, help="The minimum number of models in each ensemble?")
     parser.add_argument("--max-ensemble-size", type=int, default=10000000, help="The maximum number of models in each ensemble?")
-    parser.add_argument("--tta", type=bool, action="store_true", help="Whether to perform tta with rotation during inference")
+    parser.add_argument("--tta", action="store_true", help="Whether to perform tta with rotation during inference")
 
 
     args = parser.parse_args()
