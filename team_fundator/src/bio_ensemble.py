@@ -41,7 +41,7 @@ class PredDataset(Dataset):
             subset = np.array(list(i for i in range(len(args.subset)) if args.subset[i] == "1"))
         
         print("Loading ensemble predictions")
-        self.pred = [np.load(name)[subset] for name in sorted(glob.glob(f"data/ensemble_preds/task_{args.task}/*.npy"))]
+        self.pred = [np.load(name)[subset] for name in sorted(glob.glob(f"data/ensemble_preds/task_{args.task}{'_tta' if args.tta else ''}/*.npy"))]
 
 
         print("Loading ground truths")
@@ -273,6 +273,7 @@ if __name__ == "__main__":
     parser.add_argument("--gens", type=int, default=30, help="How many generations?")
     parser.add_argument("--start-folder", type=str, default=None, help="Folder to load saved population")
     parser.add_argument("--subset", type=str, default=None, help="String of ones and zeros to determine which models to use in the evaluated ensembles")
+    parser.add_argument("--tta", action="store_true", help="Whether to perform tta with rotation during inference")
 
 
     args = parser.parse_args()
