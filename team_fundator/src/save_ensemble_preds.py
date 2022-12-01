@@ -34,7 +34,7 @@ def main(args, pt_share_links):
     # Create needed directories for data
     ###
     #########################################################################
-    task_path = pathlib.Path(args.submission_path).joinpath(f"task_{opts['task']}")
+    task_path = pathlib.Path(args.submission_path).joinpath(f"task_{opts['task']}{'_tta' if args.tta else ''}")
     temp_path = pathlib.Path(args.submission_path).joinpath(f"temp")
 
     # if task_path.exists():
@@ -60,7 +60,6 @@ def main(args, pt_share_links):
         model_checkpoint = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.pt").absolute()
         model_cfg = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.yaml").absolute()
 
-        # if i == 5:
         #     gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
         #     gdown.download(url_to_opt, str(model_cfg), quiet=False)
 
@@ -79,10 +78,10 @@ def main(args, pt_share_links):
     lidar_augs = LidarAugComposer(opts)
     _, lidar_valid = lidar_augs.get_transforms()
 
-    device = opts["device"]
     for i, (configs, model_names) in enumerate(zip(model_cfg_list, model_name_list)):
-        if i != 7:
-            continue
+        # if i != 9:
+        #     continue
+
         #########################################################################
         ###
         # Setup Model
@@ -98,6 +97,9 @@ def main(args, pt_share_links):
             if config["imagesize"] != opts["imagesize"]:
                 opts["imagesize"] = config["imagesize"]
                 print(f"Using image resolution: {opts['imagesize']} * {opts['imagesize']}")
+                
+        device = opts["device"]
+        # device = "cpu" if opts["imagesize"] > 768 else opts["device"]
 
         model = EnsembleModel(models, target_size=target_size)
         model = model.to(device)
@@ -108,7 +110,6 @@ def main(args, pt_share_links):
         for image, label, filename in pbar:
             # Split filename and extension
             filename_base, file_extension = os.path.splitext(filename[0])
-
 
             if opts["task"] == 2:
                 image, lidar = torch.split(image, [3, 1], dim=1)
@@ -121,7 +122,7 @@ def main(args, pt_share_links):
 
             # Perform model prediction
             prediction = model(image)["result"]
-            if opts["task"] == 2:
+            if args.tta:
                 routput = model(torch.rot90(image, dims=[2, 3]))["result"]
 
                 routput = torch.rot90(routput, k=-1, dims=[2, 3])
@@ -135,10 +136,10 @@ def main(args, pt_share_links):
             
             #Load and save temp prediction
             pred_path = task_path.joinpath(f"{filename_base}.npy")
-            prediction = np.concatenate([np.load(pred_path), prediction], axis=0)
+            if i > 0:
+                prediction = np.concatenate([np.load(pred_path), prediction], axis=0)
 
             np.save(str(pred_path), prediction)
-
         del model
     # shutil.rmtree(temp_path.absolute())
 
@@ -154,6 +155,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", type=str, default="cuda", help="Which device the inference should run on")
 
     parser.add_argument("--data-ratio", type=float, default=1.0, help="Percentage of the whole dataset that is used")
+    parser.add_argument("--tta", action="store_true", help="Whether to perform tta with rotation during inference")
 
     args = parser.parse_args()
 
@@ -230,14 +232,11 @@ if __name__ == "__main__":
                 "https://drive.google.com/file/d/1WYcXT6j7o7fL4roSZeTJ3K7NY9K5xwZd/view?usp=share_link",
                 "https://drive.google.com/file/d/1-kON-6jE9Yi2uADvs7ep6GFaQZpGIOv5/view?usp=share_link"
             ),
+            (
+                "https://drive.google.com/file/d/18a41uiouY1yhDavQ_jN-dHXe09f5DaO9/view?usp=share_link",
+                "https://drive.google.com/file/d/177KVi8rvkR3Ok-0YVl3RfjNIc1fWFrBe/view?usp=share_link"
+            )
         ]
-
-    args.full_submission = False
-    args.tta = args.task == 2 and args.full_submission
-    if args.full_submission:
-        pt_share_links1 = pt_share_links1[-1]
-        pt_share_links2 = pt_share_links2[-1]
-
 
     if args.task == 1:
         main(args, pt_share_links1)

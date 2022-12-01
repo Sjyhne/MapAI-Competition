@@ -78,7 +78,7 @@ def main(args):
     w = get_weights(args.size, args.min_ensemble_size, args.max_ensemble_size)
     f = fitness(w, dataloader)
 
-    best_idx = np.argpartition(f, -5)[-5:]
+    best_idx = np.argpartition(f, range(-5, 0))[-5:]
     for (weight, fit) in zip(w[best_idx], f[best_idx]):
         print(np.uint8(weight > 0), fit)
 

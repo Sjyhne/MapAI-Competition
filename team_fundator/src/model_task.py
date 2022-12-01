@@ -58,7 +58,7 @@ def main(args, pt_share_links, weights=None):
     model_cfg_list = [[]]
     model_weights = [[]]
 
-    max_ensemble_size = opts["models_per_ensemble"]
+    max_ensemble_size = 1 # opts["models_per_ensemble"]
     for i, (pt_share_link, opt_share_link) in enumerate(pt_share_links):
         pt_id = pt_share_link.split("/")[-2]
         opt_id = opt_share_link.split("/")[-2]
@@ -108,7 +108,6 @@ def main(args, pt_share_links, weights=None):
             model = get_model(config)
             model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
             models.append(model)
-            os.remove(checkpoint)
             
             if config["imagesize"] != opts["imagesize"]:
                 opts["imagesize"] = config["imagesize"]

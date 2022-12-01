@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, default="config/main.yaml", help="Config")
     parser.add_argument("--device", type=str, default="cpu", help="Which device the inference should run on")
     parser.add_argument("--data-ratio", type=float, default=1.0, help="Percentage of the whole dataset that is used")
-    parser.add_argument("--models-per-ensemble", type=int, default=1, help="The maximum number of models to run simultaneously in an ensemble. Lower values use less memory, but more temp storage.")
+    # parser.add_argument("--models-per-ensemble", type=int, default=1, help="The maximum number of models to run simultaneously in an ensemble. Lower values use less memory, but more temp storage.")
 
     args = parser.parse_args()
 
@@ -97,18 +97,9 @@ if __name__ == "__main__":
                 "https://drive.google.com/file/d/1-kON-6jE9Yi2uADvs7ep6GFaQZpGIOv5/view?usp=share_link"
             ),
         ]
-    # [0.21759022 0.28431074 0.21561935 0.0784652  0.2040145 ]
+
     t1_weights = [0.25070253, 0.11203359, 0.14570468, 0.25154455, 0.24001464]
     t2_weights = [0.32950561, 0.33975185, 0.33074254]
-
-    
-    args.full_submission = False
-    if args.full_submission:
-        pt_share_links1 = pt_share_links1[:-1]
-        pt_share_links2 = pt_share_links2[:-1]
-
-        t1_weights = t1_weights[:-1]
-        t2_weights = t2_weights[:-1]
 
 
     from model_task import main as evaluate_model
