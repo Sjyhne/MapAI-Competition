@@ -138,7 +138,7 @@ def main(args, pt_share_links, weights=None):
             # Perform model prediction
             prediction = model(image)["result"]
 
-            if True or opts["task"] == 2:
+            if opts["task"] == 2:
                 routput = model(torch.rot90(image, dims=[2, 3]))["result"]
                 routput = torch.rot90(routput, k=-1, dims=[2, 3])
                 prediction = (prediction + routput) / 2
