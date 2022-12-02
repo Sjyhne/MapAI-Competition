@@ -89,8 +89,6 @@ def main(args, pt_share_links, weights=None):
     #########################################################################
 
     target_size = (500, 500) # for resizing the predictions
-    dataloader = create_dataloader(opts, opts["data_type"])
-    print(dataloader)
 
     lidar_augs = LidarAugComposer(opts)
     _, lidar_valid = lidar_augs.get_transforms()
@@ -118,6 +116,8 @@ def main(args, pt_share_links, weights=None):
         model = EnsembleModel(models, target_size=target_size, weights=weights)
         model = model.to(device)
         model.eval()
+
+        dataloader = create_dataloader(opts, opts["data_type"])
         pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc=f"Inference - Iter {i + 1}/{len(model_cfg_list)}")
 
         del models

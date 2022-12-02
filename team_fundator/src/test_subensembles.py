@@ -86,8 +86,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=int, default=1, help="Which task you are testing")
-    parser.add_argument("--workers", type=int, default=4, help="How many workers do you want?")
-    parser.add_argument("--size", type=int, default=8, help="How many ensembles are you testing?")
+    parser.add_argument("--workers", type=int, default=6, help="How many workers do you want?")
+    parser.add_argument("--size", type=int, default=9, help="How many ensembles are you testing?")
     parser.add_argument("--min-ensemble-size", type=int, default=6, help="The minimum number of models in each ensemble?")
     parser.add_argument("--max-ensemble-size", type=int, default=10000000, help="The maximum number of models in each ensemble?")
     parser.add_argument("--tta", action="store_true", help="Whether to perform tta with rotation during inference")

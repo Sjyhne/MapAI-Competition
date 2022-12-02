@@ -73,7 +73,6 @@ def main(args, pt_share_links):
 
 
     target_size = (500, 500) # for resizing the predictions
-    dataloader = create_dataloader(opts, opts["data_type"])
 
     lidar_augs = LidarAugComposer(opts)
     _, lidar_valid = lidar_augs.get_transforms()
@@ -97,13 +96,15 @@ def main(args, pt_share_links):
             if config["imagesize"] != opts["imagesize"]:
                 opts["imagesize"] = config["imagesize"]
                 print(f"Using image resolution: {opts['imagesize']} * {opts['imagesize']}")
-                
+
         device = opts["device"]
         # device = "cpu" if opts["imagesize"] > 768 else opts["device"]
 
         model = EnsembleModel(models, target_size=target_size)
         model = model.to(device)
         model.eval()
+
+        dataloader = create_dataloader(opts, opts["data_type"])
         pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc=f"Inference - Iter {i + 1}/{len(model_cfg_list)}")
 
         del models
@@ -122,7 +123,7 @@ def main(args, pt_share_links):
 
             # Perform model prediction
             prediction = model(image)["result"]
-            if args.tta:
+            if args.tta or opts["task"] == 2:
                 routput = model(torch.rot90(image, dims=[2, 3]))["result"]
 
                 routput = torch.rot90(routput, k=-1, dims=[2, 3])

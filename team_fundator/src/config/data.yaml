@@ -94,4 +94,4 @@ validation:
   batchsize: 3
   shuffle: False
   num_workers: 6
-  data_ratio: 0.1
+  data_ratio: 1.0

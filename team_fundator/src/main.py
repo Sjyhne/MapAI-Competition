@@ -64,10 +64,10 @@ if __name__ == "__main__":
             "https://drive.google.com/file/d/1iBmM3CuvKx-4CY1-7gU9jTWeuUXqvfRn/view?usp=share_link", # cp mapai resnest
             "https://drive.google.com/file/d/1yQctpXyuBgfR1gzc72yrdKRpEGD8Ojdo/view?usp=share_link" # opts
             ),
-            # (
-            # "https://drive.google.com/file/d/1EbSTbVADnwwuR6AYXXjK0nTtXjPeLAyU/view?usp=share_link", # mapai eb1
-            # "https://drive.google.com/file/d/1FQdxYBGYkr1_NTxtFwS0XrEs2dLybiza/view?usp=share_link"
-            # ),
+            (
+            "https://drive.google.com/file/d/1EbSTbVADnwwuR6AYXXjK0nTtXjPeLAyU/view?usp=share_link", # mapai eb1
+            "https://drive.google.com/file/d/1FQdxYBGYkr1_NTxtFwS0XrEs2dLybiza/view?usp=share_link"
+            ),
             # (
             # "https://drive.google.com/file/d/1NtUP5QwhBglf0zSlQ0rRvIr2o4qMH8Bk/view?usp=share_link", # resnest reclassified
             # "https://drive.google.com/file/d/1ZX0H4WTdz0caX0lLNJ66D6mcoC5HsFO-/view?usp=share_link"
@@ -96,10 +96,14 @@ if __name__ == "__main__":
                 "https://drive.google.com/file/d/1WYcXT6j7o7fL4roSZeTJ3K7NY9K5xwZd/view?usp=share_link",
                 "https://drive.google.com/file/d/1-kON-6jE9Yi2uADvs7ep6GFaQZpGIOv5/view?usp=share_link"
             ),
+            (
+                "https://drive.google.com/file/d/18a41uiouY1yhDavQ_jN-dHXe09f5DaO9/view?usp=share_link",
+                "https://drive.google.com/file/d/177KVi8rvkR3Ok-0YVl3RfjNIc1fWFrBe/view?usp=share_link"
+            )
         ]
 
     t1_weights = [0.25070253, 0.11203359, 0.14570468, 0.25154455, 0.24001464]
-    t2_weights = [0.32950561, 0.33975185, 0.33074254]
+    t2_weights = [0.10930062, 0.16411129, 0.21470775, 0.31022251, 0.20165782]
 
 
     from model_task import main as evaluate_model
