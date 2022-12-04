@@ -32,7 +32,9 @@ def main(args):
     ###
     #########################################################################
     
-    pt_share_link = "https://drive.google.com/file/d/1wv5H_MexHhlfcxJfOUWB3Eo51ciuGJ7y/view?usp=sharing"
+    # pt_share_link = "https://drive.google.com/file/d/1wv5H_MexHhlfcxJfOUWB3Eo51ciuGJ7y/view?usp=sharing" auduns link
+    pt_share_link = "https://drive.google.com/file/d/1fIjXUtAlPJmb98hVXrdpOb65zdcIXCCC/view?usp=sharing"
+
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
@@ -59,7 +61,9 @@ def main(args):
     ###
     #########################################################################
     device = opts["device"]
-    model, get_output = load_model(load_deepvision_resnet101, model_checkpoint, opts)
+    # model, get_output = load_model(load_deepvision_resnet101, model_checkpoint, opts)
+    model, get_output = load_model(load_unet, model_checkpoint, opts)
+
     #########################################################################
     ###
     # Load Data
