@@ -2,7 +2,6 @@ import pathlib
 
 from tqdm import tqdm
 import torch
-import torchvision
 import numpy as np
 import cv2 as cv
 import yaml
@@ -14,6 +13,7 @@ import shutil
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+from model import AutoEncoder
 
 def main(args):
     #########################################################################
@@ -25,17 +25,8 @@ def main(args):
         opts = yaml.load(f, Loader=yaml.Loader)
         opts = {**opts, **vars(args)}
 
-    #########################################################################
-    ###
-    # Download Model Weights
-    # Use a mirror that is publicly available. This example uses Google Drive
-    ###
-    #########################################################################
-    pt_share_link = "https://drive.google.com/file/d/10xBcdT3ryUFrhDs-g7ZourRuVjf-FHOj/view?usp=sharing"
-    pt_id = pt_share_link.split("/")[-2]
-
     # Download trained model ready for inference
-    url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
+    url_to_drive = "https://drive.google.com/uc?id=1Q_e4vLNZfzquFDE7G9-Y6H0u8ypeVvz3&export=download&confirm=t&uuid=037940d8-aeac-4615-876b-02d63783b554"
     model_checkpoint = "pretrained_task2.pt"
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
@@ -57,13 +48,16 @@ def main(args):
     # Setup Model
     ###
     #########################################################################
-    # Adds 4 channels to the input layer instead of 3
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    model.backbone.conv1 = new_conv1
+    model = AutoEncoder()
+
+    if opts["task"] == 2:
+        new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        model.encoder.body.conv1 = new_conv1
+
     model.load_state_dict(torch.load(model_checkpoint))
     device = opts["device"]
     model = model.to(device)
+    model = model.float()
     model.eval()
 
     #########################################################################
