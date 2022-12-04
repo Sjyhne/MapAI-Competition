@@ -41,10 +41,10 @@ if __name__ == "__main__":
         #     "https://drive.google.com/file/d/16xFkFkTgaYK5a96P1larK25749nF3G_g/view?usp=share_link",
         #     "https://drive.google.com/file/d/133TgE-Ao731rpw0pjgWn_LVoxHXBhXmt/view?usp=share_link"
         # ),
-        (
-            "https://drive.google.com/file/d/1DGL9xdN-E8ibjkpQAq2sfHo-mOwFJnFs/view?usp=share_link",
-            "https://drive.google.com/file/d/1skM8EukONBtx2b7x1qm1XJI2AXORaEN5/view?usp=share_link"
-        ),
+        # (
+        #     "https://drive.google.com/file/d/1DGL9xdN-E8ibjkpQAq2sfHo-mOwFJnFs/view?usp=share_link",
+        #     "https://drive.google.com/file/d/1skM8EukONBtx2b7x1qm1XJI2AXORaEN5/view?usp=share_link"
+        # ),
         ( 
             "https://drive.google.com/file/d/1Hp6HAT7bTYMAt4MtQwsavNGIsUJ0z0m-/view?usp=share_link",
             "https://drive.google.com/file/d/1y1Fr1pOORX1A39ZzrDEf7VxgxlUCUPaV/view?usp=share_link"
@@ -56,6 +56,10 @@ if __name__ == "__main__":
         (
             "https://drive.google.com/file/d/155y9VfHUaJY5ed8Rzo4chDJ6Yx8fJ4GQ/view?usp=share_link",
             "https://drive.google.com/file/d/1NCmt2N6SToatfwSwNyZD0_H9jPhXHksM/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/1XkYoUh6j9_UVXblaVY1WdGesLL31ixVe/view?usp=share_link",
+            "https://drive.google.com/file/d/10h4EVhwLxs6x0j6PdpibIhs8LGuxzaR7/view?usp=share_link"
         )
     ]
     
@@ -102,7 +106,7 @@ if __name__ == "__main__":
             )
         ]
 
-    t1_weights = [0.25070253, 0.11203359, 0.14570468, 0.25154455, 0.24001464]
+    t1_weights = [0.13306172, 0.17423382, 0.19285251, 0.22238564, 0.2774663]
     t2_weights = [0.10930062, 0.16411129, 0.21470775, 0.31022251, 0.20165782]
 
 

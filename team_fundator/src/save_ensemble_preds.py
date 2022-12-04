@@ -60,8 +60,8 @@ def main(args, pt_share_links):
         model_checkpoint = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.pt").absolute()
         model_cfg = temp_path.joinpath(f"task{opts['task']}_pt{i + 1}.yaml").absolute()
 
-        #     gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
-        #     gdown.download(url_to_opt, str(model_cfg), quiet=False)
+        gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
+        gdown.download(url_to_opt, str(model_cfg), quiet=False)
 
         if len(model_cfg_list[-1]) < max_ensemble_size:
             model_name_list[-1].append(model_checkpoint)
@@ -78,7 +78,7 @@ def main(args, pt_share_links):
     _, lidar_valid = lidar_augs.get_transforms()
 
     for i, (configs, model_names) in enumerate(zip(model_cfg_list, model_name_list)):
-        # if i != 9:
+        # if i != 10:
         #     continue
 
         #########################################################################
@@ -111,7 +111,6 @@ def main(args, pt_share_links):
         for image, label, filename in pbar:
             # Split filename and extension
             filename_base, file_extension = os.path.splitext(filename[0])
-
             if opts["task"] == 2:
                 image, lidar = torch.split(image, [3, 1], dim=1)
                 lidar = lidar_valid(lidar.numpy())
@@ -193,6 +192,10 @@ if __name__ == "__main__":
         (
             "https://drive.google.com/file/d/155y9VfHUaJY5ed8Rzo4chDJ6Yx8fJ4GQ/view?usp=share_link",
             "https://drive.google.com/file/d/1NCmt2N6SToatfwSwNyZD0_H9jPhXHksM/view?usp=share_link"
+        ),
+        (
+            "https://drive.google.com/file/d/1XkYoUh6j9_UVXblaVY1WdGesLL31ixVe/view?usp=share_link",
+            "https://drive.google.com/file/d/10h4EVhwLxs6x0j6PdpibIhs8LGuxzaR7/view?usp=share_link"
         )
     ]
     
@@ -236,6 +239,10 @@ if __name__ == "__main__":
             (
                 "https://drive.google.com/file/d/18a41uiouY1yhDavQ_jN-dHXe09f5DaO9/view?usp=share_link",
                 "https://drive.google.com/file/d/177KVi8rvkR3Ok-0YVl3RfjNIc1fWFrBe/view?usp=share_link"
+            ),
+            (
+                "https://drive.google.com/file/d/1mhj8l4V_jD-9wwDd14g_6amIN2-lcrrv/view?usp=share_link",
+                "https://drive.google.com/file/d/1TYdWtOgjBo3N6UA2u8BBFSrA303PHvk1/view?usp=share_link"
             )
         ]
 
