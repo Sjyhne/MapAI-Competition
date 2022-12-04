@@ -23,6 +23,8 @@ def main(args):
     with open(args.config, "r") as f:
         opts = yaml.load(f, Loader=yaml.Loader)
         opts = {**opts, **vars(args)}
+        opts[f"task{opts['task']}"]["batchsize"] = 1
+
 
     #########################################################################
     ###

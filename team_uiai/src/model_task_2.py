@@ -24,6 +24,7 @@ def main(args):
     with open(args.config, "r") as f:
         opts = yaml.load(f, Loader=yaml.Loader)
         opts = {**opts, **vars(args)}
+        opts[f"task{opts['task']}"]["batchsize"] = 1
 
     # Download trained model ready for inference
     url_to_drive = "https://drive.google.com/uc?id=1Q_e4vLNZfzquFDE7G9-Y6H0u8ypeVvz3&export=download&confirm=t&uuid=037940d8-aeac-4615-876b-02d63783b554"
