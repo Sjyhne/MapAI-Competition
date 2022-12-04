@@ -1,7 +1,6 @@
 import pathlib
 from tqdm import tqdm
 import torch
-import torchvision
 import numpy as np
 import cv2 as cv
 import yaml
@@ -13,6 +12,7 @@ import shutil
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+from model import AutoEncoder
 
 def main(args):
     #########################################################################
@@ -30,12 +30,8 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     #########################################################################
-
-    pt_share_link = "https://drive.google.com/file/d/17YB5-KZVW-mqaQdz4xv7rioDr4DzhfOU/view?usp=sharing"
-    pt_id = pt_share_link.split("/")[-2]
-
     # Download trained model ready for inference
-    url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
+    url_to_drive = "https://drive.google.com/uc?id=13udB1UqkNFXBwiha3m5P6E6D4jjI5Kr2&export=download&confirm=t&uuid=14d99b08-f08e-4b79-b41e-bc2b4f222dca"
     model_checkpoint = "pretrained_task1.pt"
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
@@ -57,10 +53,12 @@ def main(args):
     # Setup Model
     ###
     #########################################################################
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
+    model = AutoEncoder()
+
     model.load_state_dict(torch.load(model_checkpoint))
     device = opts["device"]
     model = model.to(device)
+    model = model.float()
     model.eval()
 
     #########################################################################

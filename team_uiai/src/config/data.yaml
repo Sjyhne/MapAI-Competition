@@ -15,10 +15,10 @@ train:
   shuffle: True
 validation:
   batchsize: 8
-  shuffle: True
+  shuffle: False
 task1:
-  batchsize: 8
-  shuffle: True
+  batchsize: 1
+  shuffle: False
 task2:
-  batchsize: 8
+  batchsize: 1
   shuffle: False

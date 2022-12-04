@@ -66,13 +66,12 @@ def train(opts):
 
     if opts["task"] == 2:
         new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        #model.backbone.conv1 = new_conv1
         model.encoder.body.conv1 = new_conv1
 
     model.to(device)
     model = model.float()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.00005)#opts["lr"])
+    optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
     lossfn = torch.nn.CrossEntropyLoss()
     lossfn2 = mIoULoss()
 
