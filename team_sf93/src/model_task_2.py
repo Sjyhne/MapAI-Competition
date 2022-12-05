@@ -11,7 +11,7 @@ import gdown
 import os
 import shutil
 
-from competition_toolkit.dataloader import create_dataloader
+from dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
 
@@ -38,6 +38,7 @@ def main(args):
             'shuffle': True,
         }
     }
+    opts = {**opts, **vars(args)}
 
     #########################################################################
     ###
