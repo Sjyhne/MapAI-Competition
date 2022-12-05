@@ -33,3 +33,13 @@ else:
     evaluate_model_2(args=args)
 ``` 
 When you pull request to the main repository, the code is checked for errors and if everything is OK, it should pass tests and be available for merging into the main repository. When the pull-request is merged, you can consider your code delivered.
+
+# NOTE:
+
+Please use the following fromat to execute script
+
+```bash
+cd team_redpill
+python3 src/main.py --task 2 --submission-path ../data/test/pred/ --data-type ../data/test/
+```
+
