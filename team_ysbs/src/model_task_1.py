@@ -1,17 +1,18 @@
-import pathlib
-from tqdm import tqdm
-import torch
-import torchvision
-import numpy as np
-import cv2 as cv
-import yaml
-import matplotlib.pyplot as plt
-import gdown
 import os
+import pathlib
 import shutil
 
+import cv2 as cv
+import gdown
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+import yaml
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
+from tqdm import tqdm
+
+from models import load_model
 
 
 def main(args):
@@ -31,11 +32,11 @@ def main(args):
     ###
     #########################################################################
 
-    pt_share_link = "https://drive.google.com/file/d/17YB5-KZVW-mqaQdz4xv7rioDr4DzhfOU/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/1CpauXxgS1EuFSjDl0thxU2BQzbBtGO5g/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
-    url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
+    url_to_drive = f"https://drive.google.com/uc?id={pt_id}&confirm=t"
     model_checkpoint = "pretrained_task1.pt"
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
@@ -57,8 +58,10 @@ def main(args):
     # Setup Model
     ###
     #########################################################################
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    model.load_state_dict(torch.load(model_checkpoint))
+    out = "out"
+    model, out = load_model(model_name='transunet', opts=opts)
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    model.load_state_dict(torch.load(model_checkpoint, map_location=device))
     device = opts["device"]
     model = model.to(device)
     model.eval()
@@ -85,7 +88,11 @@ def main(args):
         label = label.to(device)
 
         # Perform model prediction
-        prediction = model(image)["out"]
+        if out != -1:
+            prediction = model(image)[out]
+        else:
+            prediction = model(image)
+
         if opts["device"] == "cpu":
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
         else:
@@ -134,6 +141,10 @@ def main(args):
         plt.savefig(str(predicted_sample_path_png))
         plt.close()
         cv.imwrite(str(predicted_sample_path_tif), prediction)
+
+        resize_image = cv.imread(str(predicted_sample_path_tif), 1)
+        resized_image_out = cv.resize(resize_image, (500, 500))
+        cv.imwrite(str(predicted_sample_path_tif), resized_image_out)
 
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
 

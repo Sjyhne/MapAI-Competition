@@ -3,7 +3,7 @@ This folder contain the example code that you can use as a base.
 ## File structure
 Following is the mandatory file structure:
 ```
-team_<NAME>
+team_ysbs
 │   README.md
 │   pyproject.toml    
 │

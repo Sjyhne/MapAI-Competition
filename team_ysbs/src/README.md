@@ -48,10 +48,10 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name: ___
+Team name: YSBS
 
-Team participants:  ___
+Team participants:  Yunus Serhat Bicakci, Beytullah Sarica
 
-Emails: ___
+Emails: yunus.serhat@marmara.edu.tr, saricab@itu.edu.tr
 
-Countr(y/ies): ___
+Countr(y/ies): Turkey

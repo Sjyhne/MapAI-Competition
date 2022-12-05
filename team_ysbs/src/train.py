@@ -10,13 +10,17 @@ from tabulate import tabulate
 import argparse
 import time
 
-from competition_toolkit.dataloader import create_dataloader
+from dataloader import create_dataloader
 from utils import create_run_dir, store_model_weights, record_scores
 
 from competition_toolkit.eval_functions import calculate_score
+import segmentation_models_pytorch as smp
+from pytorch_toolbelt import losses as L
+
+from models import load_model
 
 
-def test(opts, dataloader, model, lossfn):
+def test(opts, dataloader, model, lossfn, out):
     model.eval()
 
     device = opts["device"]
@@ -31,7 +35,10 @@ def test(opts, dataloader, model, lossfn):
         image = image.to(device)
         label = label.to(device)
 
-        output = model(image)["out"]
+        if out != -1:
+            output = model(image)[out]
+        else:
+            output = model(image)
 
         loss = lossfn(output, label).item()
 
@@ -57,19 +64,13 @@ def test(opts, dataloader, model, lossfn):
 
 def train(opts):
     device = opts["device"]
-
-    # The current model should be swapped with a different one of your choice
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-
-    if opts["task"] == 2:
-        new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        model.backbone.conv1 = new_conv1
-
+    out = "out"
+    model, out = load_model(model_name='transunet', opts=opts)
     model.to(device)
     model = model.float()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
-    lossfn = torch.nn.CrossEntropyLoss()
+    lossfn = L.JointLoss(L.DiceLoss(mode="multiclass"), L.FocalLoss(), 1.0, 0.5)
 
     epochs = opts["epochs"]
 
@@ -93,9 +94,10 @@ def train(opts):
             image, label, filename = batch
             image = image.to(device)
             label = label.to(device)
-
-            output = model(image)["out"]
-
+            if out != -1:
+                output = model(image)[out]
+            else:
+                output = model(image)
             loss = lossfn(output, label)
 
             optimizer.zero_grad()
@@ -116,7 +118,7 @@ def train(opts):
             bioutotal[idx] = trainmetrics["biou"]
             scoretotal[idx] = trainmetrics["score"]
 
-        testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn)
+        testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn, out)
         trainloss = round(losstotal.mean(), 4)
         trainiou = round(ioutotal.mean(), 4)
         trainbiou = round(bioutotal.mean(), 4)
@@ -124,7 +126,7 @@ def train(opts):
 
         if testscore > bestscore:
             bestscore = testscore
-            print("new best score:", bestscore, "- saving model weights")
+            print("### new best score:", bestscore, "- saving model weights")
             store_model_weights(opts, model, f"best", epoch=e)
         else:
             store_model_weights(opts, model, f"last", epoch=e)
@@ -153,10 +155,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("Training a segmentation model")
 
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for training")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cpu")
+    parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--task", type=int, default=1)
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")

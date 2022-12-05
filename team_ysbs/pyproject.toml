@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "team-template"
+name = "team-ysbs"
 description = "Configuring the environment for running python and ML"
 requires-python = ">=3.7"
 keywords = []
@@ -22,7 +22,11 @@ dependencies = [
     "pandas",
     "pyarrow",
     "gdown",
-    "matplotlib"
+    "matplotlib",
+    "segmentation_models_pytorch",
+    "albumentations",
+    "pytorch_toolbelt",
+    "einops"
 ]
 dynamic = ["version", "readme"]
 
