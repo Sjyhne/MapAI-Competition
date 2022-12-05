@@ -1,7 +1,8 @@
-import pathlib
 
+import pathlib
 from tqdm import tqdm
 import torch
+from torch.utils.data import Dataset, DataLoader
 import torchvision
 import numpy as np
 import cv2 as cv
@@ -10,132 +11,114 @@ import matplotlib.pyplot as plt
 import gdown
 import os
 import shutil
-
+import glob
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+import pytorch_lightning as pl
+
+from utils import SimpleBuildingLidarDataset, LidarNet
+from competition_toolkit.eval_functions import iou, biou
+
+def get_sorted_data_paths(split):
+    image_paths = sorted(glob.glob(split + "/images/*.tif"))
+    lidar_paths = sorted(glob.glob(split + "/lidar/*.tif"))
+    masks_paths = sorted(glob.glob(split + "/masks/*.tif"))
+
+    return image_paths, lidar_paths, masks_paths
 
 def main(args):
-    #########################################################################
-    ###
-    # Load Model and its configuration
-    ###
-    #########################################################################
-    with open(args.config, "r") as f:
-        opts = yaml.load(f, Loader=yaml.Loader)
-        opts = {**opts, **vars(args)}
 
-    #########################################################################
-    ###
-    # Download Model Weights
-    # Use a mirror that is publicly available. This example uses Google Drive
-    ###
-    #########################################################################
-    pt_share_link = "https://drive.google.com/file/d/10xBcdT3ryUFrhDs-g7ZourRuVjf-FHOj/view?usp=sharing"
+    submission_path = args.submission_path
+    data_type = args.data_type
+
+    torch.cuda.is_available()
+
+    print("Getting the weighths")
+
+    pt_share_link = "https://drive.google.com/file/d/15lsdB8ZkLaNOTURp3tS6EcZTdyKK8j-t/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
     url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
-    model_checkpoint = "pretrained_task2.pt"
+    model_checkpoint = "pretrained_task2.ckpt"
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
 
-    #########################################################################
-    ###
-    # Create needed directories for data
-    ###
-    #########################################################################
-    task_path = pathlib.Path(args.submission_path).joinpath(f"task_{opts['task']}")
-    opts_file = task_path.joinpath("opts.yaml")
-    predictions_path = task_path.joinpath("predictions")
-    if task_path.exists():
-        shutil.rmtree(task_path.absolute())
-    predictions_path.mkdir(exist_ok=True, parents=True)
+    model =  LidarNet("unetplusplus", "vgg19", in_channels=1, out_classes=1)
 
-    #########################################################################
-    ###
-    # Setup Model
-    ###
-    #########################################################################
-    # Adds 4 channels to the input layer instead of 3
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    model.backbone.conv1 = new_conv1
-    model.load_state_dict(torch.load(model_checkpoint))
-    device = opts["device"]
-    model = model.to(device)
+    checkpoint = torch.load(model_checkpoint)
+    model.load_state_dict(checkpoint['state_dict'])
+    epoch = checkpoint['epoch']
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     model.eval()
 
-    #########################################################################
-    ###
-    # Load Data
-    ###
-    #########################################################################
+    image_paths_test, lidar_paths_test, masks_paths_test = get_sorted_data_paths(data_type)
 
-    dataloader = create_dataloader(opts, opts["data_type"])
-    print(dataloader)
+    test_dataset = SimpleBuildingLidarDataset(lidar_paths_test, masks_paths_test)
 
-    iou_scores = np.zeros((len(dataloader)))
-    biou_scores = np.zeros((len(dataloader)))
+    print(f"Test size: {len(test_dataset)}")
 
-    for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference", leave=False):
-        # Split filename and extension
-        filename_base, file_extension = os.path.splitext(filename[0])
+    n_cpu = os.cpu_count()
+    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True, num_workers=n_cpu)
+    
+    iou_scores = np.zeros((len(test_dataloader)))
+    biou_scores = np.zeros((len(test_dataloader)))
+    
+    idx = 0
+    for batch in test_dataloader:
 
-        # Send image and label to device (eg., cuda)
-        image = image.to(device)
-        label = label.to(device)
+        gt_mask = batch["mask"]
+        with torch.no_grad():
+            model.eval()
+            logits = model(batch["lidar"])
+        pr_masks = logits.sigmoid()
+        
+        prediction = np.uint8(pr_masks.numpy().squeeze())
+        label = np.uint8(gt_mask.numpy().squeeze())
 
-        # Perform model prediction
-        prediction = model(image)["out"]
-        if opts["device"] == "cpu":
-            prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
-        else:
-            prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().cpu().detach().numpy()
-
-        # Postprocess prediction
-        if opts["device"] == "cpu":
-            label = label.squeeze().detach().numpy()
-        else:
-            label = label.squeeze().cpu().detach().numpy()
-        prediction = np.uint8(prediction)
-        label = np.uint8(label)
         assert prediction.shape == label.shape, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {label.shape}]"
 
-        # Predict score
+                # Predict score
         iou_score = iou(prediction, label)
         biou_score = biou(label, prediction)
+
+        print("Curr image metrics", iou_score, biou_score)
 
         iou_scores[idx] = np.round(iou_score, 6)
         biou_scores[idx] = np.round(biou_score, 6)
 
         prediction_visual = np.copy(prediction)
 
-        for idx, value in enumerate(opts["classes"]):
-            prediction_visual[prediction_visual == idx] = opts["class_to_color"][value]
-
-        if opts["device"] == "cpu":
-            image = image.squeeze().detach().numpy()[:3, :, :].transpose(1, 2, 0)
-        else:
-            image = image.squeeze().cpu().detach().numpy()[:3, :, :].transpose(1, 2, 0)
-
+        lidar = batch["lidar"].numpy().squeeze(axis=0).transpose(1, 2, 0)
 
         fig, ax = plt.subplots(1, 3)
-        ax[0].set_title("Input (RGB)")
-        ax[0].imshow(image)
+        columns = 3
+        rows = 1
+        ax[0].set_title("Input (LIDAR)")
+        ax[0].imshow(lidar)
         ax[1].set_title("Prediction")
         ax[1].imshow(prediction_visual)
         ax[2].set_title("Label")
         ax[2].imshow(label)
 
         # Save to file.
-        predicted_sample_path_png = predictions_path.joinpath(f"{filename_base}.png")
-        predicted_sample_path_tif = predictions_path.joinpath(filename[0])
-        plt.savefig(str(predicted_sample_path_png))
+        isExist = os.path.exists(submission_path)
+        if not isExist:
+            # Create a new directory because it does not exist
+            os.makedirs(submission_path)
+
+        predicted_sample_path_png = submission_path + str(idx) + "lidar.png" 
+        plt.savefig(predicted_sample_path_png)
         plt.close()
-        cv.imwrite(str(predicted_sample_path_tif), prediction)
+
+        idx += 1
 
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
 
-    # Dump file configuration
-    yaml.dump(opts, open(opts_file, "w"), Dumper=yaml.Dumper)
+if __name__ == "__main__":
+    
+    main()
+
