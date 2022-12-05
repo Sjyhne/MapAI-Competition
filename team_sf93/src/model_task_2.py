@@ -21,9 +21,23 @@ def main(args):
     # Load Model and its configuration
     ###
     #########################################################################
-    with open(args.config, "r") as f:
-        opts = yaml.load(f, Loader=yaml.Loader)
-        opts = {**opts, **vars(args)}
+    opts = {
+        'task': 2,
+        'data_ratio': 1,
+        'epochs': 20,
+        'device': 0,
+        'lr': 1e-3,
+        'imagesize': 512,
+        'rundir': 'runs',
+        "task1": {
+            "batchsize": 6,
+            'shuffle': True,
+        },
+        "task2": {
+            "batchsize": 4,
+            'shuffle': True,
+        }
+    }
 
     #########################################################################
     ###
@@ -31,7 +45,7 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     #########################################################################
-    pt_share_link = "https://drive.google.com/file/d/10xBcdT3ryUFrhDs-g7ZourRuVjf-FHOj/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/19kON6L1juJC1uLQ3VhcwMhj31BiZSEb0/view?usp=share_link"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
@@ -57,11 +71,7 @@ def main(args):
     # Setup Model
     ###
     #########################################################################
-    # Adds 4 channels to the input layer instead of 3
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    model.backbone.conv1 = new_conv1
-    model.load_state_dict(torch.load(model_checkpoint))
+    model = torch.load(model_checkpoint)
     device = opts["device"]
     model = model.to(device)
     model.eval()
@@ -138,4 +148,4 @@ def main(args):
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))
 
     # Dump file configuration
-    yaml.dump(opts, open(opts_file, "w"), Dumper=yaml.Dumper)
+    # yaml.dump(opts, open(opts_file, "w"), Dumper=yaml.Dumper)
