@@ -34,13 +34,13 @@ Each training run will be stored in the runs folder separated based on the task 
 training for. In the runs folder you will also find a folder with the input, prediction,
 and label images - in addition to the stored model weights.
 
-## Evaluation
+## Evaluation (NOTE!, please use the following commands, they have been altered)
 To verify that your code, and to evaluate your model. You should be able to run following command:
 
 ```
 mkdir -p ./submission
-python3 main.py --data-ratio 1.0 --data-type validation --submission-path ./submission --task 1
-python3 main.py --data-ratio 1.0 --data-type validation --submission-path ./submission --task 2
+python3 src/main.py --task 1 --submission-path ./submission --data-type ../data/test/
+python3 src/main.py --task 2 --submission-path ./submission --data-type ../data/test/
 ```
 
 The commands above will output their predictions to a submission folder
@@ -48,10 +48,10 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name: ___
+Team name: team_redpill
 
-Team participants:  ___
+Team participants:  Fetullah Atas
 
-Emails: ___
+Emails: fetullah.atas@nmbu.no
 
-Countr(y/ies): ___
+Countr(y/ies): Norway

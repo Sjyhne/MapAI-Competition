@@ -40,6 +40,6 @@ Please use the following fromat to execute script
 
 ```bash
 cd team_redpill
-python3 src/main.py --task 2 --submission-path ../data/test/pred/ --data-type ../data/test/
+python3 src/main.py --task 1 --submission-path ./submission --data-type ../data/test/
 ```
 
