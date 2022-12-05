@@ -4,6 +4,14 @@
 <a href="https://sjyhne.github.io/MapAI-Competition/"><img src="https://img.shields.io/badge/Competition-Results-brightgreen" ></a>
 <a href="https://huggingface.co/datasets/sjyhne/mapai_training_data"><img src="https://img.shields.io/badge/MapAI-Dataset-brightgreen" ></a>
 
+
+## Important dates (Final! Deadline Extension)
+
+* Participant's submission of results: ~~25th of November~~ -> ~~2nd of December~~ -> Extended to **_5th of December (23:59:59 Oslo Time)_**.
+* Feedback on the evaluation results: ~~5th of December~~ -> ~~9th of December~~ -> Extended to **_12th of December_**.
+* Deadline for the 2-pager description paper: ~~15th of December~~ -> Extended to **_22nd of December_**.
+
+
 ## Update!
 
 I was notified about a flaw in the evaluation functionality currently implemented, where the evaluation disregards
@@ -271,14 +279,44 @@ your own google drive and download them from there during evaluation.
 
 ### Checklist before submission
 
+Due to some models being larger than 8GB, and therefore cannot be run on the default Github runner,
+you can either run the evaluation pipeline, or you can follow the steps specified below for verifying
+that it can be run on our local pipeline.
+
 * Verify that you are able to run the evaluation pipeline
-  * To do this you can go to your own repository.
-  * Then go to the actions tab
-  * Press the "Evaluation Pipeline"
-  * Then press the "run workflow" for the branch you are testing (most likely master)
-  * Ensure the entire workflow runs without any issues (environment issues are common)
-    * If the environment issues are an issue, then you have to edit the pyproject.toml in
-      the base of your team folder
+  1. To do this you can go to your own repository.
+     * Then go to the actions tab
+     * Press the "Evaluation Pipeline"
+     * Then press the "run workflow" for the branch you are testing (most likely master)
+     * Ensure the entire workflow runs without any issues (environment issues are common)
+       * If the environment issues are an issue, then you have to edit the pyproject.toml in
+         the base of your team folder
+
+* For local verification of being able to run in the evaluation pipeline
+   * Extract the specified python version from your .toml file
+     * `python3 competition_toolkit/competition_toolkit/version_extractor.py --config <team_folder>/pyproject.toml`
+   * Then create a virtual environment with the python version specified
+     * `<python_version> -m venv env`
+   * Source the virtual environment so you can install pip dependencies
+     * source env/bin/activate
+   * Pip install the packages specified in the .toml file which is necessary to run your code
+     * `pip3 install <team_folder>`
+   * Pip install the competition toolkit
+     * `pip3 install competition_toolkit/`
+   * Create the submission folder
+     * `submission_path="/tmp/MapAI-<team_folder>-submission`
+     * `rm -rf $submission_path`
+     * `mkdir -p $submission_path`
+   * Change directories into the src folder of your team folder
+     * `cd <team_folder>/src`
+   * Now see that task 1 are running fine (If you are submitting for task 1)
+     * `<python_version> main.py --data-type val --submission-path $submission_path --task 1`
+     * `<python_version> ../../competition_toolkit/competition_toolkit/evaluation.py --task 1 --submission-path $submission_path --team <team_folder> --data-type val`
+   * Now see that task 2 are running fine (If you are submitting for task 2)
+     * `<python_version> main.py --data-type val --submission-path $submission_path --task 2`
+     * `<python_version> ../../competition_toolkit/competition_toolkit/evaluation.py --task 2 --submission-path $submission_path --team <team_folder> --data-type val`
+* It is important that when ensuring that task 1 and task 2 are running fine, the model is loaded from
+    a cloud provider or similar, an example is using Google drive as specified above.
 
 ### Bibtex Citation
 
