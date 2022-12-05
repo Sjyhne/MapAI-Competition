@@ -118,8 +118,20 @@ def main(args):
             # Create a new directory because it does not exist
             os.makedirs(submission_path)
 
-        predicted_sample_path_png = submission_path + str(idx) + ".png" 
-        plt.savefig(predicted_sample_path_png)
+        predicted_sample_path_png = submission_path + str(idx) + "lidar.png" 
+        #plt.savefig(predicted_sample_path_png)
+
+        mask_path = batch["path"][0][-15:]
+        submission_img = mask_path.replace("/","")
+        # Saving the image
+        #img.save(submission_path + submission_img)
+        import cv2
+        full_path = submission_path +"/"+ submission_img
+        cv2.imwrite(full_path, prediction_visual)
+        label = cv2.imread(full_path, cv.IMREAD_GRAYSCALE)
+        label[label == 255] = 1
+        label = cv.resize(label, (500,500))
+        cv2.imwrite(full_path, label)
         plt.close()
 
         idx += 1

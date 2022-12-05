@@ -61,8 +61,9 @@ class BuildingDataset(Dataset):
     def __getitem__(self, idx):
         image = np.array(Image.open(self.img_paths[idx]).convert("RGB"))
         mask = np.array(Image.open(self.mask_paths[idx]))
+
         mask[mask > 0.0] = 1.0
-        sample = dict(image=image, mask=mask)
+        sample = dict(image=image, mask=mask, path=self.mask_paths[idx])
         if self.transform is not None:
             sample = self.transform(**sample)
 
@@ -95,7 +96,7 @@ class BuildingLidarDataset(Dataset):
         mask = np.array(Image.open(self.mask_paths[idx]))
         mask[mask > 0.0] = 1.0
         
-        sample = dict(lidar=lidar, mask=mask)
+        sample = dict(lidar=lidar, mask=mask, path=self.mask_paths[idx])
         if self.transform is not None:
             sample = self.transform(**sample)
 
