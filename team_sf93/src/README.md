@@ -48,10 +48,10 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name: ___
+Team name: sf93
 
-Team participants:  ___
+Team participants:  Liushifeng Chen
 
-Emails: ___
+Emails: shifeng@solgt.no
 
-Countr(y/ies): ___
+Countr(y/ies): Norge
