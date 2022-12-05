@@ -37,7 +37,8 @@ def main(args):
     #pt_share_link = "https://drive.google.com/file/d/1C3zu4nvsbAy8Q-CqFXQF8prstFCxVYw5/view?usp=sharing"
     #pt_share_link = "https://drive.google.com/file/d/1MHpOCO7gzseOWBS2B6pPGbu6MwLEAYk6/view?usp=share_link"
     #pt_share_link = "https://drive.google.com/file/d/1yveA77yPVzZ5OlL89K9ZyK9nw5byZhYE/view?usp=share_link"
-    pt_share_link = "https://drive.google.com/file/d/15WP4OrMOQ8Ik5MZgMRlASdqISeeQpjnO/view?usp=sharing"
+    #pt_share_link = "https://drive.google.com/file/d/15WP4OrMOQ8Ik5MZgMRlASdqISeeQpjnO/view?usp=sharing"
+    pt_share_link = "https://drive.google.com/file/d/169o9GfH5eqpIjKMUwBKOhhUw8VA_3TSc/view?usp=sharing"
     pt_id = pt_share_link.split("/")[-2]
     # Download trained model ready for inference
     url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
@@ -73,7 +74,7 @@ def main(args):
 
     dataloader = create_dataloader(opts, opts["data_type"])
     print(dataloader)
-
+    
     iou_scores = np.zeros((len(dataloader)))
     biou_scores = np.zeros((len(dataloader)))
     for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference",
