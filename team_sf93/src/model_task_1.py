@@ -81,7 +81,7 @@ def main(args):
         # Split filename and extension
         filename_base, file_extension = os.path.splitext(filename[0])
 
-        image = F.interpolate(image, size=(3, 512, 512), mode='bicubic', align_corners=False)
+        image = F.interpolate(image, size=(512, 512), mode='bicubic', align_corners=False)
 
         # Send image and label to device (eg., cuda)
         image = image.to(device)
@@ -89,7 +89,7 @@ def main(args):
 
         # Perform model prediction
         prediction = model(image)
-        prediction = F.interpolate(prediction, size=(2, 500, 500), mode='bicubic', align_corners=False)
+        prediction = F.interpolate(prediction, size=(500, 500), mode='bicubic', align_corners=False)
 
         if opts["device"] == "cpu":
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
