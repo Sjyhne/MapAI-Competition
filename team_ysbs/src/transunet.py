@@ -1,3 +1,13 @@
+''' 
+References; 
+
+https://arxiv.org/abs/2102.04306
+https://www.sciencedirect.com/science/article/pii/S1361841518306133
+https://arxiv.org/abs/1803.08494
+https://arxiv.org/abs/1505.04597
+https://arxiv.org/abs/2010.11929
+''' 
+
 # -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
