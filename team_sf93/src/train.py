@@ -55,18 +55,18 @@ def test(opts, dataloader, model, lossfn):
     return loss, iou, biou, score
 
 
-def train(model, opts):
+def train(opts):
     device = opts["device"]
 
     # The current model should be swapped with a different one of your choice
-    # model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
+    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
 
-    # if opts["task"] == 2:
-    #     new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-    #     model.backbone.conv1 = new_conv1
+    if opts["task"] == 2:
+        new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        model.backbone.conv1 = new_conv1
 
     model.to(device)
-    # model = model.float()
+    model = model.float()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
     lossfn = torch.nn.CrossEntropyLoss()
@@ -93,9 +93,6 @@ def train(model, opts):
             image, label, filename = batch
             image = image.to(device)
             label = label.to(device)
-            print(image.size())
-            print("-=------")
-            print(model(image))
 
             output = model(image)["out"]
 
