@@ -2,9 +2,9 @@
 
 This repository contains all files related to our submission for the MapAI Building segmentation competition.
 
-Our solution is based on UNet ensembles with heterogneity from differing backbones and training data.
+Our solution is based on UNet ensembles with heterogneity from differing backbones, training data, and image resolution.
 
-An archive with pretrained models is available in [Google Drive](https://drive.google.com/drive/folders/1SQnS-cczKYae0_FpBFchFGpZ3X4QFyZo?usp=share_link)
+An archive with pretrained models is available in [Google Drive](https://drive.google.com/drive/folders/1czzlkgjAzMUqc-fg5WagfRWeZgXVWURd?usp=share_link)
 
 ## Requirements
 
@@ -34,7 +34,7 @@ To run the script, simply write:
 
     sh prepare_data.sh
 
-The script `reclassify_data.sh` reclassifies the masks with building edges and regions in-between two adjacent buildlings as separate classes.
+The script `reclassify_data.sh` reclassifies the masks with building edges and regions in-between two adjacent buildlings as separate classes. We call this dataset `mapai_reclassified`.
 
 ## Training
 
@@ -61,7 +61,7 @@ To train models run `train_task*.sh <epochs> <data_ratio>`. For our standard par
     sh train_task1.sh
     sh train_task2.sh
     
-Lastly, train two models each for task 1 and 2 with 1024 image resolution on the `mapai` and `mapai_edge` datasets:  
+Lastly, train three models each for task 1 and 2 with 1024 image resolution on the `mapai` and `mapai_edge` datasets:  
     
     sh train_1024res.sh
     
