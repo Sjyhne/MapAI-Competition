@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 ''' 
 References; 
 
@@ -8,7 +10,6 @@ https://arxiv.org/abs/1505.04597
 https://arxiv.org/abs/2010.11929
 ''' 
 
-# -*- coding: utf-8 -*-
 import torch
 import torch.nn as nn
 from einops import rearrange
