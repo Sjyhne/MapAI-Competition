@@ -48,10 +48,10 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name: ___
+Team name: UiAI
 
-Team participants:  ___
+Team participants:  Pedro Alves, Andreas Høiberg Eike and Lukasz Filip Mrozik
 
-Emails: ___
+Emails: pedron18@uia.no, andree18@uia.no, lukafm18@uia.no
 
-Countr(y/ies): ___
+Countr(y/ies): Norway
