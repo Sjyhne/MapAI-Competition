@@ -1,3 +1,4 @@
+import random
 import os
 
 import numpy as np
@@ -11,6 +12,8 @@ import argparse
 import time
 
 from competition_toolkit.dataloader import create_dataloader
+from model import AutoEncoder
+from mIoULoss import mIoULoss
 from utils import create_run_dir, store_model_weights, record_scores
 
 from competition_toolkit.eval_functions import calculate_score
@@ -47,10 +50,10 @@ def test(opts, dataloader, model, lossfn):
         bioutotal[idx] = metrics["biou"]
         scoretotal[idx] = metrics["score"]
 
-    loss = round(losstotal.mean(), 4)
-    iou = round(ioutotal.mean(), 4)
-    biou = round(bioutotal.mean(), 4)
-    score = round(scoretotal.mean(), 4)
+    loss = round(losstotal.mean(), 6)
+    iou = round(ioutotal.mean(), 6)
+    biou = round(bioutotal.mean(), 6)
+    score = round(scoretotal.mean(), 6)
 
     return loss, iou, biou, score
 
@@ -59,17 +62,18 @@ def train(opts):
     device = opts["device"]
 
     # The current model should be swapped with a different one of your choice
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
+    model = AutoEncoder()
 
     if opts["task"] == 2:
         new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        model.backbone.conv1 = new_conv1
+        model.encoder.body.conv1 = new_conv1
 
     model.to(device)
     model = model.float()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=opts["lr"])
     lossfn = torch.nn.CrossEntropyLoss()
+    lossfn2 = mIoULoss()
 
     epochs = opts["epochs"]
 
@@ -94,12 +98,48 @@ def train(opts):
             image = image.to(device)
             label = label.to(device)
 
+            if e == 0 and idx == 0:
+                print("pretraining the network")
+                for i in range(30):
+                    output = model(image)["out"]
+                    
+                    loss = lossfn(output, label)
+                    loss2 = lossfn2(output, label)
+
+                    optimizer.zero_grad()
+                    if i < 5:
+                        loss.backward()
+                    else:
+                        loss2.backward()
+                    optimizer.step()
+                    print("loss1,loss2:", float(loss), float(loss2))
+
+            flip_lr = bool(random.randint(0, 1))
+            flip_ud = bool(random.randint(0, 1))
+            rot90_amount = random.randint(0, 3)
+
+            image = torch.rot90(image, rot90_amount, (2, 3))
+            label = torch.rot90(label, rot90_amount, (1, 2))
+
+            if flip_lr:
+                if flip_ud:
+                    image = torch.flip(image, (2, 3))
+                    label = torch.flip(label, (1, 2))
+                else:
+                    image = torch.flip(image, (3,))
+                    label = torch.flip(label, (2,))
+            else:
+                if flip_ud:
+                    image = torch.flip(image, (2,))
+                    label = torch.flip(label, (1,))
+
             output = model(image)["out"]
 
             loss = lossfn(output, label)
+            loss2 = lossfn2(output, label)
 
             optimizer.zero_grad()
-            loss.backward()
+            loss2.backward()
             optimizer.step()
 
             lossitem = loss.item()
@@ -117,10 +157,10 @@ def train(opts):
             scoretotal[idx] = trainmetrics["score"]
 
         testloss, testiou, testbiou, testscore = test(opts, valloader, model, lossfn)
-        trainloss = round(losstotal.mean(), 4)
-        trainiou = round(ioutotal.mean(), 4)
-        trainbiou = round(bioutotal.mean(), 4)
-        trainscore = round(scoretotal.mean(), 4)
+        trainloss = round(losstotal.mean(), 6)
+        trainiou = round(ioutotal.mean(), 6)
+        trainbiou = round(bioutotal.mean(), 6)
+        trainscore = round(scoretotal.mean(), 6)
 
         if testscore > bestscore:
             bestscore = testscore
@@ -153,10 +193,10 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("Training a segmentation model")
 
-    parser.add_argument("--epochs", type=int, default=10, help="Number of epochs for training")
+    parser.add_argument("--epochs", type=int, default=15, help="Number of epochs for training")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate used during training")
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Configuration file to be used")
-    parser.add_argument("--device", type=str, default="cpu")
+    parser.add_argument("--device", type=str, default=("cuda" if torch.cuda.is_available() else "cpu"))
     parser.add_argument("--task", type=int, default=1)
     parser.add_argument("--data_ratio", type=float, default=1.0,
                         help="Percentage of the whole dataset that is used")

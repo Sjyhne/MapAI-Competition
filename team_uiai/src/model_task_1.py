@@ -1,7 +1,6 @@
 import pathlib
 from tqdm import tqdm
 import torch
-import torchvision
 import numpy as np
 import cv2 as cv
 import yaml
@@ -13,6 +12,7 @@ import shutil
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+from model import AutoEncoder
 
 def main(args):
     #########################################################################
@@ -23,6 +23,8 @@ def main(args):
     with open(args.config, "r") as f:
         opts = yaml.load(f, Loader=yaml.Loader)
         opts = {**opts, **vars(args)}
+        opts[f"task{opts['task']}"]["batchsize"] = 1
+
 
     #########################################################################
     ###
@@ -30,12 +32,8 @@ def main(args):
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
     #########################################################################
-
-    pt_share_link = "https://drive.google.com/file/d/17YB5-KZVW-mqaQdz4xv7rioDr4DzhfOU/view?usp=sharing"
-    pt_id = pt_share_link.split("/")[-2]
-
     # Download trained model ready for inference
-    url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
+    url_to_drive = "https://drive.google.com/uc?id=1qPatTw7QNyc36JBv9MrmF566jAmJSRVK&export=download&confirm=t&uuid=c4f7210a-1974-4a89-8c83-fbb83b24e9b0"
     model_checkpoint = "pretrained_task1.pt"
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
@@ -57,10 +55,11 @@ def main(args):
     # Setup Model
     ###
     #########################################################################
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
-    model.load_state_dict(torch.load(model_checkpoint))
+    model = AutoEncoder()
     device = opts["device"]
+    model.load_state_dict(torch.load(model_checkpoint, map_location=torch.device(device)))
     model = model.to(device)
+    model = model.float()
     model.eval()
 
     #########################################################################
