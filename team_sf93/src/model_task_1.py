@@ -13,6 +13,8 @@ import shutil
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+import torch.nn.functional as F
+
 
 def main(args):
     #########################################################################
@@ -84,7 +86,9 @@ def main(args):
         label = label.to(device)
 
         # Perform model prediction
-        prediction = model(image)["out"]
+        prediction = model(image)
+        prediction = F.interpolate(prediction, size=(2, 500, 500), mode='bicubic', align_corners=False)
+
         if opts["device"] == "cpu":
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
         else:
