@@ -177,3 +177,5 @@ if __name__ == "__main__":
     rundir = create_run_dir(opts)
     opts["rundir"] = rundir
     dump(opts, open(os.path.join(rundir, "opts.yaml"), "w"), Dumper)
+
+    train(opts)

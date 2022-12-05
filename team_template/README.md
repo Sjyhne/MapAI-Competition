@@ -31,4 +31,5 @@ elif args.task == 2:
 else:  
     evaluate_model_1(args=args)  
     evaluate_model_2(args=args)
-```
+``` 
+When you pull request to the main repository, the code is checked for errors and if everything is OK, it should pass tests and be available for merging into the main repository. When the pull-request is merged, you can consider your code delivered.
