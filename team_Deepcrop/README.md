@@ -1,8 +1,7 @@
-### NORA MapAI: Precision in Building Segmentation
-
+### NORA MapAI: Precision 
 
 ## For Task 1
-we use mmsegmentation as a pipeline for diverse model and data design
+we base mmsegmentation for diverse model and data design
     https://drive.google.com/drive/folders/1jLslKQ62u1xGVP0VMaDgW8bBT-LTEHqW?usp=sharing
     to download "convext_base_aug18k_model.pth"
 ### install mmsegmentation 
