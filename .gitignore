@@ -3,19 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-*.tif
-*.png
-*.pickle
-*.npy
-
-**/temp/*.yaml
-
 # C extensions
 *.so
-
-# VS Code
-.vscode
-
 
 # Distribution / packaging
 .Python
@@ -145,6 +134,8 @@ dmypy.json
 data/train
 data/validation
 data/test
+data/big_tiles
+data/mapai
 data/task1_test
 data/task2_test
 submission/

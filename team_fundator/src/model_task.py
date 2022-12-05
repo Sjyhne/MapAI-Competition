@@ -72,6 +72,10 @@ def main(args, pt_share_links, weights=None):
         gdown.download(url_to_pt, str(model_checkpoint), quiet=False)
         gdown.download(url_to_opt, str(model_cfg), quiet=False)
 
+
+        model_cfg = yaml.load(open(model_cfg, "r"), yaml.Loader)
+        print(f"Loaded {model_cfg['model']['encoder']} model. Trained on {model_cfg['dataset']}. Resolution {model_cfg['imagesize']} ")
+
         if len(model_cfg_list[-1]) < max_ensemble_size:
             model_name_list[-1].append(model_checkpoint)
             model_cfg_list[-1].append(model_cfg)
@@ -101,10 +105,9 @@ def main(args, pt_share_links, weights=None):
         ###
         #########################################################################
         models = []
-        for config, checkpoint in zip(configs, model_names):
-            config =  yaml.load(open(config, "r"), yaml.Loader)
+        for config, checkpoint_path in zip(configs, model_names):
             model = get_model(config)
-            model.load_state_dict(torch.load(checkpoint, map_location=torch.device(opts["device"])))
+            model.load_state_dict(torch.load(checkpoint_path, map_location=torch.device(opts["device"])))
             models.append(model)
             
             if config["imagesize"] != opts["imagesize"]:
@@ -120,10 +123,8 @@ def main(args, pt_share_links, weights=None):
         dataloader = create_dataloader(opts, opts["data_type"])
         pbar = tqdm(dataloader, miniters=int(len(dataloader)/100), desc=f"Inference - Iter {i + 1}/{len(model_cfg_list)}")
 
-        del models
         for image, label, filename in pbar:
             # Split filename and extension
-            del label
             filename_base, file_extension = os.path.splitext(filename[0])
 
             if opts["task"] == 2:
@@ -131,7 +132,6 @@ def main(args, pt_share_links, weights=None):
                 lidar = lidar_valid(lidar.numpy())
 
                 image = torch.cat([image, torch.tensor(lidar, dtype=image.dtype)], dim=1)
-                del lidar
             # Send image and label to device (eg., cuda)
             image = image.to(device)
 
@@ -142,8 +142,6 @@ def main(args, pt_share_links, weights=None):
                 routput = model(torch.rot90(image, dims=[2, 3]))["result"]
                 routput = torch.rot90(routput, k=-1, dims=[2, 3])
                 prediction = (prediction + routput) / 2
-                del routput
-            del image
 
             if opts["device"] == "cpu":
                 prediction = prediction.squeeze().detach().numpy()

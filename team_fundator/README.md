@@ -70,25 +70,24 @@ Lastly, train two models each for task 1 and 2 with 1024 image resolution on the
 ## Description
 The ensembles for task 1 and 2 are desdcribed here.
 ### Task 1
-We selected five models for the task 1 ensemble, out of eight models which were trained with different combinations of encoders, datasets and imagesizes. The first 6 combinations are given by the Cartesian product of the following sets:
+We selected five models for the task 1 ensemble, out of nine models which were trained with different combinations of encoders, datasets and imagesizes. The first 6 combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_edge)
 
-The last two models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets. 
+The last three models were trained with image size 1024 using the `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets, and `efficientnet-b1` backbone with the   `mapai_edge` dataset.
 
 See the section *Model Selection* for how we chose which models to include in the task 1 and 2 ensembles.
 
 ### Task 2
-The ensemble contains three models out of ten models which were trained with different combinations of encoders, datasets and image sizes. The first 8 combinations are given by the Cartesian product of the following sets:
+The ensemble contains five models out of 11 models which were trained with different combinations of encoders, datasets and image sizes. The first 8 combinations are given by the Cartesian product of the following sets:
     
     Encoders: (timm-resnest-26d, efficientnet-b1)
     Datasets: (mapai, mapai_reclassified, mapai_lidar_masks, mapai_edge)
 
-
 The dataset `mapai_lidar_masks` has a third class for the case where the LIDAR height is 0. `Mapai_edge` is similar to `mapai_reclassified`, but only has the additional edge class.
 
-The last two models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets.
+The last three models were trained with image size 1024 using the  `timm-resnest26d` backbone with the  `mapai` and  `mapai_edge` datasets, and `efficientnet-b1` backbone with the   `mapai_edge` dataset.
 
 ### Model Selection
 To select models for the ensemble, we first use `save_ensemble_preds.py` to save the concatenated predictions of each model for each task. Next we use `test_subensembles.py` to go through all combinations of 3 or more models from the concatenated predictions, using an even weighting of each prediction.
