@@ -24,6 +24,7 @@ def main(args):
     with open(args.config, "r") as f:
         opts = yaml.load(f, Loader=yaml.Loader)
         opts = {**opts, **vars(args)}
+        opts[f"task{opts['task']}"]["batchsize"] = 1
 
     # Download trained model ready for inference
     url_to_drive = "https://drive.google.com/uc?id=1Q_e4vLNZfzquFDE7G9-Y6H0u8ypeVvz3&export=download&confirm=t&uuid=037940d8-aeac-4615-876b-02d63783b554"
@@ -54,8 +55,8 @@ def main(args):
         new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         model.encoder.body.conv1 = new_conv1
 
-    model.load_state_dict(torch.load(model_checkpoint))
     device = opts["device"]
+    model.load_state_dict(torch.load(model_checkpoint, map_location=torch.device(device)))
     model = model.to(device)
     model = model.float()
     model.eval()

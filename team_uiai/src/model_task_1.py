@@ -23,6 +23,8 @@ def main(args):
     with open(args.config, "r") as f:
         opts = yaml.load(f, Loader=yaml.Loader)
         opts = {**opts, **vars(args)}
+        opts[f"task{opts['task']}"]["batchsize"] = 1
+
 
     #########################################################################
     ###
@@ -31,7 +33,7 @@ def main(args):
     ###
     #########################################################################
     # Download trained model ready for inference
-    url_to_drive = "https://drive.google.com/uc?id=13udB1UqkNFXBwiha3m5P6E6D4jjI5Kr2&export=download&confirm=t&uuid=14d99b08-f08e-4b79-b41e-bc2b4f222dca"
+    url_to_drive = "https://drive.google.com/uc?id=1qPatTw7QNyc36JBv9MrmF566jAmJSRVK&export=download&confirm=t&uuid=c4f7210a-1974-4a89-8c83-fbb83b24e9b0"
     model_checkpoint = "pretrained_task1.pt"
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
@@ -54,9 +56,8 @@ def main(args):
     ###
     #########################################################################
     model = AutoEncoder()
-
-    model.load_state_dict(torch.load(model_checkpoint))
     device = opts["device"]
+    model.load_state_dict(torch.load(model_checkpoint, map_location=torch.device(device)))
     model = model.to(device)
     model = model.float()
     model.eval()
