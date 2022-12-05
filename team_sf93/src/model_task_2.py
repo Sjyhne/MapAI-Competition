@@ -82,14 +82,14 @@ def main(args):
 
         # Send image and label to device (eg., cuda)
         
-        image = F.interpolate(x, size=(3, 512, 512), mode='bicubic', align_corners=False)
+        image = F.interpolate(image, size=(4, 512, 512), mode='bicubic', align_corners=False)
 
         image = image.to(device)
         label = label.to(device)
 
         # Perform model prediction
         prediction = model(image)
-        prediction = F.interpolate(x, size=(2, 500, 500), mode='bicubic', align_corners=False)
+        prediction = F.interpolate(prediction, size=(2, 500, 500), mode='bicubic', align_corners=False)
 
         if opts["device"] == "cpu":
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()

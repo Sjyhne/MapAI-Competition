@@ -81,6 +81,8 @@ def main(args):
         # Split filename and extension
         filename_base, file_extension = os.path.splitext(filename[0])
 
+        image = F.interpolate(image, size=(3, 512, 512), mode='bicubic', align_corners=False)
+
         # Send image and label to device (eg., cuda)
         image = image.to(device)
         label = label.to(device)
