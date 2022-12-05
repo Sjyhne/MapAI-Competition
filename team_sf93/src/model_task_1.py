@@ -20,23 +20,9 @@ def main(args):
     # Load Model and its configuration
     ###
     #########################################################################
-    opts = {
-        'task': 2,
-        'data_ratio': 1,
-        'epochs': 20,
-        'device': 0,
-        'lr': 1e-3,
-        'imagesize': 512,
-        'rundir': 'runs',
-        "task1": {
-            "batchsize": 6,
-            'shuffle': True,
-        },
-        "task2": {
-            "batchsize": 4,
-            'shuffle': True,
-        }
-    }
+    with open(args.config, "r") as f:
+        opts = yaml.load(f, Loader=yaml.Loader)
+        opts = {**opts, **vars(args)}
 
     #########################################################################
     ###
@@ -81,7 +67,7 @@ def main(args):
     # Load Data
     ###
     #########################################################################
-
+    print(opts, opts["data_type"])
     dataloader = create_dataloader(opts, opts["data_type"])
     print(dataloader)
 

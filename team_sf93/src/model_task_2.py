@@ -14,6 +14,8 @@ import shutil
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+import torch.nn.functional as F
+
 
 def main(args):
     #########################################################################
@@ -21,23 +23,9 @@ def main(args):
     # Load Model and its configuration
     ###
     #########################################################################
-    opts = {
-        'task': 2,
-        'data_ratio': 1,
-        'epochs': 20,
-        'device': 0,
-        'lr': 1e-3,
-        'imagesize': 512,
-        'rundir': 'runs',
-        "task1": {
-            "batchsize": 6,
-            'shuffle': True,
-        },
-        "task2": {
-            "batchsize": 4,
-            'shuffle': True,
-        }
-    }
+    with open(args.config, "r") as f:
+        opts = yaml.load(f, Loader=yaml.Loader)
+        opts = {**opts, **vars(args)}
 
     #########################################################################
     ###
@@ -93,11 +81,16 @@ def main(args):
         filename_base, file_extension = os.path.splitext(filename[0])
 
         # Send image and label to device (eg., cuda)
+        
+        image = F.interpolate(x, size=(3, 512, 512), mode='bicubic', align_corners=False)
+
         image = image.to(device)
         label = label.to(device)
 
         # Perform model prediction
-        prediction = model(image)["out"]
+        prediction = model(image)
+        prediction = F.interpolate(x, size=(2, 500, 500), mode='bicubic', align_corners=False)
+
         if opts["device"] == "cpu":
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
         else:
