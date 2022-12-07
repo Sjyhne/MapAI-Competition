@@ -3,7 +3,7 @@ import glob
 import torch
 import onnxruntime as ort
 from pathlib import Path
-from typing import Callable
+from typing import Callable, List, Union
 import numpy as np
 from skimage.morphology import remove_small_objects, remove_small_holes
 
@@ -61,7 +61,7 @@ def create_model(model_fpath: Path, cpu=False):
         )
 
 
-    def model(x: torch.FloatTensor | np.ndarray):
+    def model(x: Union[torch.FloatTensor, np.ndarray]):
         if isinstance(x, torch.Tensor):
             x = x.numpy()
         return ort_session.run(None, {"feature": x})[0]
@@ -69,7 +69,7 @@ def create_model(model_fpath: Path, cpu=False):
     return model
 
 
-def predict(feature: torch.FloatTensor, models: list[Callable] | Callable, numpy=False):
+def predict(feature: torch.FloatTensor, models: Union[List[Callable], Callable], numpy=False):
     predictions = []
     models = [models] if isinstance(models, Callable) else models
 
