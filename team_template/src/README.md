@@ -48,10 +48,10 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name:
+Team name: ___
 
-Team participants:
+Team participants: ___
 
-Emails:
+Emails: ___
 
-Countr(y/ies):
+Countr(y/ies): ___
