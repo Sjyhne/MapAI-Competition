@@ -34,7 +34,7 @@ Each training run will be stored in the runs folder separated based on the task 
 training for. In the runs folder you will also find a folder with the input, prediction,
 and label images - in addition to the stored model weights.
 
-## Evaluation (NOTE!, please use the following commands, they have been altered)
+## Evaluation
 To verify that your code, and to evaluate your model. You should be able to run following command:
 
 ```
@@ -50,7 +50,7 @@ which is used during evaluation on our servers
 
 Team name: ___
 
-Team participants: ___
+Team participants:  ___
 
 Emails: ___
 
