@@ -1,0 +1,11 @@
+
+dataset: "mapai_edge"
+data_dirs:
+    masks_train: "masks_reclassified"
+
+num_classes: 4
+classes: ["background", "building", "building_edge",]
+class_to_color:
+  "background": 0
+  "building": 1
+  "building_edge": 2

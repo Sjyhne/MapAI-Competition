@@ -163,10 +163,13 @@ dmypy.json
 data/train
 data/validation
 data/test
+data/big_tiles
+data/mapai
 data/task1_test
 data/task2_test
 submission/
 runs/
+
 Footer
 © 2022 GitHub, Inc.
 Footer navigation
