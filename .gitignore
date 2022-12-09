@@ -144,3 +144,5 @@ data/mapai
 data/task1_test
 data/task2_test
 submission/
+runs/
+team_redpill/src/lightning_logs/
