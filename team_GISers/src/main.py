@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # CUSTOM ARGUMENTS GOES HERE
     #############################################################
     parser.add_argument("--config", type=str, default="config/data.yaml", help="Config")
-    parser.add_argument("--device", type=str, default="cpu", help="Which device the inference should run on")
+    parser.add_argument("--device", type=str, default="cuda", help="Which device the inference should run on")
     parser.add_argument("--data-ratio", type=float, default=1.0, help="Percentage of the whole dataset that is used")
 
     args = parser.parse_args()
@@ -23,8 +23,8 @@ if __name__ == "__main__":
     # CODE GOES HERE
     # Save results into: args.submission_path
     #############################################################
-    from model_task_1 import main as evaluate_model_1
-    from model_task_2 import main as evaluate_model_2
+    from model_task_1_v2 import main as evaluate_model_1
+    from model_task_2_v2 import main as evaluate_model_2
     if args.task == 1:
         evaluate_model_1(args=args)
     elif args.task == 2:

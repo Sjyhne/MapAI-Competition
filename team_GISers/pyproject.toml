@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "team-template"
+name = "team-GISers"
 description = "Configuring the environment for running python and ML"
 requires-python = ">=3.7"
 keywords = []
