@@ -1,4 +1,5 @@
 import pathlib
+
 from tqdm import tqdm
 import torch
 import torchvision
@@ -13,6 +14,10 @@ import shutil
 from competition_toolkit.dataloader import create_dataloader
 from competition_toolkit.eval_functions import iou, biou
 
+# ======================================================================================================================
+# add my own models
+from models.E_PANet_v3 import E_PANet_v3
+# ======================================================================================================================
 
 def main(args):
     #########################################################################
@@ -29,14 +34,19 @@ def main(args):
     # Download Model Weights
     # Use a mirror that is publicly available. This example uses Google Drive
     ###
+    ###
+    # Updated time: 28th, Nov. 2022
+    # Task_2 best:from EPANet_v3, in task_2/run_12
+    ###
     #########################################################################
-
-    pt_share_link = "https://drive.google.com/file/d/17YB5-KZVW-mqaQdz4xv7rioDr4DzhfOU/view?usp=sharing"
+    # pt_share_link = "https://drive.google.com/file/d/10xBcdT3ryUFrhDs-g7ZourRuVjf-FHOj/view?usp=sharing"
+    # pt_share_link = "https://drive.google.com/file/d/1od8ksryB7vVhCgYjVGiZpqd_IRRYOemd/view?usp=share_link"
+    pt_share_link = "https://drive.google.com/file/d/1-L8NUIDUUi9lbkKIbspmp3kLUgCXnah2/view?usp=share_link"
     pt_id = pt_share_link.split("/")[-2]
 
     # Download trained model ready for inference
     url_to_drive = f"https://drive.google.com/uc?id={pt_id}"
-    model_checkpoint = "pretrained_task1.pt"
+    model_checkpoint = "task_2_best_run12.pt"  # pretrained_task2.pt
 
     gdown.download(url_to_drive, model_checkpoint, quiet=False)
 
@@ -56,8 +66,16 @@ def main(args):
     ###
     # Setup Model
     ###
+    ###
+    # Updated time: 16th, Nov. 2022
+    ###
     #########################################################################
-    model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
+    # # Adds 4 channels to the input layer instead of 3
+    # model = torchvision.models.segmentation.fcn_resnet50(pretrained=False, num_classes=opts["num_classes"])
+    # new_conv1 = torch.nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+    # model.backbone.conv1 = new_conv1
+
+    model = E_PANet_v3(inp_channel=4, n_cls=opts["num_classes"])
     model.load_state_dict(torch.load(model_checkpoint))
     device = opts["device"]
     model = model.to(device)
@@ -75,28 +93,40 @@ def main(args):
     iou_scores = np.zeros((len(dataloader)))
     biou_scores = np.zeros((len(dataloader)))
 
-    for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference",
-                                              leave=False):
+    for idx, (image, label, filename) in tqdm(enumerate(dataloader), total=len(dataloader), desc="Inference", leave=False):
         # Split filename and extension
         filename_base, file_extension = os.path.splitext(filename[0])
+
+        # ==============================================================================================================
+        # Updated time: 16th, Nov. 2022
+        # Added part: for normalize lidar data
+        lidar = image[:, 3, :, :]
+        max_lidar, min_lidar = torch.max(lidar), torch.min(lidar)
+        lidar = (lidar - min_lidar) / (max_lidar - min_lidar + 1e-6)  # 1e-6: an eplision to avoid nan
+        image[:, 3, :, :] = lidar
+        # ==============================================================================================================
 
         # Send image and label to device (eg., cuda)
         image = image.to(device)
         label = label.to(device)
 
         # Perform model prediction
-        prediction = model(image)["out"]
+        ###
+        # Updated time: 16th, Nov. 2022
+        ###
+        # prediction = model(image)["out"]
+        prediction_3cls, prediction_2cls, prediction = model(image)
+
         if opts["device"] == "cpu":
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().detach().numpy()
         else:
             prediction = torch.argmax(torch.softmax(prediction, dim=1), dim=1).squeeze().cpu().detach().numpy()
-        # Postprocess prediction
 
+        # Postprocess prediction
         if opts["device"] == "cpu":
             label = label.squeeze().detach().numpy()
         else:
             label = label.squeeze().cpu().detach().numpy()
-
         prediction = np.uint8(prediction)
         label = np.uint8(label)
         assert prediction.shape == label.shape, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {label.shape}]"
@@ -118,9 +148,8 @@ def main(args):
         else:
             image = image.squeeze().cpu().detach().numpy()[:3, :, :].transpose(1, 2, 0)
 
+
         fig, ax = plt.subplots(1, 3)
-        columns = 3
-        rows = 1
         ax[0].set_title("Input (RGB)")
         ax[0].imshow(image)
         ax[1].set_title("Prediction")

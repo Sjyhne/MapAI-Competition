@@ -48,10 +48,10 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name: ___
+Team name: ___GISers___
 
-Team participants:  ___
+Team participants:  ___Gefei Kong, Chaoquan Zhang, Yi Zhao, Hongchao Fan___
 
-Emails: ___
+Emails: ___gefei.kong@ntnu.no___
 
-Countr(y/ies): ___
+Countr(y/ies): ___Norway___
