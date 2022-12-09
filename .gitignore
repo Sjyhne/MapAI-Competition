@@ -1,32 +1,3 @@
-Skip to content
-Search or jump to…
-Pull requests
-Issues
-Codespaces
-Marketplace
-Explore
- 
-@morteg15 
-Sjyhne
-/
-MapAI-Competition
-Public
-Code
-Issues
-2
-Pull requests
-Actions
-Projects
-Security
-Insights
-MapAI-Competition/.gitignore
-@Sjyhne
-Sjyhne init
-Latest commit 53a6be1 on Sep 20
- History
- 1 contributor
-140 lines (114 sloc)  1.86 KB
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -169,19 +140,3 @@ data/task1_test
 data/task2_test
 submission/
 runs/
-
-Footer
-© 2022 GitHub, Inc.
-Footer navigation
-Terms
-Privacy
-Security
-Status
-Docs
-Contact GitHub
-Pricing
-API
-Training
-Blog
-About
-MapAI-Competition/.gitignore at master · Sjyhne/MapAI-Competition
