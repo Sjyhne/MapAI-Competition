@@ -1,0 +1,97 @@
+version: 1.0
+
+model:
+  name: "UNet"
+  encoder_depth: 5
+  encoder: "timm-resnest26d"
+  aux_head: False
+  aux_head_params:
+    classes: 1 # binary building / no building classification
+    pooling: "avg" # "max",  "avg"
+    dropout: 0.2 # default 0.0
+
+
+dataset: 'mapai_lidar_masks' # mapai, mapai_reclassified, mapai_lidar_masks, landcover
+
+augmentation:
+  initial: 'hard'  # None, 'normal', 'hard', 'very_hard'
+  warmup_epochs: 3 # number of epochs before switching to augmentation cycle
+  cycle: ["hard"] # select augmentations with index (epoch - warmup_epochs) % len(cycle)
+
+lidar_augs:
+  clip_min: -1.0 # normalizing (always applied as the last augmentation)
+  clip_max: 40.0
+  norm: "max" # "max", "min_max"
+  norm_basis: "clip" # "clip", "image"
+
+  other_augs: ["random_scaling", "random_noise"] # always applied first, in order
+  one_of: [] # ["random_offset", "random_scaling"]
+
+  dropout:
+    p: 0.5 # with probability p,  num_pixels * pixel_prob pixels are dropped
+    pixel_frac: 0.01
+    min_replacement: -5.0
+    max_replacement: 0.0
+
+  random_noise:
+    p: 0.5 # with probability p, add gaussian noise
+    std: 0.1 # std in meters
+    keep_zero: True # do not add noise to orthorectified ground where lidar = 0
+
+  random_offset:
+    p: 0.5 # with probability p, add a an offset to all pixels greater than min_height
+    min_offset: 0.0
+    max_offset: 2.0
+    min_height: 3.5
+
+  random_scaling:
+    p: 0.5
+    min_scale: 0.85
+    max_scale: 1.15
+
+imagesize: 768
+training:
+  losses:
+    # "DiceLoss": smp.losses.DiceLoss,
+    # "JaccardLoss": smp.losses.JaccardLoss,
+    # "TverskyLoss": smp.losses.TverskyLoss,
+    # "FocalLoss": smp.losses.FocalLoss,
+    # "LovaszLoss": smp.losses.LovaszLoss,
+    # "CrossEntropy": smp.losses.SoftBCEWithLogitsLoss, OR smp.losses.SoftCrossEntropyLoss if num_classes > 1
+    names: ['JaccardLoss']
+    weights: [1.0]
+    JaccardLoss:
+      init_params:
+        mode: "multiclass"
+
+  optimizer:
+    name: RAdam # Adam, SGD, RAdam, AdamWarmup
+    init_params:
+      lr: 0.0002
+
+  scheduler:
+    name: MultiStep # PolyLR, MultiStep
+    init_params:
+        milestones: [25]
+  # fit:
+  #   epochs: 50
+  #   accumulation_steps: 4
+
+
+testing:
+  interpolation: bilinear # bicubic, bilinear
+  antialias: True
+  erode_val_preds: True
+
+train:
+  epochs: 1
+  batchsize: 12 
+  shuffle: True
+  num_workers: 10
+  data_ratio: 0.0004
+
+validation:
+  batchsize: 4
+  shuffle: False
+  num_workers: 8
+  data_ratio: 0.01
