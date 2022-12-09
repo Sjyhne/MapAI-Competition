@@ -48,10 +48,10 @@ which is used during evaluation on our servers
 
 ## Team info (Fill in the blank fields):
 
-Team name: team_redpill
+Team name:
 
-Team participants:  Fetullah Atas
+Team participants:
 
-Emails: fetullah.atas@nmbu.no
+Emails:
 
-Countr(y/ies): Norway
+Countr(y/ies):
