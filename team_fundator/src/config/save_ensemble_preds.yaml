@@ -1,0 +1,27 @@
+version: 1.0
+
+dataset: 'mapai' # mapai, mapai_reclassified, mapai_lidar_masks, landcover
+
+lidar_augs:
+  clip_min: -1.0 # normalizing (always applied as the last augmentation)
+  clip_max: 30.0
+  norm: "max" # "max", "min_max"
+  norm_basis: "clip" # "clip", "image"
+
+  other_augs: [] # always applied first, in order
+  one_of: []
+
+
+imagesize: 512
+
+train:
+  batchsize: 1
+  shuffle: True
+  num_workers: 3
+  data_ratio: 1.0
+
+validation:
+  batchsize: 1
+  shuffle: False
+  num_workers: 2
+  data_ratio: 1.0

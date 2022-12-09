@@ -1,0 +1,47 @@
+version: 1.0
+
+model:
+  name: "UNet"
+  encoder_depth: 5
+  encoder: "timm-resnest26d"
+  aux_head: False
+  aux_head_params:
+    classes: 1 # binary building / no building classification
+    pooling: "avg" # "max",  "avg"
+    dropout: 0.2 # default 0.0
+
+lidar_augs:
+  clip_min: -1.0 # normalizing (always applied as the last augmentation)
+  clip_max: 40.0
+  norm: "max" # "max", "min_max"
+  norm_basis: "clip" # "clip", "image"
+
+  other_augs: []
+  one_of: []
+
+
+num_classes: 2
+classes: ["background", "building"]
+class_to_color:
+  "background": 0
+  "building": 255
+
+post_process_preds: True
+
+imagesize: 512
+
+train:
+  batchsize: 1
+  shuffle: True
+
+validation:
+  batchsize: 1
+  shuffle: False
+
+task1:
+  batchsize: 1
+  shuffle: False
+
+task2:
+  batchsize: 1
+  shuffle: False
