@@ -1,3 +1,8 @@
+shared/
+bin/
+lib/
+lib64/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -134,7 +139,10 @@ dmypy.json
 data/train
 data/validation
 data/test
+data/big_tiles
+data/mapai
 data/task1_test
 data/task2_test
 submission/
 runs/
+

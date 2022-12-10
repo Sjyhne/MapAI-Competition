@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "team-template"
+description = "Configuring the environment for running python and ML"
+requires-python = ">=3.7"
+keywords = []
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "torch",
+    "torchvision",
+    "tqdm",
+    "opencv-python",
+    "numpy",
+    "datasets",
+    "tomli",
+    "pandas",
+    "pyarrow",
+    "gdown",
+    "matplotlib",
+    "albumentations",
+    "segmentation_models_pytorch"
+]
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.rst"]}
+
+[tool.setuptools.packages.find]
+where = ["."]  # list of folders that contain the packages (["."] by default)
+include = ["src*"]  # package names should match these glob patterns (["*"] by default)
+exclude = [
+    "node_modules*",
+    "scripts*",
+    "tests*",
+    "venv*"
+]  # exclude packages matching these glob patterns (empty by default)

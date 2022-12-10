@@ -1,0 +1,10 @@
+
+dataset: "mapai_lidar_masks"
+use_lidar_in_mask: True
+num_classes: 3
+
+classes: ["background", "building", "lidar_ground"]
+class_to_color:
+  "background": 0
+  "building": 1
+  "lidar_ground": 3
