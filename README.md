@@ -4,6 +4,29 @@
 <a href="https://sjyhne.github.io/MapAI-Competition/"><img src="https://img.shields.io/badge/Competition-Results-brightgreen" ></a>
 <a href="https://huggingface.co/datasets/sjyhne/mapai_training_data"><img src="https://img.shields.io/badge/MapAI-Dataset-brightgreen" ></a>
 
+## Results
+
+This is the final results of the competition! All code must be shared and participants must submit a 2-pager detailing the approach of your submission.
+
+|    |   Team   | IoU (Task 1) | BIoU (Task 1) | Total (Task 1) | IoU (Task 2) | BIoU (Task 2) | Total (Task 2) |    Score   | Eligible for prizes |
+|:--:|:--------:|:------------:|:-------------:|:--------------:|:------------:|:-------------:|:--------------:|:----------:|:-------------------:|
+|  1 | FUNDATOR |    0.7794    |     0.6115    |     0.6955     |    0.8775    |     0.7857    |     0.8316     | **0.7635** |         N/A         |
+|  2 |  HVL-ML  |    0.7879    |     0.6245    |     0.7062     |    0.8711    |     0.7504    |     0.8108     | **0.7585** |         N/A         |
+|  3 |  ATELIER |    0.7823    |     0.6103    |     0.6963     |    0.8427    |     0.7405    |     0.7916     | **0.7440** |         N/A         |
+|  4 |   UIAI   |    0.7336    |     0.5780    |     0.6558     |    0.8790    |     0.7841    |     0.8316     | **0.7437** |         N/A         |
+|  5 |   YSBS   |    0.7551    |     0.5613    |     0.6582     |    0.8555    |     0.7127    |     0.7841     | **0.7212** |         N/A         |
+|  6 |  REDPILL |    0.7642    |     0.5962    |     0.6802     |    0.7796    |     0.6392    |     0.7094     | **0.6948** |         N/A         |
+|  7 |   SF93   |    0.6599    |     0.5154    |     0.5877     |    0.7577    |     0.6366    |     0.6972     | **0.6424** |         N/A         |
+|  8 |   MORTY  |    0.7448    |     0.5709    |     0.6579     |    0.6731    |     0.5368    |     0.6050     | **0.6314** |         N/A         |
+|  9 |  KABORG  |    0.7112    |     0.5195    |     0.6154     |    0.6890    |     0.5616    |     0.6253     | **0.6203** |         N/A         |
+| 10 |  GISERS  |    0.6055    |     0.4422    |     0.5239     |    0.7662    |     0.6413    |     0.7038     | **0.6138** |         N/A         |
+| 11 | DEEPCROP |    0.5290    |     0.3227    |     0.4259     |      0.0     |      0.0      |       0.0      | **0.2129** |         N/A         |
+
+
+All participants are asked to submit a 2 paper (double column, plus 1 additional page for references) describing their method and results. 
+The submitted papers will be reviewed single blind and will be published. Outstanding submissions will be invited to submit a 
+full length paper to a special issue about the competition in the Nordic Machine Intelligence Journal.
+
 
 ## Important dates (Final! Deadline Extension)
 
@@ -44,6 +67,7 @@ competition consists of two different tasks:
 
 1. Building segmentation only using aerial images.
 2. Building segmentation using lidar data (it is allowed to combine the lidar with aerial images).
+3. 
 ### Task Rules
 
 You are allowed to use additional training data for both tasks. The datasets used for training must be open and accessible to everyone and follow the specific rules for each task.
@@ -138,8 +162,6 @@ The prizes will be 1200 euros for first place, 500 euros for second place, and 3
 1. 1200 Euro
 2. 500 Euro
 3. 300 Euro
-
-Results will be presented at https://sjyhne.github.io/MapAI-Competition/ after evaluation.
 
 ### Check Fork Version
 
