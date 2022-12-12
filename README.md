@@ -8,7 +8,7 @@
 
 This is the final results of the competition! All code must be shared and participants must submit a 2-pager detailing the approach of your submission.
 
-|    |   Team   | IoU (Task 1) | BIoU (Task 1) | Total (Task 1) | IoU (Task 2) | BIoU (Task 2) | Total (Task 2) |    Score   | Eligible for prizes |
+|    |   Team   | IoU Task 1 | BIoU Task 1 | Total Task 1 | IoU Task 2 | BIoU Task 2 | Total Task 2 |    Score   | Eligible for prizes |
 |:--:|:--------:|:------------:|:-------------:|:--------------:|:------------:|:-------------:|:--------------:|:----------:|:-------------------:|
 |  1 | FUNDATOR |    0.7794    |     0.6115    |     0.6955     |    0.8775    |     0.7857    |     0.8316     | **0.7635** |         N/A         |
 |  2 |  HVL-ML  |    0.7879    |     0.6245    |     0.7062     |    0.8711    |     0.7504    |     0.8108     | **0.7585** |         N/A         |
