@@ -6,7 +6,7 @@
 
 ## Results
 
-This is the final results of the competition! All code must be shared and participants must submit a 2-pager detailing the approach of your submission.
+This is the final results of the competition!
 
 |    |   Team   | IoU Task 1 | BIoU Task 1 | Total Task 1 | IoU Task 2 | BIoU Task 2 | Total Task 2 |    Score   | Eligible for prizes |
 |:--:|:--------:|:------------:|:-------------:|:--------------:|:------------:|:-------------:|:--------------:|:----------:|:-------------------:|
@@ -23,10 +23,11 @@ This is the final results of the competition! All code must be shared and partic
 | 11 | DEEPCROP |    0.5290    |     0.3227    |     0.4259     |      0.0     |      0.0      |       0.0      | **0.2129** |         N/A         |
 
 
-All participants are asked to submit a 2 paper (double column, plus 1 additional page for references) describing their method and results. 
-The submitted papers will be reviewed single blind and will be published. Outstanding submissions will be invited to submit a 
-full length paper to a special issue about the competition in the Nordic Machine Intelligence Journal.
+All participants should submit a 2-page paper (double column, plus one additional page for references) describing their method and results. Submission of the paper is a requirement for participation in the competition. After a single-blind review, the submitted paper will be officially published as part of a special issue Nordic Machine Intelligence Journal (https://www.nora.ai/journal/). 
 
+Outstanding submissions will additionally be invited to submit a full-length paper to the same journal.
+
+The competition's winner will be announced at the Northern Lights Deep Learning conference in January 2023 (https://www.nldl.org/).
 
 ## Important dates (Final! Deadline Extension)
 
