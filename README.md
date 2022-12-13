@@ -29,6 +29,10 @@ Outstanding submissions will additionally be invited to submit a full-length pap
 
 The competition's winner will be announced at the Northern Lights Deep Learning conference in January 2023 (https://www.nldl.org/).
 
+Examples of 2-pagers can be found at https://journals.uio.no/NMI/issue/view/787 under "NMI Challenge" headline.
+
+The 2-pagers should use the NMI template for papers, which can be found at https://journals.uio.no/NMI/about/submissions under "formatting". If there are any questions regarding the 2-pager, please feel free to send me an e-mail and I'll help you out.
+
 ## Important dates (Final! Deadline Extension)
 
 * Participant's submission of results: ~~25th of November~~ -> ~~2nd of December~~ -> Extended to **_5th of December (23:59:59 Oslo Time)_**.
