@@ -6,21 +6,29 @@
 
 ## Results
 
+### COMPETITION IS FINISHED
+
+Congratulations to TEAM FUNDATOR, TEAM HVL-ML, and TEAM UIAI for claiming the 1st, 2nd and 3rd place, respectively.
+
+The complete dataset for the competition is hosted on [huggingface](https://huggingface.co/datasets/sjyhne/mapai_dataset).
+
+### Results
+
 This is the final results of the competition! All code must be shared and participants must submit a 2-pager detailing the approach of your submission.
 
 |    |   Team   | IoU Task 1 | BIoU Task 1 | Total Task 1 | IoU Task 2 | BIoU Task 2 | Total Task 2 |    Score   | Eligible for prizes |
 |:--:|:--------:|:------------:|:-------------:|:--------------:|:------------:|:-------------:|:--------------:|:----------:|:-------------------:|
-|  1 | FUNDATOR |    0.7794    |     0.6115    |     0.6955     |    0.8775    |     0.7857    |     0.8316     | **0.7635** |         N/A         |
-|  2 |  HVL-ML  |    0.7879    |     0.6245    |     0.7062     |    0.8711    |     0.7504    |     0.8108     | **0.7585** |         N/A         |
-|  3 |  ATELIER |    0.7823    |     0.6103    |     0.6963     |    0.8427    |     0.7405    |     0.7916     | **0.7440** |         No         |
-|  4 |   UIAI   |    0.7336    |     0.5780    |     0.6558     |    0.8790    |     0.7841    |     0.8316     | **0.7437** |         N/A         |
-|  5 |   YSBS   |    0.7551    |     0.5613    |     0.6582     |    0.8555    |     0.7127    |     0.7841     | **0.7212** |         N/A         |
-|  6 |  REDPILL |    0.7642    |     0.5962    |     0.6802     |    0.7796    |     0.6392    |     0.7094     | **0.6948** |         N/A         |
-|  7 |   SF93   |    0.6599    |     0.5154    |     0.5877     |    0.7577    |     0.6366    |     0.6972     | **0.6424** |         N/A         |
-|  8 |   MORTY  |    0.7448    |     0.5709    |     0.6579     |    0.6731    |     0.5368    |     0.6050     | **0.6314** |         N/A         |
-|  9 |  KABORG  |    0.7112    |     0.5195    |     0.6154     |    0.6890    |     0.5616    |     0.6253     | **0.6203** |         N/A         |
-| 10 |  GISERS  |    0.6055    |     0.4422    |     0.5239     |    0.7662    |     0.6413    |     0.7038     | **0.6138** |         N/A         |
-| 11 | DEEPCROP |    0.5290    |     0.3227    |     0.4259     |      0.0     |      0.0      |       0.0      | **0.2129** |         N/A         |
+|  1 | FUNDATOR |    0.7794    |     0.6115    |     0.6955     |    0.8775    |     0.7857    |     0.8316     | **0.7635** |         Yes         |
+|  2 |  HVL-ML  |    0.7879    |     0.6245    |     0.7062     |    0.8711    |     0.7504    |     0.8108     | **0.7585** |         Yes         |
+|  3 | DEEPCROP |    0.7902    |     0.6185    |     0.7044     |    0.8506    |     0.7461    |     0.7984     | **0.7514** |         No          |
+|  4 |  ATELIER |    0.7823    |     0.6103    |     0.6963     |    0.8427    |     0.7405    |     0.7916     | **0.7440** |         No          |
+|  5 |   UIAI   |    0.7336    |     0.5780    |     0.6558     |    0.8790    |     0.7841    |     0.8316     | **0.7437** |         Yes         |
+|  6 |   YSBS   |    0.7551    |     0.5613    |     0.6582     |    0.8555    |     0.7127    |     0.7841     | **0.7212** |         Yes         |
+|  7 |  REDPILL |    0.7642    |     0.5962    |     0.6802     |    0.7796    |     0.6392    |     0.7094     | **0.6948** |         Yes         |
+|  8 |   SF93   |    0.6599    |     0.5154    |     0.5877     |    0.7577    |     0.6366    |     0.6972     | **0.6424** |         Yes         |
+|  9 |   MORTY  |    0.7448    |     0.5709    |     0.6579     |    0.6731    |     0.5368    |     0.6050     | **0.6314** |         Yes         |
+| 10 |  KABORG  |    0.7112    |     0.5195    |     0.6154     |    0.6890    |     0.5616    |     0.6253     | **0.6203** |         Yes         |
+| 11 |  GISERS  |    0.6055    |     0.4422    |     0.5239     |    0.7662    |     0.6413    |     0.7038     | **0.6138** |         Yes         |
 
 
 All participants are asked to submit a 2 paper (double column, plus 1 additional page for references) describing their method and results. 
