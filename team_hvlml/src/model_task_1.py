@@ -89,8 +89,8 @@ def main(args):
         # Load data
         data_type = opts["data_type"]
 
-        img_fn = f"../../data/{data_type}/images/{filename[0]}"
-        label_fn = f"../../data/{data_type}/masks/{filename[0]}"
+        img_fn = f"../../data/task{opts['task']}_{opts['data_type']}/images/{filename[0]}"
+        label_fn = f"../../data/task{opts['task']}_{opts['data_type']}/masks/{filename[0]}"
         img = PILImage.create(img_fn)
         label = TensorMask(PILImage.create(label_fn))[:,:,0]
 
@@ -136,10 +136,10 @@ def main(args):
 
         # Save to file.
         #predicted_sample_path_png = predictions_path.joinpath(f"{filename_base}.png")
-        #predicted_sample_path_tif = predictions_path.joinpath(filename[0])
+        predicted_sample_path_tif = predictions_path.joinpath(filename[0])
         #plt.savefig(str(predicted_sample_path_png))
         #plt.close()
-        #cv2.imwrite(str(predicted_sample_path_tif), prediction)
+        cv2.imwrite(str(predicted_sample_path_tif), prediction)
 
         
     print("iou_score:", np.round(iou_scores.mean(), 5), "biou_score:", np.round(biou_scores.mean(), 5))

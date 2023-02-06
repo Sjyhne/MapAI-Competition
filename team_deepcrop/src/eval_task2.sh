@@ -1,0 +1,1 @@
+python3 main.py --data-type test --submission-path task2_submission_folder --task 2 --data-ratio 1.0 --device cuda:0

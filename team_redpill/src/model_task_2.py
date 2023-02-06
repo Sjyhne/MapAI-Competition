@@ -23,9 +23,9 @@ from PIL import Image
 import numpy as np
 
 def get_sorted_data_paths(split):
-    image_paths = sorted(glob.glob(split + "/images/*.tif"))
-    lidar_paths = sorted(glob.glob(split + "/lidar/*.tif"))
-    masks_paths = sorted(glob.glob(split + "/masks/*.tif"))
+    image_paths = sorted(glob.glob("../../data/" + split + "/images/*.tif"))
+    lidar_paths = sorted(glob.glob("../../data/" + split + "/lidar/*.tif"))
+    masks_paths = sorted(glob.glob("../../data/" + split + "/masks/*.tif"))
 
     return image_paths, lidar_paths, masks_paths
 
@@ -115,17 +115,21 @@ def main(args):
         predicted_sample_path_png = submission_path + str(idx) + "lidar.png" 
         #plt.savefig(predicted_sample_path_png)
 
-        mask_path = batch["path"][0][-15:]
-        submission_img = mask_path.replace("/","")
+        mask_path = batch["path"][0]
+        submission_img = mask_path.split("/")[-1]
         # Saving the image
-        #img.save(submission_path + submission_img)
+        # img.save(submission_path + submission_img)
         import cv2
-        full_path = submission_path +"/"+ submission_img
+        from pathlib import Path
+        predpath = Path(submission_path, "task_2", "predictions")
+        predpath.mkdir(exist_ok=True, parents=True)
+        full_path = Path(predpath.__str__(), submission_img).__str__()
+        prediction_visual = cv.resize(prediction_visual, (500, 500))
         cv2.imwrite(full_path, prediction_visual)
-        label = cv2.imread(full_path, cv.IMREAD_GRAYSCALE)
-        label[label == 255] = 1
-        label = cv.resize(label, (500,500))
-        cv2.imwrite(full_path, label)
+        # label = cv2.imread(full_path, cv.IMREAD_GRAYSCALE)
+        # label[label == 255] = 1
+        # label = cv.resize(label, (500,500))
+        # cv2.imwrite(full_path, label)
         plt.close()
 
         idx += 1

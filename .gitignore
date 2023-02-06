@@ -146,3 +146,16 @@ data/task2_test
 submission/
 runs/
 
+submission_folder/
+
+include/
+
+team_deepcrop/mmsegmentation/
+
+*.onnx
+*.ckpt
+
+*.pt
+
+mapai_data.tar.gz
+parquetify.py

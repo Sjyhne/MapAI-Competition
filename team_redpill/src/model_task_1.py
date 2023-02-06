@@ -21,9 +21,9 @@ from utils import SimpleBuildingDataset, PetModel
 from competition_toolkit.eval_functions import iou, biou
 
 def get_sorted_data_paths(split):
-    image_paths = sorted(glob.glob(split + "/images/*.tif"))
-    lidar_paths = sorted(glob.glob(split + "/lidar/*.tif"))
-    masks_paths = sorted(glob.glob(split + "/masks/*.tif"))
+    image_paths = sorted(glob.glob("../../data/" + split + "/images/*.tif"))
+    lidar_paths = sorted(glob.glob("../../data/" + split + "/lidar/*.tif"))
+    masks_paths = sorted(glob.glob("../../data/" + split + "/masks/*.tif"))
 
     return image_paths, lidar_paths, masks_paths
 
@@ -47,10 +47,10 @@ def main(args):
 
     model =  PetModel("unetplusplus", "vgg19", in_channels=3, out_classes=1)
 
-    trainer = pl.Trainer(
-        gpus=1, 
-        max_epochs=5,
-    )
+    #trainer = pl.Trainer(
+    #    gpus=1,
+    #    max_epochs=5,
+    #)
 
     checkpoint = torch.load(model_checkpoint)
     model.load_state_dict(checkpoint['state_dict'])
@@ -62,13 +62,12 @@ def main(args):
 
     image_paths_test, lidar_paths_test, masks_paths_test = get_sorted_data_paths(data_type)
 
-
     test_dataset = SimpleBuildingDataset(image_paths_test, masks_paths_test)
 
     print(f"Test size: {len(test_dataset)}")
 
     n_cpu = os.cpu_count()
-    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=True, num_workers=n_cpu)
+    test_dataloader = DataLoader(test_dataset, batch_size=1, shuffle=False)
     
     #test_metrics = trainer.test(model, dataloaders=test_dataloader, verbose=False)
 
@@ -92,8 +91,6 @@ def main(args):
                 # Predict score
         iou_score = iou(prediction, label)
         biou_score = biou(label, prediction)
-
-        print(iou_score, biou_score)
 
         iou_scores[idx] = np.round(iou_score, 6)
         biou_scores[idx] = np.round(biou_score, 6)
@@ -121,17 +118,22 @@ def main(args):
         predicted_sample_path_png = submission_path + str(idx) + "lidar.png" 
         #plt.savefig(predicted_sample_path_png)
 
-        mask_path = batch["path"][0][-15:]
-        submission_img = mask_path.replace("/","")
+
+        mask_path = batch["path"][0]
+        submission_img = mask_path.split("/")[-1]
         # Saving the image
         #img.save(submission_path + submission_img)
         import cv2
-        full_path = submission_path +"/"+ submission_img
+        from pathlib import Path
+        predpath = Path(submission_path, "task_1", "predictions")
+        predpath.mkdir(exist_ok=True, parents=True)
+        full_path = Path(predpath.__str__(), submission_img).__str__()
+        prediction_visual = cv.resize(prediction_visual, (500, 500))
         cv2.imwrite(full_path, prediction_visual)
-        label = cv2.imread(full_path, cv.IMREAD_GRAYSCALE)
-        label[label == 255] = 1
-        label = cv.resize(label, (500,500))
-        cv2.imwrite(full_path, label)
+        #label = cv2.imread(full_path, cv.IMREAD_GRAYSCALE)
+        #label[label == 255] = 1
+        #label = cv.resize(label, (500,500))
+        #cv2.imwrite(full_path, label)
         plt.close()
 
         idx += 1

@@ -12,6 +12,7 @@ from eval_functions import iou, biou
 from dataloader import download_dataset
 
 
+# NOT USED
 def calculate_score(preds: np.array, tars: np.array) -> dict:
     assert preds.shape == tars.shape, f"pred shape {preds.shape} does not match tar shape {tars.shape}"
     assert len(preds.shape) != 4, f"expected shape is (bs, ydim, xdim), but found {preds.shape}"
@@ -54,8 +55,8 @@ if __name__ == "__main__":
     mask_path = dataset_path.joinpath("masks")  # TODO correct?
 
 
-    base_path = Path(__file__).parent.parent
-    submission_path = base_path.joinpath(args.submission_path)
+    #base_path = Path(__file__).parent.parent
+    submission_path = Path(args.submission_path)
     task_path = submission_path.joinpath("task_" + str(args.task))
     prediction_path = task_path.joinpath("predictions")
     prediction_path.mkdir(exist_ok=True, parents=True)

@@ -13,7 +13,7 @@ if __name__ == "__main__":
     ########################################## ###################
     # CUSTOM ARGUMENTS GOES HERE
     #############################################################
-    parser.add_argument("--config", type=str, default="team_kaborg/src/config/data.yaml", help="Config")
+    parser.add_argument("--config", type=str, default="config/data.yaml", help="Config")
     parser.add_argument("--device", type=str, default="cuda", help="Which device the inference should run on")
     parser.add_argument("--data-ratio", type=float, default=1.0, help="Percentage of the whole dataset that is used")
 

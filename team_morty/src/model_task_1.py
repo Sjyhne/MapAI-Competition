@@ -102,6 +102,11 @@ def main(args):
         label = np.uint8(label)
         assert prediction.shape == label.shape, f"Prediction and label shape is not same, pls fix [{prediction.shape} - {label.shape}]"
 
+        print(label.shape)
+        print(prediction.shape)
+
+        exit()
+
         # Predict score
         iou_score = iou(prediction, label)
         biou_score = biou(label, prediction)
