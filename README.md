@@ -31,10 +31,15 @@ This is the final results of the competition! All code must be shared and partic
 | 11 |  GISERS  |    0.6055    |     0.4422    |     0.5239     |    0.7662    |     0.6413    |     0.7038     | **0.6138** |         Yes         |
 
 
-All participants are asked to submit a 2 paper (double column, plus 1 additional page for references) describing their method and results. 
-The submitted papers will be reviewed single blind and will be published. Outstanding submissions will be invited to submit a 
-full length paper to a special issue about the competition in the Nordic Machine Intelligence Journal.
+All participants should submit a 2-page paper (double column, plus one additional page for references) describing their method and results. Submission of the paper is a requirement for participation in the competition. After a single-blind review, the submitted paper will be officially published as part of a special issue Nordic Machine Intelligence Journal (https://www.nora.ai/journal/). 
 
+Outstanding submissions will additionally be invited to submit a full-length paper to the same journal.
+
+The competition's winner will be announced at the Northern Lights Deep Learning conference in January 2023 (https://www.nldl.org/).
+
+Examples of 2-pagers can be found at https://journals.uio.no/NMI/issue/view/787 under "NMI Challenge" headline.
+
+The 2-pagers should use the NMI template for papers, which can be found at https://journals.uio.no/NMI/about/submissions under "formatting". If there are any questions regarding the 2-pager, please feel free to send me an e-mail and I'll help you out.
 
 ## Important dates (Final! Deadline Extension)
 
